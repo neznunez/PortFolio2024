@@ -1,0 +1,30 @@
+@charset "UTF-8";
+/* CSS Document */
+
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+.project-container, .scrollable-content {
+    padding: 20px;
+    max-height: 500px; /* Altura máxima antes de começar a rolar */
+    overflow-y: auto; /* Habilita o scroll vertical se o conteúdo exceder a altura máxima */
+}
+
+h1 {
+    color: #FF0000;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+/* Adicionando estilos para a área scrollável */
+.scrollable-content {
+    margin: 20px 0; /* Espaçamento externo */
+    border: 1px solid #ccc; /* Uma borda para visualização, opcional */
+    /* Adicione mais estilos conforme necessário */
+}

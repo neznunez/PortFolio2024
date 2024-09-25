@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <title>Portfólio</title>
+	 <link rel="stylesheet" href="landing.css">
+	
+    <style>
+        body, html {
+            margin: 0;
+            overflow: hidden;
+            height: 100%;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            pointer-events: none;
+            visibility: hidden;
+        }
+
+    </style>
+</head>
+<body>
+   <script src="ReLibs/three.min.js"></script>
+    <script src="ReLibs/OrbitControls.js"></script>
+	<script src="ReLibs/gsap.min.js"></script>
+    <script src="ReLibs/GLTFLoader.js"></script>
+
+
+	 <!-- Switch Buttons -->
+    <div class="switch-container">
+        <label class="switch">
+            <input type="checkbox" id="toggleSkybox">
+            <span class="slider round"></span>
+        </label>
+        <label class="switch switch-second">
+            <input type="checkbox" id="toggleSceneModel">
+            <span class="slider round"></span>
+        </label>
+    </div>
+	
+  <script>
+        var scene, camera, renderer, controls;
+        var cubeArray = [];
+        var raycaster, mouse;
+        var tooltip;
+        var INTERSECTED;
+        var rotationSpeed = 0.005;
+        var angle = 0;
+        var selectedCube = null;
+        var initialCameraPosition, initialCameraQuaternion;
+        var model; // Referência ao modelo 3D da cabeça para uso em animações
+	    var scaleFactor = 1; // Escala inicial normal, sem expansão
+	  var sceneModel; // Variável global para o modelo de cenário
+	  
+ // Lista dos conjuntos de skyboxes
+      var skyboxes = [
+    [
+        'desertdawn/desertdawn_ft.jpg', 'desertdawn/desertdawn_bk.jpg',
+        'desertdawn/desertdawn_up.jpg', 'desertdawn/desertdawn_dn.jpg',
+        'desertdawn/desertdawn_rt.jpg', 'desertdawn/desertdawn_lf.jpg'
+    ],
+    // Novo conjunto de skybox adicionado corretamente como um array separado
+    [
+        'Park2/posx.jpg', 'Park2/negx.jpg', 
+        'Park2/posy.jpg', 'Park2/negy.jpg',
+        'Park2/posz.jpg', 'Park2/negz.jpg'
+    ],		  
+		   [
+        'Rainbow/rainbow_ft.png', 'Rainbow/rainbow_bk.png',
+        'Rainbow/rainbow_up.png', 'Rainbow/rainbow_dn.png',
+        'Rainbow/rainbow_rt.png', 'Rainbow/rainbow_lf.png'
+    ],
+		   [
+        'Lycksele3/posx.jpg', 'Lycksele3/negx.jpg', 
+        'Lycksele3/posy.jpg', 'Lycksele3/negy.jpg',
+        'Lycksele3/posz.jpg', 'Lycksele3/negz.jpg'
+    ]
+		  
+		  
+		  
+    // Adicione mais conjuntos de skybox aqui conforme necessário, cada um como seu próprio array
+];
+			
+        // Função para carregar um skybox aleatório
+        function loadRandomSkybox() {
+            var randomIndex = Math.floor(Math.random() * skyboxes.length);
+            var selectedSkybox = skyboxes[randomIndex];
+
+            var loader = new THREE.CubeTextureLoader();
+            var texture = loader.load(selectedSkybox);
+            scene.background = texture;
+        }
+		
+		   function addModel() {
+            var loader = new THREE.GLTFLoader();
+            var modelPath = 'models/NezHead5.glb';
+            loader.load(modelPath, function (gltf) {
+                model = gltf.scene;
+                model.position.set(0, 0, 0);
+                model.scale.set(20, 20, 20);
+                scene.add(model);
+                // Iniciar com a câmera focada na cabeça
+                animateCameraToPosition(0, 0, 5);
+            }, undefined, function (error) {
+                console.error(error);
+            });
+        }
+	  
+	function addSceneModel() {
+    var loader = new THREE.GLTFLoader();
+    var modelPath = 'models/StudioNez.glb'; // Substitua pelo caminho do seu modelo de cenário
+    loader.load(modelPath, function (gltf) {
+        sceneModel = gltf.scene;
+        sceneModel.position.set(20, -25, -4); // Ajuste conforme necessário
+        sceneModel.rotation.y = Math.PI; // Rotaciona o cenário 180 graus em torno do eixo Y
+        sceneModel.scale.set(15, 15, 15); // Ajuste conforme necessário
+        scene.add(sceneModel);
+    }, undefined, function (error) {
+        console.error('An error occurred while loading the scene model:', error);
+    });
+}
+	  
+	  function toggleSceneModelVisibility() {
+    if (sceneModel) {
+        sceneModel.visible = !sceneModel.visible;
+    }
+}
+
+        function init() {
+			
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 0, 8);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+			 // Adicionando customização do zoom no OrbitControls
+    controls.minDistance = 4; // O mínimo de distância para o zoom in
+    controls.maxDistance = 8; // O máximo de distância para o zoom out
+			
+			
+			initialCameraPosition = camera.position.clone();
+            initialCameraQuaternion = camera.quaternion.clone();
+
+            
+            loadRandomSkybox(); // esta é a única linha que define o skybox
+            addLighting();
+            addCubesAroundSphere();
+            setupEventListeners();
+			addModel();
+			addSceneModel(); // Adiciona o modelo de cenário à cena
+            animate();
+			
+        }
+	  
+function handleHeadClick() {
+    // Torna todos os cubos visíveis
+    cubeArray.forEach(cube => cube.visible = true);
+
+    // Movimenta a câmera para a posição inicial e ajusta a rotação
+    gsap.to(camera.position, {
+        x: initialCameraPosition.x,
+        y: initialCameraPosition.y,
+        z: initialCameraPosition.z,
+        duration: 2,
+        ease: "power3.inOut",
+        onUpdate: function() {
+            camera.lookAt(scene.position); // Opcional: dependendo de como você quer que a câmera se comporte
+        }
+    });
+
+    // Ajusta a quaternião (rotação) da câmera para sua rotação inicial
+    gsap.to(camera.quaternion, {
+        x: initialCameraQuaternion.x,
+        y: initialCameraQuaternion.y,
+        z: initialCameraQuaternion.z,
+        w: initialCameraQuaternion.w,
+        duration: 2,
+        ease: "power3.inOut"
+    });
+}
+
+
+
+        function addLighting() {
+    var ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    var hemiLight = new THREE.HemisphereLight(0xffeeb1, 0x080820, 1);
+    scene.add(hemiLight);
+
+    var directionalLight = new THREE.DirectionalLight(0xffffff, 0.75);
+    directionalLight.position.set(5, 3, 5);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
+}
+		
+        function addCentralSphere() {
+            var sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
+            var sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+            var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+            scene.add(sphere);
+        }
+
+    function addCubesAroundSphere(){
+    var projects = [
+		 { name: 'Projeto 1', description: 'Descrição do Projeto 1' },
+        { name: 'Projeto 2', description: 'Descrição do Projeto 2' },
+        { name: 'Projeto 3', description: 'Descrição do Projeto 3' },
+        { name: 'Projeto 4', description: 'Descrição do Projeto 4' },
+        { name: 'Projeto 5', description: 'Descrição do Projeto 5' },
+        { name: 'Projeto 6', description: 'Descrição do Projeto 6' },
+        { name: 'Projeto 7', description: 'Descrição do Projeto 7' },
+        { name: 'Projeto 8', description: 'Descrição do Projeto 8' },
+        { name: 'Projeto 9', description: 'Descrição do Projeto 9' },
+        { name: 'Projeto 10', description: 'Descrição do Projeto 10' },
+        // Seus projetos...
+    ];
+    var sphereRadius = 1; // Raio da esfera central
+    var minDistanceFromSphere = 3; // Distância mínima desejada da superfície da esfera aos cubos
+    var totalRadius = sphereRadius + minDistanceFromSphere; // Raio total a partir do centro para iniciar o posicionamento dos cubos
+    var numCubes = projects.length;
+    var minDistanceBetweenCubes = 2; // Distância mínima entre os cubos
+    var radiusMultiplier = 1; // Valor inicial que não altera o raio
+		
+		
+
+    for (var i = 0; i < numCubes; i++) {
+        var position, isTooClose;
+        do {
+            position = new THREE.Vector3(
+                (Math.random() - 0.5) * 2 * totalRadius,
+                (Math.random() - 0.5) * 2 * totalRadius,
+                (Math.random() - 0.5) * 2 * totalRadius
+            );
+
+            // Verifica se a posição está muito próxima de outros cubos
+            isTooClose = cubeArray.some(cube => position.distanceTo(cube.position) < minDistanceBetweenCubes);
+        } while (isTooClose || position.length() < totalRadius); // Garante distância mínima da esfera e entre cubos
+
+        var cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+        var cubeMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0xFFFFFF, 
+    roughness: 0.5, // Superfície lisa
+    metalness: 0.1, // Vidro não é metálico
+    reflectivity: 0.9, // Alta reflexividade para um efeito de vidro
+    transparent: true, // Habilita transparência
+    opacity: 0.8, // Ajuste conforme necessário para mais ou menos transparência
+    transmission: 0.9, // Permite que a luz passe através do material (Three.js r125 ou superior)
+    side: THREE.DoubleSide // Renderiza ambos os lados do material
+});
+        var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+        cube.position.copy(position);
+        cube.userData.project = projects[i];
+        scene.add(cube);
+        cubeArray.push(cube);
+		cube.visible = false; // Isso oculta o cubo
+		
+    }
+}
+		
+		// Função para redefinir a câmera para a vista original
+        function resetCamera() {
+            gsap.to(camera.position, {
+                x: initialCameraPosition.x,
+                y: initialCameraPosition.y,
+                z: initialCameraPosition.z,
+                duration: 2,
+                ease: "power3.inOut",
+                onUpdate: function() {
+                    camera.lookAt(scene.position); // Ou para onde quer que a câmera olhe inicialmente
+                }
+            });
+
+            gsap.to(camera.quaternion, {
+                x: initialCameraQuaternion.x,
+                y: initialCameraQuaternion.y,
+                z: initialCameraQuaternion.z,
+                w: initialCameraQuaternion.w,
+                duration: 2,
+                ease: "power3.inOut"
+            });
+
+            gsap.to(controls.target, {
+                x: scene.position.x,
+                y: scene.position.y,
+                z: scene.position.z,
+                duration: 2,
+                ease: "power3.inOut"
+            });
+        }
+
+    function setupEventListeners() {
+    raycaster = new THREE.Raycaster();
+    mouse = new THREE.Vector2();
+
+   
+    tooltip = document.createElement('div');
+    tooltip.className = 'tooltip';
+    document.body.appendChild(tooltip);
+
+    document.addEventListener('mousemove', onDocumentMouseMove, false);
+    document.addEventListener('mouseout', onDocumentMouseOut, false);
+    document.addEventListener('mousedown', onDocumentMouseDown, true); // Modifiquei para 'true' para capturar eventos de forma mais precisa
+    document.addEventListener('mouseup', onDocumentMouseUp, false);
+    window.addEventListener('resize', onWindowResize, false);
+}
+
+	  
+	   function animateCameraToPosition(x, y, z) {
+        // Implementação de uma animação de câmera usando GSAP para mover suavemente para a posição especificada
+        gsap.to(camera.position, {
+            x: x,
+            y: y,
+            z: z,
+            duration: 2,
+            ease: "power3.inOut",
+            onComplete: function() {
+                // Opcional: qualquer lógica a ser executada após a conclusão da animação da câmera
+            }
+        });
+    }
+	  
+	   function startTransitionToCubesScene() {
+        // Essa função deverá gerenciar a lógica de transição entre a cena inicial e a cena dos cubos
+        // Por exemplo, pode começar por tornar os cubos visíveis e mover a câmera para a posição original da cena dos cubos
+        cubeArray.forEach(function(cube) {
+            cube.visible = true; // Torna todos os cubos visíveis
+        });
+        // Retorna a câmera para a posição inicial (ou qualquer outra lógica de transição desejada)
+        resetCamera();
+    }
+
+function onDocumentMouseMove(event) {
+    event.preventDefault();
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    var intersects = raycaster.intersectObjects(cubeArray);
+
+    if (intersects.length > 0) {
+        if (INTERSECTED != intersects[0].object) {
+            if (INTERSECTED) INTERSECTED.material.color.setHex(INTERSECTED.currentHex);
+
+            INTERSECTED = intersects[0].object;
+            INTERSECTED.currentHex = INTERSECTED.material.color.getHex();
+            INTERSECTED.material.color.setHex(0xff0000);
+        }
+
+        tooltip.style.left = event.clientX + 'px';
+        tooltip.style.top = event.clientY + 'px';
+        tooltip.innerHTML = INTERSECTED.userData.project.name;
+        tooltip.style.visibility = 'visible';
+    } else {
+        if (INTERSECTED) INTERSECTED.material.color.setHex(INTERSECTED.currentHex);
+
+        INTERSECTED = null;
+        tooltip.style.visibility = 'hidden';
+    }
+}
+
+
+        function onDocumentMouseOut() {
+            tooltip.style.visibility = 'hidden';
+        }
+	  
+	  function onDocumentMouseDown(event) {
+    event.preventDefault();
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    var intersects = raycaster.intersectObject(model, true);
+
+    if (intersects.length > 0) {
+        handleHeadClick(); // Chama a função se a cabeça foi clicada
+    } else {
+        mouseDown = true; // Mantém essa linha se você tiver lógica dependente de mouseDown
+    }
+}
+
+	  
+	
+			
+var projectToPageMap = {
+    "Projeto 1": "window1.html",
+    "Projeto 2": "window2.html",
+    // Adicione mais projetos e suas páginas correspondentes aqui
+};
+
+var cubeFocused = false; // Uma nova variável para rastrear o estado do foco
+
+function onDocumentMouseUp(event) {
+    if (!mouseDown) return;
+    event.preventDefault();
+    raycaster.setFromCamera(mouse, camera);
+    var intersects = raycaster.intersectObjects(cubeArray);
+
+    if (intersects.length > 0) {
+        if (!cubeFocused) {
+            selectedCube = intersects[0].object; // Armazena o cubo focado
+
+            var cubeCenter = new THREE.Vector3();
+            selectedCube.geometry.computeBoundingBox();
+            selectedCube.geometry.boundingBox.getCenter(cubeCenter);
+            cubeCenter.applyMatrix4(selectedCube.matrixWorld);
+
+            gsap.to(camera.position, {
+                x: cubeCenter.x,
+                y: cubeCenter.y,
+                z: cubeCenter.z + 2, // Ajuste conforme necessário
+                duration: 2,
+                ease: "power3.inOut"
+            });
+
+            controls.target.set(cubeCenter.x, cubeCenter.y, cubeCenter.z);
+            cubeFocused = true;
+        } else {
+            var pageName = projectToPageMap[selectedCube.userData.project.name];
+            if (pageName) window.location.href = pageName;
+        }
+    } else if (cubeFocused) {
+        resetCamera();
+        cubeFocused = false;
+        selectedCube = null; // Reseta o cubo selecionado
+    }
+    mouseDown = false;
+}
+
+		
+        function onWindowResize() {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        }
+		
+	  
+  function animate() {
+    requestAnimationFrame(animate);
+	  
+      renderer.render(scene, camera);
+    // Rotação coletiva dos cubos
+    angle += rotationSpeed;
+    cubeArray.forEach(cube => {
+        var radius = Math.sqrt(cube.position.x * cube.position.x + cube.position.z * cube.position.z);
+        var currentAngle = Math.atan2(cube.position.z, cube.position.x) + rotationSpeed;
+        cube.position.x = Math.cos(currentAngle) * radius;
+        cube.position.z = Math.sin(currentAngle) * radius;
+    });
+
+    if (selectedCube && cubeFocused) {
+        // Calcula o centro do cubo focado
+        var cubeCenter = new THREE.Vector3();
+        selectedCube.geometry.computeBoundingBox();
+        selectedCube.geometry.boundingBox.getCenter(cubeCenter);
+        cubeCenter.applyMatrix4(selectedCube.matrixWorld);
+        
+        // Mantém a câmera focada no cubo enquanto mantém a distância especificada
+        var distance = 1; // Ajuste conforme necessário para a distância desejada da câmera ao cubo
+        var direction = new THREE.Vector3().subVectors(camera.position, cubeCenter).normalize().multiplyScalar(distance);
+        var newPosition = cubeCenter.clone().add(direction);
+
+        // Anima a câmera suavemente para a nova posição, mantendo-a focada no cubo
+        gsap.to(camera.position, {
+            x: newPosition.x,
+            y: newPosition.y,
+            z: newPosition.z,
+            duration: 2, // Ajuste conforme necessário para a velocidade da animação
+            onUpdate: function() {
+                camera.lookAt(cubeCenter);
+            }
+        });
+        
+        controls.target.copy(cubeCenter); // Garante que o OrbitControls focalize o cubo
+    }
+
+    renderer.render(scene, camera);
+}
+
+document.getElementById('toggleSkybox').addEventListener('change', function() {
+    if (this.checked) {
+        scene.background = new THREE.Color(0xffffff); // Fundo branco
+    } else {
+        loadRandomSkybox(); // Reaplica um skybox aleatório
+    }
+});
+
+	  document.getElementById('toggleSceneModel').addEventListener('change', function() {
+    toggleSceneModelVisibility();
+});
+
+
+        init();
+    </script>
+	
+	
+</body>
+</html>
