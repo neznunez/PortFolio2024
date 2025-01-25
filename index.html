@@ -42,10 +42,13 @@
             <input type="checkbox" id="toggleSkybox">
             <span class="slider round"></span>
         </label>
+        <!-- Comentar o botão de alternância para o toggleSceneModel -->
+        <!--
         <label class="switch switch-second">
             <input type="checkbox" id="toggleSceneModel">
             <span class="slider round"></span>
         </label>
+        -->
     </div>
 	
   <script>
@@ -95,10 +98,20 @@
         function loadRandomSkybox() {
             var randomIndex = Math.floor(Math.random() * skyboxes.length);
             var selectedSkybox = skyboxes[randomIndex];
-
+            
             var loader = new THREE.CubeTextureLoader();
-            var texture = loader.load(selectedSkybox);
-            scene.background = texture;
+            loader.load(selectedSkybox, function(texture) {
+                scene.background = texture;
+                // Aplicar o mapa de ambiente aos materiais
+                scene.traverse(function(child) {
+                    if (child.isMesh) {
+                        child.material.envMap = texture;
+                        child.material.envMapIntensity = 1.0;
+                    }
+                });
+            }, undefined, function(error) {
+                console.error('Erro ao carregar o skybox:', error);
+            });
         }
 		
 		   function addModel() {
@@ -136,6 +149,8 @@
     }
 }
 
+        var composer;
+
         function init() {
 			
             scene = new THREE.Scene();
@@ -144,26 +159,37 @@
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             document.body.appendChild(renderer.domElement);
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
-			 // Adicionando customização do zoom no OrbitControls
-    controls.minDistance = 4; // O mínimo de distância para o zoom in
-    controls.maxDistance = 8; // O máximo de distância para o zoom out
+            controls.minDistance = 4;
+            controls.maxDistance = 8;
 			
 			
 			initialCameraPosition = camera.position.clone();
             initialCameraQuaternion = camera.quaternion.clone();
 
             
-            loadRandomSkybox(); // esta é a única linha que define o skybox
+            loadRandomSkybox();
             addLighting();
             addCubesAroundSphere();
             setupEventListeners();
 			addModel();
-			addSceneModel(); // Adiciona o modelo de cenário à cena
+            // Comentar a chamada para addSceneModel() para desabilitar a cena 3D
+            // addSceneModel();
             animate();
 			
+            // Comente o composer para simplificar
+            /*
+            composer = new THREE.EffectComposer(renderer);
+            var renderPass = new THREE.RenderPass(scene, camera);
+            composer.addPass(renderPass);
+
+            var bloomPass = new THREE.BloomPass(1.5);
+            composer.addPass(bloomPass);
+            */
         }
 	  
 function handleHeadClick() {
@@ -253,15 +279,15 @@ function handleHeadClick() {
 
         var cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
         var cubeMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0xFFFFFF, 
-    roughness: 0.5, // Superfície lisa
-    metalness: 0.1, // Vidro não é metálico
-    reflectivity: 0.9, // Alta reflexividade para um efeito de vidro
-    transparent: true, // Habilita transparência
-    opacity: 0.8, // Ajuste conforme necessário para mais ou menos transparência
-    transmission: 0.9, // Permite que a luz passe através do material (Three.js r125 ou superior)
-    side: THREE.DoubleSide // Renderiza ambos os lados do material
-});
+            color: 0xFFFFFF, 
+            roughness: 0.5,
+            metalness: 0.1,
+            reflectivity: 0.9,
+            transparent: true,
+            opacity: 0.8,
+            transmission: 0.9,
+            side: THREE.DoubleSide // Renderiza ambos os lados do material
+        });
         var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
         cube.position.copy(position);
         cube.userData.project = projects[i];
@@ -451,9 +477,9 @@ function onDocumentMouseUp(event) {
 	  
   function animate() {
     requestAnimationFrame(animate);
-	  
-      renderer.render(scene, camera);
-    // Rotação coletiva dos cubos
+    renderer.render(scene, camera);
+
+    // Lógica de rotação dos cubos
     angle += rotationSpeed;
     cubeArray.forEach(cube => {
         var radius = Math.sqrt(cube.position.x * cube.position.x + cube.position.z * cube.position.z);
@@ -463,34 +489,66 @@ function onDocumentMouseUp(event) {
     });
 
     if (selectedCube && cubeFocused) {
-        // Calcula o centro do cubo focado
         var cubeCenter = new THREE.Vector3();
         selectedCube.geometry.computeBoundingBox();
         selectedCube.geometry.boundingBox.getCenter(cubeCenter);
         cubeCenter.applyMatrix4(selectedCube.matrixWorld);
         
-        // Mantém a câmera focada no cubo enquanto mantém a distância especificada
-        var distance = 1; // Ajuste conforme necessário para a distância desejada da câmera ao cubo
+        var distance = 1;
         var direction = new THREE.Vector3().subVectors(camera.position, cubeCenter).normalize().multiplyScalar(distance);
         var newPosition = cubeCenter.clone().add(direction);
 
-        // Anima a câmera suavemente para a nova posição, mantendo-a focada no cubo
         gsap.to(camera.position, {
             x: newPosition.x,
             y: newPosition.y,
             z: newPosition.z,
-            duration: 2, // Ajuste conforme necessário para a velocidade da animação
+            duration: 2,
             onUpdate: function() {
                 camera.lookAt(cubeCenter);
             }
         });
         
-        controls.target.copy(cubeCenter); // Garante que o OrbitControls focalize o cubo
+        controls.target.copy(cubeCenter);
     }
-
-    renderer.render(scene, camera);
 }
 
+// Variáveis para controlar o estado dos botões e o contador de pressionamentos
+var toggleButtonsVisible = false;
+var spacePressCount = 0;
+var spacePressTimeout;
+
+// Função para alternar a visibilidade dos botões de alternância
+function toggleSwitchButtonsVisibility() {
+    var switchContainer = document.querySelector('.switch-container');
+    toggleButtonsVisible = !toggleButtonsVisible;
+    switchContainer.style.display = toggleButtonsVisible ? 'block' : 'none';
+}
+
+// Evento para detectar pressionamentos da barra de espaço
+document.addEventListener('keydown', function(event) {
+    if (event.code === 'Space') {
+        spacePressCount++;
+
+        // Se a barra de espaço for pressionada 3 vezes rapidamente
+        if (spacePressCount === 3) {
+            toggleSwitchButtonsVisibility();
+            spacePressCount = 0; // Reseta o contador após alternar a visibilidade
+        }
+
+        // Reseta o contador se não houver mais pressionamentos em 1 segundo
+        clearTimeout(spacePressTimeout);
+        spacePressTimeout = setTimeout(function() {
+            spacePressCount = 0;
+        }, 1000);
+    }
+});
+
+// Inicialmente, ocultar os botões de alternância
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelector('.switch-container').style.display = 'none';
+});
+
+// Manter o evento de alternância para o toggleSkybox
 document.getElementById('toggleSkybox').addEventListener('change', function() {
     if (this.checked) {
         scene.background = new THREE.Color(0xffffff); // Fundo branco
@@ -499,12 +557,15 @@ document.getElementById('toggleSkybox').addEventListener('change', function() {
     }
 });
 
-	  document.getElementById('toggleSceneModel').addEventListener('change', function() {
+// Evento de alternância para o toggleSceneModel
+// Comentar este bloco para desativar a funcionalidade
+/*
+document.getElementById('toggleSceneModel').addEventListener('change', function() {
     toggleSceneModelVisibility();
 });
+*/
 
-
-        init();
+    init();
     </script>
 	
 	
