@@ -465,7 +465,23 @@ function onDocumentMouseUp(event) {
         } else {
             var pageName = projectToPageMap[selectedCube.userData.project.name];
             if (pageName) {
-                window.location.href = pageName; // Redireciona para a página do projeto
+                // Animação de transição
+                gsap.to(camera.position, {
+                    x: selectedCube.position.x,
+                    y: selectedCube.position.y,
+                    z: selectedCube.position.z,
+                    duration: 1,
+                    ease: "power3.in",
+                    onComplete: function() {
+                        window.location.href = pageName; // Redireciona para a página do projeto
+                    }
+                });
+
+                gsap.to(renderer.domElement, {
+                    opacity: 0,
+                    duration: 1,
+                    ease: "power1.inOut"
+                });
             }
         }
     } else if (cubeFocused) {
