@@ -193,10 +193,18 @@
         }
 	  
 function handleHeadClick() {
-    // Torna todos os cubos visíveis
-    cubeArray.forEach(cube => cube.visible = true);
+    cubeArray.forEach(cube => {
+        cube.visible = true;
+        gsap.fromTo(cube.scale, 
+            { x: 0, y: 0, z: 0 }, 
+            { x: 1, y: 1, z: 1, duration: 0.5, ease: "back.out(1.7)" }
+        );
+        gsap.fromTo(cube.material, 
+            { opacity: 0 }, 
+            { opacity: 1, duration: 0.5, ease: "power1.inOut" }
+        );
+    });
 
-    // Movimenta a câmera para a posição inicial e ajusta a rotação
     gsap.to(camera.position, {
         x: initialCameraPosition.x,
         y: initialCameraPosition.y,
@@ -204,11 +212,10 @@ function handleHeadClick() {
         duration: 2,
         ease: "power3.inOut",
         onUpdate: function() {
-            camera.lookAt(scene.position); // Opcional: dependendo de como você quer que a câmera se comporte
+            camera.lookAt(scene.position);
         }
     });
 
-    // Ajusta a quaternião (rotação) da câmera para sua rotação inicial
     gsap.to(camera.quaternion, {
         x: initialCameraQuaternion.x,
         y: initialCameraQuaternion.y,
@@ -423,9 +430,9 @@ function onDocumentMouseMove(event) {
 	
 			
 var projectToPageMap = {
-    "Projeto 1": "window1.html",
-    "Projeto 2": "window2.html",
-    // Adicione mais projetos e suas páginas correspondentes aqui
+    "Projeto 1": "project.html?id=1",
+    "Projeto 2": "project.html?id=2"
+    // Adicione mais projetos conforme necessário
 };
 
 var cubeFocused = false; // Uma nova variável para rastrear o estado do foco
@@ -438,7 +445,7 @@ function onDocumentMouseUp(event) {
 
     if (intersects.length > 0) {
         if (!cubeFocused) {
-            selectedCube = intersects[0].object; // Armazena o cubo focado
+            selectedCube = intersects[0].object;
 
             var cubeCenter = new THREE.Vector3();
             selectedCube.geometry.computeBoundingBox();
@@ -448,7 +455,7 @@ function onDocumentMouseUp(event) {
             gsap.to(camera.position, {
                 x: cubeCenter.x,
                 y: cubeCenter.y,
-                z: cubeCenter.z + 2, // Ajuste conforme necessário
+                z: cubeCenter.z + 2,
                 duration: 2,
                 ease: "power3.inOut"
             });
@@ -457,12 +464,14 @@ function onDocumentMouseUp(event) {
             cubeFocused = true;
         } else {
             var pageName = projectToPageMap[selectedCube.userData.project.name];
-            if (pageName) window.location.href = pageName;
+            if (pageName) {
+                window.location.href = pageName; // Redireciona para a página do projeto
+            }
         }
     } else if (cubeFocused) {
         resetCamera();
         cubeFocused = false;
-        selectedCube = null; // Reseta o cubo selecionado
+        selectedCube = null;
     }
     mouseDown = false;
 }

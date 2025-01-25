@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhes do Projeto</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f4f4f9;
+        }
+        .project-container {
+            max-width: 800px;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            text-align: center;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        h1, p {
+            margin: 10px 0;
+        }
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .back-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="project-container">
+        <h1 id="project-title" class="fade-in"></h1>
+        <p id="project-description" class="fade-in"></p>
+        <div id="project-images" class="fade-in"></div>
+        <a href="index.html" class="back-button">Voltar</a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const projectId = urlParams.get('id');
+
+            fetch('projects.json')
+                .then(response => response.json())
+                .then(data => {
+                    const project = data.find(p => p.id == projectId);
+                    if (project) {
+                        document.getElementById('project-title').textContent = project.title;
+                        document.getElementById('project-description').textContent = project.description;
+                        const imagesContainer = document.getElementById('project-images');
+                        project.images.forEach(image => {
+                            const imgElement = document.createElement('img');
+                            imgElement.src = image;
+                            imagesContainer.appendChild(imgElement);
+                        });
+                        document.querySelectorAll('.fade-in').forEach(el => {
+                            el.classList.add('visible');
+                        });
+                    }
+                })
+                .catch(error => console.error('Erro ao carregar os dados do projeto:', error));
+        });
+    </script>
+</body>
+</html> 
