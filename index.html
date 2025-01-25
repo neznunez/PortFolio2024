@@ -466,21 +466,13 @@ function onDocumentMouseUp(event) {
             var pageName = projectToPageMap[selectedCube.userData.project.name];
             if (pageName) {
                 // Animação de transição
-                gsap.to(camera.position, {
-                    x: selectedCube.position.x,
-                    y: selectedCube.position.y,
-                    z: selectedCube.position.z,
-                    duration: 1,
-                    ease: "power3.in",
-                    onComplete: function() {
-                        window.location.href = pageName; // Redireciona para a página do projeto
-                    }
-                });
-
                 gsap.to(renderer.domElement, {
                     opacity: 0,
                     duration: 1,
-                    ease: "power1.inOut"
+                    ease: "power1.inOut",
+                    onComplete: function() {
+                        window.location.href = pageName; // Redireciona para a página do projeto
+                    }
                 });
             }
         }
@@ -589,6 +581,30 @@ document.getElementById('toggleSceneModel').addEventListener('change', function(
     toggleSceneModelVisibility();
 });
 */
+
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('projects.json')
+        .then(response => response.json())
+        .then(data => {
+            data.forEach(project => {
+                // Configure os cubos e redirecionamentos aqui
+                // Exemplo: Adicione o nome do projeto ao cubo
+                var cube = createCubeForProject(project);
+                cube.userData.project = project;
+                cubeArray.push(cube);
+                scene.add(cube);
+            });
+        })
+        .catch(error => console.error('Erro ao carregar os dados dos projetos:', error));
+});
+
+function createCubeForProject(project) {
+    var geometry = new THREE.BoxGeometry(1, 1, 1);
+    var material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    var cube = new THREE.Mesh(geometry, material);
+    cube.userData.project = project;
+    return cube;
+}
 
     init();
     </script>
