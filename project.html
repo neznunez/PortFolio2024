@@ -22,8 +22,8 @@
             position: absolute;
             width: 80%;
             height: 60%;
-            background: rgba(0, 0, 0, 0.6);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background: rgba(0, 0, 0, 0.5);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
             border-radius: 16px;
             display: flex;
             flex-direction: column;
@@ -31,6 +31,7 @@
             justify-content: center;
             text-align: center;
             z-index: 1;
+            backdrop-filter: blur(5px);
         }
         img {
             max-width: 100%;
@@ -62,6 +63,7 @@
             font-family: 'Courier New', monospace;
             transition: color 0.3s ease;
             z-index: 2;
+            text-transform: none;
         }
         .back-button:hover {
             color: red;
@@ -69,7 +71,7 @@
     </style>
 </head>
 <body>
-    <a href="index.html" class="back-button" id="back-button">BACK</a>
+    <a href="index.html" class="back-button" id="back-button">Back</a>
     <div class="project-container">
         <h1 id="project-title" class="fade-in"></h1>
         <p id="project-description" class="fade-in"></p>
