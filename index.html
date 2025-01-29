@@ -26,7 +26,22 @@
             pointer-events: none;
             visibility: hidden;
         }
-
+        .card {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 280px;
+            height: 180px;
+            background-color: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
     </style>
 </head>
 <body>
@@ -34,6 +49,7 @@
     <script src="ReLibs/OrbitControls.js"></script>
 	<script src="ReLibs/gsap.min.js"></script>
     <script src="ReLibs/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanilla-tilt@1.7.0/dist/vanilla-tilt.min.js"></script>
 
 
 	 <!-- Switch Buttons -->
@@ -612,3 +628,30 @@ function createCubeForProject(project) {
 	
 </body>
 </html>
+
+<div class="card" id="aboutCard">
+  Sobre Mim
+</div>
+
+<script>
+  const card = document.getElementById('aboutCard');
+
+  card.addEventListener('mouseenter', () => {
+    gsap.to(card, { duration: 0.5, rotationY: 15, rotationX: 15, ease: "power1.out" });
+  });
+
+  card.addEventListener('mouseleave', () => {
+    gsap.to(card, { duration: 0.5, rotationY: 0, rotationX: 0, ease: "power1.out" });
+  });
+</script>
+
+<script>
+  VanillaTilt.init(document.querySelector("#aboutCard"), {
+    max: 25, // Máximo ângulo de inclinação
+    speed: 400, // Velocidade da transição
+    glare: true, // Ativar brilho
+    "max-glare": 0.5, // Máximo de brilho
+    perspective: 1000, // Profundidade da perspectiva
+    scale: 1.05, // Escala ao passar o mouse
+  });
+</script>
