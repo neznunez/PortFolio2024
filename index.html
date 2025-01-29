@@ -30,8 +30,8 @@
             position: fixed;
             top: 20px;
             left: 20px;
-            width: 280px;
-            height: 180px;
+            width: 240px;
+            height: 140px;
             background-color: rgba(255, 255, 255, 0.6);
             border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 10px;
@@ -39,8 +39,14 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: transform 0.3s ease, width 0.3s ease, height 0.3s ease;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
         }
     </style>
 </head>
@@ -630,18 +636,18 @@ function createCubeForProject(project) {
 </html>
 
 <div class="card" id="aboutCard">
-  Sobre Mim
+  <img src="asset/id.jpg" alt="">
 </div>
 
 <script>
   const card = document.getElementById('aboutCard');
 
   card.addEventListener('mouseenter', () => {
-    gsap.to(card, { duration: 0.5, rotationY: 15, rotationX: 15, ease: "power1.out" });
+    gsap.to(card, { duration: 0.3, width: 280, height: 180, ease: "power1.out" }); // Aumenta o tamanho
   });
 
   card.addEventListener('mouseleave', () => {
-    gsap.to(card, { duration: 0.5, rotationY: 0, rotationX: 0, ease: "power1.out" });
+    gsap.to(card, { duration: 0.3, width: 240, height: 140, ease: "power1.out" }); // Volta ao tamanho original
   });
 </script>
 
