@@ -48,6 +48,79 @@
             object-fit: cover;
             border-radius: 10px;
         }
+        /* Chat styles */
+        .chat-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 350px;
+            max-height: 500px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column-reverse;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            z-index: 3000;
+            pointer-events: auto;
+        }
+
+        .chat-header {
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            border-top: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
+            background-color: #f9f9f9;
+        }
+
+        .chat-input {
+            display: flex;
+            border-top: 1px solid #ddd;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+            font-size: 14px;
+            margin-right: 5px;
+            box-sizing: border-box;
+            background-color: #fff;
+            color: #333;
+            z-index: 4000;
+        }
+
+        .chat-input input:focus {
+            border-color: #007bff;
+        }
+
+        .chat-input button {
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+
+        .chat-input button:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
@@ -565,20 +638,13 @@ function toggleSwitchButtonsVisibility() {
 
 // Evento para detectar pressionamentos da barra de espaço
 document.addEventListener('keydown', function(event) {
-    if (event.code === 'Space') {
-        spacePressCount++;
-
-        // Se a barra de espaço for pressionada 3 vezes rapidamente
-        if (spacePressCount === 3) {
-            toggleSwitchButtonsVisibility();
-            spacePressCount = 0; // Reseta o contador após alternar a visibilidade
-        }
-
-        // Reseta o contador se não houver mais pressionamentos em 1 segundo
-        clearTimeout(spacePressTimeout);
-        spacePressTimeout = setTimeout(function() {
-            spacePressCount = 0;
-        }, 1000);
+    const chatInput = document.getElementById('chat-input');
+    if (event.code === 'Space' && document.activeElement !== chatInput) {
+        event.preventDefault(); // Prevenir o scroll da página
+        chatInput.focus();
+    }
+    if (event.code === 'Enter' && document.activeElement === chatInput) {
+        sendMessage();
     }
 });
 
@@ -660,4 +726,91 @@ function createCubeForProject(project) {
     perspective: 1000, // Profundidade da perspectiva
     scale: 1.05, // Escala ao passar o mouse
   });
+</script>
+
+<!-- Chat Interface -->
+<div class="chat-container">
+    <div class="chat-header">Chat</div>
+    <div class="chat-messages" id="chat-messages"></div>
+    <div class="chat-input">
+        <input type="text" id="chat-input" placeholder="Digite sua pergunta...">
+        <button onclick="sendMessage()">Enviar</button>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const chatInput = document.getElementById('chat-input');
+        chatInput.addEventListener('focus', function() {
+            chatInput.style.borderColor = '#007bff';
+        });
+        chatInput.addEventListener('blur', function() {
+            chatInput.style.borderColor = '#ccc';
+        });
+    });
+
+    const apiKey = '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';
+
+    async function sendMessage() {
+        const input = document.getElementById('chat-input');
+        const messages = document.getElementById('chat-messages');
+        const userMessage = input.value;
+
+        if (userMessage.trim() === '') return;
+
+        // Display user message
+        const userMessageElement = document.createElement('div');
+        userMessageElement.textContent = 'Você: ' + userMessage;
+        messages.appendChild(userMessageElement);
+
+        // Clear input
+        input.value = '';
+
+        // Function to call the API
+        async function callApi(endpoint) {
+            try {
+                console.log('Enviando mensagem para a API:', userMessage);
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ inputs: userMessage })
+                });
+
+                console.log('Status da resposta:', response.status);
+                console.log('Cabeçalhos da resposta:', response.headers);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Detalhes do erro:', errorText);
+                    throw new Error('Erro na comunicação com a API');
+                }
+
+                const data = await response.json();
+                console.log('Dados recebidos:', data);
+                const botMessage = data.generated_text || 'Desculpe, não consegui entender.';
+
+                // Display bot message
+                const botMessageElement = document.createElement('div');
+                botMessageElement.textContent = 'Bot: ' + botMessage;
+                messages.appendChild(botMessageElement);
+            } catch (error) {
+                console.error('Erro ao comunicar com a API:', error);
+                const errorMessageElement = document.createElement('div');
+                errorMessageElement.textContent = 'Erro: ' + error.message;
+                messages.appendChild(errorMessageElement);
+
+                // Try another model if the first two fail
+                if (endpoint.includes('DeepSeek-R1-Distill-Llama-70B')) {
+                    console.log('Tentando o modelo Llama mais moderno...');
+                    await callApi('https://api-inference.huggingface.co/models/meta-llama/Llama-3.3-70B-Instruct');
+                }
+            }
+        }
+
+        // Call the primary model
+        await callApi('https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-R1');
+    }
 </script>
