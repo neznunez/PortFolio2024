@@ -129,6 +129,7 @@
 	<script src="ReLibs/gsap.min.js"></script>
     <script src="ReLibs/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vanilla-tilt@1.7.0/dist/vanilla-tilt.min.js"></script>
+    <script src="chat.js" defer></script>
 
 
 	 <!-- Switch Buttons -->
@@ -734,83 +735,6 @@ function createCubeForProject(project) {
     <div class="chat-messages" id="chat-messages"></div>
     <div class="chat-input">
         <input type="text" id="chat-input" placeholder="Digite sua pergunta...">
-        <button onclick="sendMessage()">Enviar</button>
+        <button id="enviar">Enviar</button>
     </div>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const chatInput = document.getElementById('chat-input');
-        chatInput.addEventListener('focus', function() {
-            chatInput.style.borderColor = '#007bff';
-        });
-        chatInput.addEventListener('blur', function() {
-            chatInput.style.borderColor = '#ccc';
-        });
-    });
-
-    const apiKey = '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';
-
-    async function sendMessage() {
-        const input = document.getElementById('chat-input');
-        const messages = document.getElementById('chat-messages');
-        const userMessage = input.value;
-
-        if (userMessage.trim() === '') return;
-
-        // Display user message
-        const userMessageElement = document.createElement('div');
-        userMessageElement.textContent = 'Você: ' + userMessage;
-        messages.appendChild(userMessageElement);
-
-        // Clear input
-        input.value = '';
-
-        // Function to call the API
-        async function callApi(endpoint) {
-            try {
-                console.log('Enviando mensagem para a API:', userMessage);
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${apiKey}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ inputs: userMessage })
-                });
-
-                console.log('Status da resposta:', response.status);
-                console.log('Cabeçalhos da resposta:', response.headers);
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('Detalhes do erro:', errorText);
-                    throw new Error('Erro na comunicação com a API');
-                }
-
-                const data = await response.json();
-                console.log('Dados recebidos:', data);
-                const botMessage = data.generated_text || 'Desculpe, não consegui entender.';
-
-                // Display bot message
-                const botMessageElement = document.createElement('div');
-                botMessageElement.textContent = 'Bot: ' + botMessage;
-                messages.appendChild(botMessageElement);
-            } catch (error) {
-                console.error('Erro ao comunicar com a API:', error);
-                const errorMessageElement = document.createElement('div');
-                errorMessageElement.textContent = 'Erro: ' + error.message;
-                messages.appendChild(errorMessageElement);
-
-                // Try another model if the first two fail
-                if (endpoint.includes('DeepSeek-R1-Distill-Llama-70B')) {
-                    console.log('Tentando o modelo Llama mais moderno...');
-                    await callApi('https://api-inference.huggingface.co/models/meta-llama/Llama-3.3-70B-Instruct');
-                }
-            }
-        }
-
-        // Call the primary model
-        await callApi('https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-R1');
-    }
-</script>
