@@ -951,83 +951,45 @@ function createCubeForProject(project) {
   });
 </script>
 
-// Adicionar evento de clique para o botão de skybox
-document.getElementById('skyboxButton').addEventListener('click', function() {
-    // Carregar um novo skybox aleatório
-    loadRandomSkybox();
-    
-    // Efeito visual de clique
-    gsap.to(this, {
-        scale: 0.95,
-        duration: 0.1,
-        onComplete: function() {
-            gsap.to(document.getElementById('skyboxButton'), {
-                scale: 1,
-                duration: 0.2
-            });
-        }
-    });
-});
-
-document.addEventListener('DOMContentLoaded', function() {
-    // ... existing code ...
-});
-
-// Função para trocar o skybox ao clicar no botão
-function changeSkybox() {
-    // Efeito visual no botão para indicar que foi clicado
-    var skyboxButton = document.getElementById('skyboxButton');
-    
-    // Animação de clique usando GSAP
-    gsap.timeline()
-        .to(skyboxButton, { 
-            scale: 0.9, 
-            backgroundColor: 'rgba(51, 255, 51, 0.3)', 
-            duration: 0.1 
-        })
-        .to(skyboxButton, { 
-            scale: 1, 
-            backgroundColor: 'rgba(0, 0, 0, 0.7)', 
-            duration: 0.2,
-            delay: 0.1
-        });
-    
-    // Incrementa o índice e volta ao início se necessário
-    currentSkyboxIndex = (currentSkyboxIndex + 1) % skyboxes.length;
-    
-    // Carrega o skybox com o novo índice
-    var selectedSkybox = skyboxes[currentSkyboxIndex];
-    
-    var loader = new THREE.CubeTextureLoader();
-    loader.load(selectedSkybox, function(texture) {
-        scene.background = texture;
+<script>
+    // Adicionar evento de clique para o botão de skybox (colocando dentro de uma tag script)
+    document.getElementById('skyboxButton').addEventListener('click', function() {
+        // Carregar um novo skybox aleatório
+        loadRandomSkybox();
         
-        // Aplicar o mapa de ambiente aos materiais, exceto aos olhos
-        scene.traverse(function(child) {
-            if (child.isMesh) {
-                // Verificar se o objeto é parte dos olhos
-                const isEyePart = child.name && (
-                    child.name.toLowerCase().includes('eye') || 
-                    child.name.toLowerCase().includes('olho')
-                );
-                
-                // Só aplicar o envMap se não for parte dos olhos
-                if (!isEyePart) {
-                    if (child.material) {
-                        if (Array.isArray(child.material)) {
-                            child.material.forEach(mat => {
-                                if (mat.envMap !== undefined) {
-                                    mat.envMap = texture;
-                                    mat.needsUpdate = true;
-                                }
-                            });
-                        } else if (child.material.envMap !== undefined) {
-                            child.material.envMap = texture;
-                            child.material.needsUpdate = true;
-                        }
-                    }
-                }
+        // Efeito visual de clique
+        gsap.to(this, {
+            scale: 0.95,
+            duration: 0.1,
+            onComplete: function() {
+                gsap.to(document.getElementById('skyboxButton'), {
+                    scale: 1,
+                    duration: 0.2
+                });
             }
         });
     });
-}
+
+    // Função para trocar o skybox ao clicar no botão
+    function changeSkybox() {
+        // Efeito visual no botão para indicar que foi clicado
+        var skyboxButton = document.getElementById('skyboxButton');
+        
+        // Animação de clique usando GSAP
+        gsap.timeline()
+            .to(skyboxButton, { 
+                scale: 0.9, 
+                backgroundColor: 'rgba(51, 255, 51, 0.3)', 
+                duration: 0.1 
+            })
+            .to(skyboxButton, { 
+                scale: 1, 
+                backgroundColor: 'rgba(0, 0, 0, 0.7)', 
+                duration: 0.2,
+                delay: 0.1
+            });
+        
+        // Carrega o skybox com o novo índice
+        loadRandomSkybox();
+    }
+</script>
