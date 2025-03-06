@@ -201,6 +201,44 @@
             text-shadow: 0 0 5px #33ff33;
             letter-spacing: 1px;
         }
+
+        /* Estilo para a notificação de retorno */
+        .return-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #33ff33;
+            border: 2px solid #33ff33;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            text-align: right;
+            z-index: 9999;
+            box-shadow: 0 0 15px rgba(51, 255, 51, 0.7);
+            max-width: 250px;
+            pointer-events: none;
+            text-shadow: 0 0 5px #33ff33;
+            letter-spacing: 1px;
+        }
+
+        /* Efeito de pulso para as notificações */
+        .notification-pulse {
+            animation: notification-pulse 2s infinite;
+        }
+
+        @keyframes notification-pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(51, 255, 51, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(51, 255, 51, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(51, 255, 51, 0);
+            }
+        }
     </style>
 </head>
 <body>
@@ -465,49 +503,23 @@ function handleHeadClick() {
         });
     }
 
-    // Tornar todos os objetos visíveis, incluindo o modelo especial
+    // Tornar todos os objetos visíveis
     cubeArray.forEach(cube => {
         cube.visible = true;
-        
-        // Verificar se é um cubo normal ou o modelo especial
-        if (cube.geometry) {
-            // É um cubo normal
-            gsap.fromTo(cube.scale, 
-                { x: 0, y: 0, z: 0 }, 
-                { x: 1, y: 1, z: 1, duration: 0.5, ease: "back.out(1.7)" }
-            );
-            gsap.fromTo(cube.material, 
-                { opacity: 0 }, 
-                { opacity: 1, duration: 0.5, ease: "power1.inOut" }
-            );
-        } else if (cube.userData && cube.userData.isSpecialModel) {
-            // É o modelo especial
-            // Salvar a escala atual antes de animar
-            var originalScale = cube.scale.clone();
-            
-            // Animar a partir de escala zero até a escala original
-            gsap.fromTo(cube.scale, 
-                { x: 0, y: 0, z: 0 }, 
-                { 
-                    x: originalScale.x, 
-                    y: originalScale.y, 
-                    z: originalScale.z, 
-                    duration: 0.5, 
-                    ease: "back.out(1.7)" 
-                }
-            );
-            
-            // Animar a opacidade de cada mesh no modelo
-            cube.traverse(function(child) {
-                if (child.isMesh && child.material) {
-                    gsap.fromTo(child.material, 
-                        { opacity: 0 }, 
-                        { opacity: 1.0, duration: 0.5, ease: "power1.inOut" }
-                    );
-                }
-            });
-        }
+        gsap.fromTo(cube.scale, 
+            { x: 0, y: 0, z: 0 }, 
+            { x: 1, y: 1, z: 1, duration: 0.5, ease: "back.out(1.7)" }
+        );
+        gsap.fromTo(cube.material, 
+            { opacity: 0 }, 
+            { opacity: 1, duration: 0.5, ease: "power1.inOut" }
+        );
     });
+
+    // Mostrar a notificação de navegação após um pequeno atraso
+    setTimeout(function() {
+        showNavigationNotification();
+    }, 1000);
 
     gsap.to(camera.position, {
         x: initialCameraPosition.x,
@@ -989,16 +1001,16 @@ document.addEventListener('keydown', function(event) {
   });
 </script>
 
-<!-- Adicione isso logo após a abertura da tag body -->
-<div id="initialNotification" class="initial-notification notification-pulse" style="opacity: 0;">
+<!-- Adicionar a notificação inicial -->
+<div class="initial-notification notification-pulse" style="opacity: 0;">
     CLIQUE NA CABEÇA<br>
     <span style="font-size: 12px; opacity: 0.8;">para iniciar</span>
 </div>
 
 <script>
-    // Adicione isso no início do seu script
+    // Mostrar a notificação inicial quando a página carrega
     window.addEventListener('load', function() {
-        var notification = document.getElementById('initialNotification');
+        var notification = document.querySelector('.initial-notification');
         if (notification) {
             setTimeout(function() {
                 gsap.to(notification, {
@@ -1008,14 +1020,15 @@ document.addEventListener('keydown', function(event) {
                     ease: "power3.out"
                 });
                 
-                setTimeout(function() {
-                    gsap.to(notification, {
-                        opacity: 0,
-                        y: -20,
-                        duration: 0.2,
-                        ease: "power3.in"
-                    });
-                }, 2000); // Reduzido de 8000 para 2000 (2 segundos)
+                // Opcional: configurar um timeout para remover a notificação após um tempo
+                // setTimeout(function() {
+                //     gsap.to(notification, {
+                //         opacity: 0,
+                //         y: -20,
+                //         duration: 0.2,
+                //         ease: "power3.in"
+                //     });
+                // }, 8000);
             }, 2000);
         }
     });
@@ -1038,4 +1051,19 @@ document.getElementById('skyboxButton').addEventListener('click', function() {
         }
     });
 });
+</script>
+
+<!-- Adicione isso logo após a abertura da tag body -->
+<div id="returnNotification" class="return-notification notification-pulse" style="opacity: 0;">
+    CLIQUE FORA DO CUBO<br>
+    <span style="font-size: 12px; opacity: 0.8;">para voltar</span>
+</div>
+
+<script>
+    // Adicione isso no início do seu script
+    // window.addEventListener('load', function() {
+    //     setTimeout(function() {
+    //         showInitialNotification();
+    //     }, 1000);
+    // });
 </script>
