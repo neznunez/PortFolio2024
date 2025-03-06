@@ -114,80 +114,6 @@
             font-weight: bold;
             mix-blend-mode: difference;
         }
-        /* Chat styles */
-        .chat-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 350px;
-            max-height: 500px;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column-reverse;
-            overflow: hidden;
-            font-family: Arial, sans-serif;
-            z-index: 3000;
-            pointer-events: auto;
-        }
-
-        .chat-header {
-            background-color: #007bff;
-            color: white;
-            padding: 10px;
-            text-align: center;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .chat-messages {
-            flex: 1;
-            padding: 10px;
-            overflow-y: auto;
-            border-top: 1px solid #ddd;
-            border-bottom: 1px solid #ddd;
-            background-color: #f9f9f9;
-        }
-
-        .chat-input {
-            display: flex;
-            border-top: 1px solid #ddd;
-        }
-
-        .chat-input input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            outline: none;
-            font-size: 14px;
-            margin-right: 5px;
-            box-sizing: border-box;
-            background-color: #fff;
-            color: #333;
-            z-index: 4000;
-        }
-
-        .chat-input input:focus {
-            border-color: #007bff;
-        }
-
-        .chat-input button {
-            padding: 10px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.3s ease;
-        }
-
-        .chat-input button:hover {
-            background-color: #0056b3;
-        }
-        
         /* Estilo para o botão de skybox */
         .skybox-button {
             position: fixed;
@@ -800,8 +726,7 @@ var spacePressTimeout;
 
 // Evento para detectar pressionamentos da barra de espaço
 document.addEventListener('keydown', function(event) {
-    const chatInput = document.getElementById('chat-input');
-    if (event.code === 'Space' && document.activeElement !== chatInput) {
+    if (event.code === 'Space') {
         event.preventDefault(); // Prevenir o scroll da página
         
         // Incrementar o contador de pressionamentos da barra de espaço
@@ -842,11 +767,6 @@ document.addEventListener('keydown', function(event) {
             }
             spacePressCount = 0; // Resetar o contador
         }
-        
-        chatInput.focus();
-    }
-    if (event.code === 'Enter' && document.activeElement === chatInput) {
-        sendMessage();
     }
 });
 
