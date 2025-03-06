@@ -462,16 +462,6 @@
             }, 500);
             
             animate();
-			
-            // Comente o composer para simplificar
-            /*
-            composer = new THREE.EffectComposer(renderer);
-            var renderPass = new THREE.RenderPass(scene, camera);
-            composer.addPass(renderPass);
-
-            var bloomPass = new THREE.BloomPass(1.5);
-            composer.addPass(bloomPass);
-            */
         }
 	  
 function handleHeadClick() {
@@ -523,13 +513,6 @@ function handleHeadClick() {
     scene.add(directionalLight);
 }
 		
-        function addCentralSphere() {
-            var sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
-            var sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-            var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-            scene.add(sphere);
-        }
-
     function addCubesAroundSphere(){
     var projects = [
 		 { name: 'Projeto 1', description: 'Descrição do Projeto 1' },
