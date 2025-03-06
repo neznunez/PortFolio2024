@@ -187,6 +187,36 @@
         .chat-input button:hover {
             background-color: #0056b3;
         }
+        
+        /* Estilo para o botão de skybox */
+        .skybox-button {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #33ff33;
+            border: 2px solid #33ff33;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(51, 255, 51, 0.5);
+            text-shadow: 0 0 5px #33ff33;
+            letter-spacing: 2px;
+            display: none; /* Inicialmente oculto */
+        }
+        
+        .skybox-button:hover {
+            background-color: rgba(51, 255, 51, 0.2);
+            transform: scale(1.05);
+        }
+        
+        .skybox-button:active {
+            transform: scale(0.95);
+        }
     </style>
 </head>
 <body>
@@ -197,20 +227,8 @@
     <script src="https://cdn.jsdelivr.net/npm/vanilla-tilt@1.7.0/dist/vanilla-tilt.min.js"></script>
 
 
-	 <!-- Switch Buttons -->
-    <div class="switch-container">
-        <label class="switch">
-            <input type="checkbox" id="toggleSkybox">
-            <span class="slider round"></span>
-        </label>
-        <!-- Comentar o botão de alternância para o toggleSceneModel -->
-        <!--
-        <label class="switch switch-second">
-            <input type="checkbox" id="toggleSceneModel">
-            <span class="slider round"></span>
-        </label>
-        -->
-    </div>
+	 <!-- Botão Skybox -->
+    <button id="skyboxButton" class="skybox-button">SKYBOX</button>
 	
   <script>
         var scene, camera, renderer, controls;
@@ -224,7 +242,6 @@
         var initialCameraPosition, initialCameraQuaternion;
         var model; // Referência ao modelo 3D da cabeça para uso em animações
 	    var scaleFactor = 1; // Escala inicial normal, sem expansão
-	  var sceneModel; // Variável global para o modelo de cenário
 	  
  // Lista dos conjuntos de skyboxes
       var skyboxes = [
@@ -409,26 +426,6 @@
             );
         }
 	  
-	function addSceneModel() {
-    var loader = new THREE.GLTFLoader();
-    var modelPath = 'models/StudioNez.glb'; // Substitua pelo caminho do seu modelo de cenário
-    loader.load(modelPath, function (gltf) {
-        sceneModel = gltf.scene;
-        sceneModel.position.set(20, -25, -4); // Ajuste conforme necessário
-        sceneModel.rotation.y = Math.PI; // Rotaciona o cenário 180 graus em torno do eixo Y
-        sceneModel.scale.set(15, 15, 15); // Ajuste conforme necessário
-        scene.add(sceneModel);
-    }, undefined, function (error) {
-        console.error('An error occurred while loading the scene model:', error);
-    });
-}
-	  
-	  function toggleSceneModelVisibility() {
-    if (sceneModel) {
-        sceneModel.visible = !sceneModel.visible;
-    }
-}
-
         var composer;
 
         function init() {
@@ -464,8 +461,6 @@
                 loadRandomSkybox();
             }, 500);
             
-            // Comentar a chamada para addSceneModel() para desabilitar a cena 3D
-            // addSceneModel();
             animate();
 			
             // Comente o composer para simplificar
@@ -817,16 +812,8 @@ function onDocumentMouseUp(event) {
 }
 
 // Variáveis para controlar o estado dos botões e o contador de pressionamentos
-var toggleButtonsVisible = false;
 var spacePressCount = 0;
 var spacePressTimeout;
-
-// Função para alternar a visibilidade dos botões de alternância
-function toggleSwitchButtonsVisibility() {
-    var switchContainer = document.querySelector('.switch-container');
-    toggleButtonsVisible = !toggleButtonsVisible;
-    switchContainer.style.display = toggleButtonsVisible ? 'block' : 'none';
-}
 
 // Evento para detectar pressionamentos da barra de espaço
 document.addEventListener('keydown', function(event) {
@@ -847,11 +834,30 @@ document.addEventListener('keydown', function(event) {
             spacePressCount = 0;
         }, 1000);
         
-        // Se a barra de espaço foi pressionada 3 vezes em sequência, mostrar/ocultar os botões
-        if (spacePressCount >= 3) {
-            toggleSwitchButtonsVisibility();
+        // Verificar se a barra de espaço foi pressionada 3 vezes
+        if (spacePressCount === 3) {
+            // Mostrar ou ocultar o botão de skybox
+            var skyboxButton = document.getElementById('skyboxButton');
+            if (skyboxButton.style.display === 'none' || skyboxButton.style.display === '') {
+                skyboxButton.style.display = 'block';
+                // Animação de entrada
+                gsap.fromTo(skyboxButton, 
+                    { opacity: 0, scale: 0.8 }, 
+                    { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.7)" }
+                );
+            } else {
+                // Animação de saída
+                gsap.to(skyboxButton, { 
+                    opacity: 0, 
+                    scale: 0.8, 
+                    duration: 0.3, 
+                    ease: "power2.in",
+                    onComplete: function() {
+                        skyboxButton.style.display = 'none';
+                    }
+                });
+            }
             spacePressCount = 0; // Resetar o contador
-            clearTimeout(spacePressTimeout); // Limpar o timeout
         }
         
         chatInput.focus();
@@ -860,28 +866,6 @@ document.addEventListener('keydown', function(event) {
         sendMessage();
     }
 });
-
-// Inicialmente, ocultar os botões de alternância
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelector('.switch-container').style.display = 'none';
-});
-
-// Manter o evento de alternância para o toggleSkybox
-document.getElementById('toggleSkybox').addEventListener('change', function() {
-    if (this.checked) {
-        scene.background = new THREE.Color(0xffffff); // Fundo branco
-    } else {
-        loadRandomSkybox(); // Reaplica um skybox aleatório
-    }
-});
-
-// Evento de alternância para o toggleSceneModel
-// Comentar este bloco para desativar a funcionalidade
-/*
-document.getElementById('toggleSceneModel').addEventListener('change', function() {
-    toggleSceneModelVisibility();
-});
-*/
 
 document.addEventListener('DOMContentLoaded', function() {
     fetch('projects.json')
@@ -983,3 +967,84 @@ function createCubeForProject(project) {
     scale: 1.05, // Escala ao passar o mouse
   });
 </script>
+
+// Adicionar evento de clique para o botão de skybox
+document.getElementById('skyboxButton').addEventListener('click', function() {
+    // Carregar um novo skybox aleatório
+    loadRandomSkybox();
+    
+    // Efeito visual de clique
+    gsap.to(this, {
+        scale: 0.95,
+        duration: 0.1,
+        onComplete: function() {
+            gsap.to(document.getElementById('skyboxButton'), {
+                scale: 1,
+                duration: 0.2
+            });
+        }
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // ... existing code ...
+});
+
+// Função para trocar o skybox ao clicar no botão
+function changeSkybox() {
+    // Efeito visual no botão para indicar que foi clicado
+    var skyboxButton = document.getElementById('skyboxButton');
+    
+    // Animação de clique usando GSAP
+    gsap.timeline()
+        .to(skyboxButton, { 
+            scale: 0.9, 
+            backgroundColor: 'rgba(51, 255, 51, 0.3)', 
+            duration: 0.1 
+        })
+        .to(skyboxButton, { 
+            scale: 1, 
+            backgroundColor: 'rgba(0, 0, 0, 0.7)', 
+            duration: 0.2,
+            delay: 0.1
+        });
+    
+    // Incrementa o índice e volta ao início se necessário
+    currentSkyboxIndex = (currentSkyboxIndex + 1) % skyboxes.length;
+    
+    // Carrega o skybox com o novo índice
+    var selectedSkybox = skyboxes[currentSkyboxIndex];
+    
+    var loader = new THREE.CubeTextureLoader();
+    loader.load(selectedSkybox, function(texture) {
+        scene.background = texture;
+        
+        // Aplicar o mapa de ambiente aos materiais, exceto aos olhos
+        scene.traverse(function(child) {
+            if (child.isMesh) {
+                // Verificar se o objeto é parte dos olhos
+                const isEyePart = child.name && (
+                    child.name.toLowerCase().includes('eye') || 
+                    child.name.toLowerCase().includes('olho')
+                );
+                
+                // Só aplicar o envMap se não for parte dos olhos
+                if (!isEyePart) {
+                    if (child.material) {
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach(mat => {
+                                if (mat.envMap !== undefined) {
+                                    mat.envMap = texture;
+                                    mat.needsUpdate = true;
+                                }
+                            });
+                        } else if (child.material.envMap !== undefined) {
+                            child.material.envMap = texture;
+                            child.material.needsUpdate = true;
+                        }
+                    }
+                }
+            }
+        });
+    });
+}
