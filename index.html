@@ -110,7 +110,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            color: #00ff37;
+            color: #11ff00;
             font-weight: bold;
             mix-blend-mode: difference;
         }
@@ -142,6 +142,44 @@
         
         .skybox-button:active {
             transform: scale(0.95);
+        }
+
+        /* Estilo para a notificação inicial */
+        .initial-notification {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            transform: none; /* Removido o transform que centralizava */
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #33ff33;
+            border: 2px solid #33ff33;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px; /* Reduzido o tamanho da fonte */
+            text-align: left; /* Alinhado à esquerda */
+            z-index: 9999;
+            box-shadow: 0 0 15px rgba(51, 255, 51, 0.7);
+            max-width: 250px; /* Largura máxima reduzida */
+            pointer-events: none;
+            text-shadow: 0 0 5px #33ff33;
+            letter-spacing: 1px;
+        }
+
+        .notification-pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 15px rgba(51, 255, 51, 0.7);
+            }
+            50% {
+                box-shadow: 0 0 25px rgba(51, 255, 51, 0.9);
+            }
+            100% {
+                box-shadow: 0 0 15px rgba(51, 255, 51, 0.7);
+            }
         }
     </style>
 </head>
@@ -387,10 +425,29 @@
                 loadRandomSkybox();
             }, 500);
             
+            // Adicionar a notificação inicial após o carregamento
+            setTimeout(showInitialNotification, 3000);
+            
             animate();
         }
 	  
 function handleHeadClick() {
+    // Remover a notificação se ainda estiver presente
+    var notification = document.querySelector('.initial-notification');
+    if (notification) {
+        gsap.to(notification, {
+            opacity: 0,
+            y: -20,
+            duration: 0.5,
+            ease: "power3.in",
+            onComplete: function() {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }
+        });
+    }
+
     cubeArray.forEach(cube => {
         cube.visible = true;
         gsap.fromTo(cube.scale, 
@@ -871,45 +928,34 @@ function createCubeForProject(project) {
   });
 </script>
 
-<script>
-    // Adicionar evento de clique para o botão de skybox (colocando dentro de uma tag script)
-    document.getElementById('skyboxButton').addEventListener('click', function() {
-        // Carregar um novo skybox aleatório
-        loadRandomSkybox();
-        
-        // Efeito visual de clique
-        gsap.to(this, {
-            scale: 0.95,
-            duration: 0.1,
-            onComplete: function() {
-                gsap.to(document.getElementById('skyboxButton'), {
-                    scale: 1,
-                    duration: 0.2
-                });
-            }
-        });
-    });
+<!-- Adicione isso logo após a abertura da tag body -->
+<div id="initialNotification" class="initial-notification notification-pulse" style="opacity: 0;">
+    ClIque na CaBeça!<br>
+  
+</div>
 
-    // Função para trocar o skybox ao clicar no botão
-    function changeSkybox() {
-        // Efeito visual no botão para indicar que foi clicado
-        var skyboxButton = document.getElementById('skyboxButton');
-        
-        // Animação de clique usando GSAP
-        gsap.timeline()
-            .to(skyboxButton, { 
-                scale: 0.9, 
-                backgroundColor: 'rgba(51, 255, 51, 0.3)', 
-                duration: 0.1 
-            })
-            .to(skyboxButton, { 
-                scale: 1, 
-                backgroundColor: 'rgba(0, 0, 0, 0.7)', 
-                duration: 0.2,
-                delay: 0.1
-            });
-        
-        // Carrega o skybox com o novo índice
-        loadRandomSkybox();
-    }
+<script>
+    // Adicione isso no início do seu script
+    window.addEventListener('load', function() {
+        var notification = document.getElementById('initialNotification');
+        if (notification) {
+            setTimeout(function() {
+                gsap.to(notification, {
+                    opacity: 1,
+                    scale: 1,
+                    duration: 0.2,
+                    ease: "power3.out"
+                });
+                
+                setTimeout(function() {
+                    gsap.to(notification, {
+                        opacity: 0,
+                        y: -20,
+                        duration: 0.2,
+                        ease: "power3.in"
+                    });
+                }, 2000); // Reduzido de 8000 para 2000 (2 segundos)
+            }, 2000);
+        }
+    });
 </script>
