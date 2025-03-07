@@ -20,62 +20,258 @@
         }
         .project-container {
             position: absolute;
-            width: 80%;
-            height: 60%;
+            width: 90%;
+            height: 75%;
+            top: 52%;
+            transform: translateY(-50%);
             background: rgba(0, 0, 0, 0.5);
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
             border-radius: 16px;
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: space-between;
             z-index: 1;
             backdrop-filter: blur(5px);
+            overflow: hidden;
+            padding: 20px;
         }
-        img {
-            max-width: 100%;
-            height: auto;
+        
+        .project-images-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-right: 20px;
+            max-width: 60%;
+            position: relative;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .carousel-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
             border-radius: 8px;
-            margin: 10px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        h1, p {
-            margin: 10px 0;
+        
+        .carousel-slide {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .carousel-slide.active {
+            display: block;
+            opacity: 1;
+        }
+        
+        .carousel-nav {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            transform: translateY(-50%);
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+            pointer-events: none;
+        }
+        
+        .carousel-button {
+            background-color: rgba(255, 255, 255, 0.5);
+            color: #000;
+            border: none;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            border-radius: 50%;
+            pointer-events: auto;
+        }
+        
+        .carousel-button:hover {
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .carousel-indicators {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            margin: 0;
+        }
+        
+        .carousel-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.5);
+            margin: 0 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .carousel-dot.active {
+            background-color: #33ff33;
+            box-shadow: 0 0 8px rgba(51, 255, 51, 0.7);
+        }
+        
+        .project-text-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+            padding-left: 20px;
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            height: 100%;
+            overflow-y: auto;
+        }
+        
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            margin: 0;
+            display: block;
+        }
+        
+        h1 {
+            margin: 0 0 20px 0;
+            color: #33ff33;
+            font-size: 2.2rem;
+            text-shadow: 0 0 5px rgba(51, 255, 51, 0.5);
+        }
+        
+        p {
+            margin: 0;
             color: white;
+            line-height: 1.6;
+            font-size: 1.1rem;
         }
+        
         .fade-in {
             opacity: 0;
             transform: translateY(20px);
             transition: opacity 0.6s ease-out, transform 0.6s ease-out;
         }
+        
         .fade-in.visible {
             opacity: 1;
             transform: translateY(0);
         }
+        
         .back-button {
             position: absolute;
-            top: 40px;
-            left: 40px;
-            color: white;
+            top: 10px;
+            left: 20px;
+            color: #33ff33;
             text-decoration: none;
-            font-size: 28px;
+            font-size: 20px;
             font-weight: bold;
             font-family: 'Courier New', monospace;
-            transition: color 0.3s ease;
+            transition: all 0.3s ease;
             z-index: 2;
             text-transform: none;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 8px 15px;
+            border-radius: 8px;
+            border: 2px solid #33ff33;
+            box-shadow: 0 0 10px rgba(51, 255, 51, 0.5);
+            text-shadow: 0 0 5px #33ff33;
         }
+        
         .back-button:hover {
-            color: red;
+            background-color: rgba(51, 255, 51, 0.2);
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(51, 255, 51, 0.7);
+        }
+        
+        .project-text-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .project-text-container::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 3px;
+        }
+        
+        .project-text-container::-webkit-scrollbar-thumb {
+            background: rgba(51, 255, 51, 0.5);
+            border-radius: 3px;
+        }
+        
+        .project-text-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(51, 255, 51, 0.7);
         }
     </style>
 </head>
 <body>
     <a href="index.html" class="back-button" id="back-button">Back</a>
     <div class="project-container">
-        <h1 id="project-title" class="fade-in"></h1>
-        <p id="project-description" class="fade-in"></p>
-        <div id="project-images" class="fade-in"></div>
+        <div class="project-images-container">
+            <div class="carousel-container fade-in">
+                <div id="carousel-slides">
+                    <!-- Slides serão adicionados dinamicamente -->
+                    <div class="carousel-slide active">
+                        <img src="desertdawn/desertdawn_bk.jpg">
+                    </div>
+                    <div class="carousel-slide">
+                        <img src="desertdawn/desertdawn_dn.jpg">
+                    </div>
+                    <div class="carousel-slide">
+                        <img src="desertdawn/desertdawn_ft.jpg">
+                    </div>
+                </div>
+                
+                <!-- Botões de navegação sobrepostos à imagem -->
+                <div class="carousel-nav">
+                    <div class="carousel-button" id="prev-button">&#10094;</div>
+                    <div class="carousel-button" id="next-button">&#10095;</div>
+                </div>
+                
+                <!-- Indicadores na parte inferior -->
+                <div class="carousel-indicators" id="carousel-dots">
+                    <div class="carousel-dot active" data-index="0"></div>
+                    <div class="carousel-dot" data-index="1"></div>
+                    <div class="carousel-dot" data-index="2"></div>
+                </div>
+            </div>
+        </div>
+        <div class="project-text-container">
+            <h1 id="project-title" class="fade-in visible">Projeto de Exemplo: Sistema de Gestão Inteligente</h1>
+            <p id="project-description" class="fade-in visible">
+                Este é um exemplo de descrição de projeto para visualização do layout. Um sistema completo de gestão empresarial desenvolvido com tecnologias modernas como React, Node.js e MongoDB. O sistema inclui módulos de gestão financeira, controle de estoque, recursos humanos e análise de dados em tempo real.
+                <br><br>
+                O projeto foi desenvolvido utilizando metodologias ágeis, com foco em usabilidade e performance. A interface foi projetada seguindo princípios de UX/UI modernos, garantindo uma experiência intuitiva para o usuário final.
+                <br><br>
+                Recursos principais:
+                <br>• Dashboard interativo com métricas em tempo real
+                <br>• Sistema de autenticação seguro com múltiplos níveis de acesso
+                <br>• Relatórios personalizáveis com exportação em diversos formatos
+                <br>• Integração com APIs externas para automação de processos
+                <br>• Aplicativo mobile para acesso remoto às funcionalidades principais
+            </p>
+        </div>
     </div>
 
     <script src="libs/gsap.min.js"></script>
@@ -83,11 +279,70 @@
         import * as THREE from './libs/three.module.js';
 
         document.addEventListener('DOMContentLoaded', function() {
+            // Configuração do carrossel
+            let currentSlide = 0;
+            const slides = document.querySelectorAll('.carousel-slide');
+            const dots = document.querySelectorAll('.carousel-dot');
+            const prevButton = document.getElementById('prev-button');
+            const nextButton = document.getElementById('next-button');
+            
+            // Função para mostrar um slide específico
+            function showSlide(index) {
+                // Ocultar todos os slides
+                slides.forEach(slide => {
+                    slide.classList.remove('active');
+                });
+                
+                // Desativar todos os dots
+                dots.forEach(dot => {
+                    dot.classList.remove('active');
+                });
+                
+                // Mostrar o slide atual
+                slides[index].classList.add('active');
+                dots[index].classList.add('active');
+                
+                // Atualizar o índice atual
+                currentSlide = index;
+            }
+            
+            // Evento para o botão anterior
+            prevButton.addEventListener('click', function() {
+                let newIndex = currentSlide - 1;
+                if (newIndex < 0) {
+                    newIndex = slides.length - 1;
+                }
+                showSlide(newIndex);
+            });
+            
+            // Evento para o botão próximo
+            nextButton.addEventListener('click', function() {
+                let newIndex = currentSlide + 1;
+                if (newIndex >= slides.length) {
+                    newIndex = 0;
+                }
+                showSlide(newIndex);
+            });
+            
+            // Evento para os dots
+            dots.forEach(dot => {
+                dot.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    showSlide(index);
+                });
+            });
+            
+            // Mostrar o primeiro slide
+            showSlide(0);
+            
+            // Adicionar classe visible para animar a entrada do carrossel
+            document.querySelector('.carousel-container').classList.add('visible');
+            
             const urlParams = new URLSearchParams(window.location.search);
             const projectId = urlParams.get('id');
 
             if (!projectId) {
-                window.location.href = 'index.html'; // Redireciona para index.html se não houver id
+                // Já temos conteúdo de exemplo no HTML
                 return;
             }
 
@@ -98,15 +353,53 @@
                     if (project) {
                         document.getElementById('project-title').textContent = project.title;
                         document.getElementById('project-description').textContent = project.description;
-                        const imagesContainer = document.getElementById('project-images');
-                        project.images.forEach(image => {
-                            const imgElement = document.createElement('img');
-                            imgElement.src = image;
-                            imagesContainer.appendChild(imgElement);
+                        
+                        // Limpar slides existentes
+                        const slidesContainer = document.getElementById('carousel-slides');
+                        slidesContainer.innerHTML = '';
+                        
+                        // Limpar dots existentes
+                        const dotsContainer = document.getElementById('carousel-dots');
+                        dotsContainer.innerHTML = '';
+                        
+                        // Adicionar imagens ao carrossel
+                        project.images.forEach((image, index) => {
+                            // Criar slide
+                            const slide = document.createElement('div');
+                            slide.className = 'carousel-slide' + (index === 0 ? ' active' : '');
+                            
+                            // Criar imagem
+                            const img = document.createElement('img');
+                            img.src = image;
+                            img.alt = `${project.title} - Imagem ${index + 1}`;
+                            
+                            // Adicionar imagem ao slide
+                            slide.appendChild(img);
+                            
+                            // Adicionar slide ao container
+                            slidesContainer.appendChild(slide);
+                            
+                            // Criar dot para o slide
+                            const dot = document.createElement('div');
+                            dot.className = 'carousel-dot' + (index === 0 ? ' active' : '');
+                            dot.setAttribute('data-index', index);
+                            
+                            // Adicionar evento ao dot
+                            dot.addEventListener('click', function() {
+                                showSlide(index);
+                            });
+                            
+                            // Adicionar dot ao container
+                            dotsContainer.appendChild(dot);
                         });
+                        
+                        // Mostrar os elementos com fade-in
                         document.querySelectorAll('.fade-in').forEach(el => {
                             el.classList.add('visible');
                         });
+                        
+                        // Reinicializar o carrossel
+                        currentSlide = 0;
                     }
                 })
                 .catch(error => console.error('Erro ao carregar os dados do projeto:', error));

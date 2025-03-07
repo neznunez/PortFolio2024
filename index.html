@@ -2,10 +2,33 @@
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8">
-    <title>Portfólio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfólio 3D</title>
 	 <link rel="stylesheet" href="landing.css">
 	
     <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: #33ff33;
+            font-family: 'Courier New', monospace;
+        }
+        
         body, html {
             margin: 0;
             overflow: hidden;
@@ -586,7 +609,7 @@ function showNavigationNotification() {
         function addLighting() {
     var ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
-
+    
     var hemiLight = new THREE.HemisphereLight(0xffeeb1, 0x080820, 1);
     scene.add(hemiLight);
 
@@ -840,7 +863,7 @@ function onDocumentMouseUp(event) {
   function animate() {
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
-
+    
     // Lógica de rotação dos cubos
     angle += rotationSpeed;
     cubeArray.forEach(cube => {
@@ -849,7 +872,7 @@ function onDocumentMouseUp(event) {
         cube.position.x = Math.cos(currentAngle) * radius;
         cube.position.z = Math.sin(currentAngle) * radius;
     });
-
+    
     if (selectedCube && cubeFocused) {
         var cubeCenter = new THREE.Vector3();
         selectedCube.geometry.computeBoundingBox();
