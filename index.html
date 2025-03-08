@@ -506,6 +506,11 @@
                 loadRandomSkybox();
             }, 500);
             
+            // Após a criação dos cubos, atribuir IDs
+            setTimeout(function() {
+                assignProjectIdsToExistingCubes();
+            }, 1000); // Atraso para garantir que não interfira com outras inicializações
+            
             animate();
         }
 	  
@@ -619,60 +624,65 @@ function showNavigationNotification() {
     scene.add(directionalLight);
 }
 		
-    function addCubesAroundSphere(){
-    var projects = [
-        { name: 'Projeto 1', description: 'Descrição do Projeto 1' },
-        { name: 'Projeto 2', description: 'Descrição do Projeto 2' },
-        { name: 'Projeto 3', description: 'Descrição do Projeto 3' },
-        { name: 'Projeto 4', description: 'Descrição do Projeto 4' },
-        { name: 'Projeto 5', description: 'Descrição do Projeto 5' },
-        { name: 'Projeto 6', description: 'Descrição do Projeto 6' },
-        { name: 'Projeto 7', description: 'Descrição do Projeto 7' },
-        { name: 'Projeto 8', description: 'Descrição do Projeto 8' },
-        { name: 'Projeto 9', description: 'Descrição do Projeto 9' },
-        { name: 'Projeto 10', description: 'Descrição do Projeto 10' },
-        // Seus projetos...
-    ];
-    var sphereRadius = 1; // Raio da esfera central
-    var minDistanceFromSphere = 3.5; // Ajustado para 3.5 como um meio termo mais próximo
-    var totalRadius = sphereRadius + minDistanceFromSphere; // Raio total a partir do centro para iniciar o posicionamento dos cubos
-    var numCubes = projects.length;
-    var minDistanceBetweenCubes = 2; // Distância mínima entre os cubos
-    var radiusMultiplier = 1; // Valor inicial que não altera o raio
-    
-    for (var i = 0; i < numCubes; i++) {
-        var position, isTooClose;
-        do {
-            position = new THREE.Vector3(
-                (Math.random() - 0.5) * 2 * totalRadius,
-                (Math.random() - 0.5) * 2 * totalRadius,
-                (Math.random() - 0.5) * 2 * totalRadius
-            );
+    function addCubesAroundSphere() {
+        // Array com os dados dos projetos
+        var projects = [
+            { id: '1', name: 'Projeto de Exemplo: Sistema de Gestão Inteligente' },
+            { id: '2', name: 'Projeto de Visualização de Dados' },
+            { id: '3', name: 'Aplicativo de Realidade Aumentada' },
+            { id: '4', name: 'Plataforma de Aprendizado Online' },
+            { id: '5', name: 'Projeto 5' },
+            { id: '6', name: 'Projeto 6' },
+            { id: '7', name: 'Projeto 7' },
+            { id: '8', name: 'Projeto 8' },
+            { id: '9', name: 'Projeto 9' },
+            { id: '10', name: 'Projeto 10' }
+        ];
+        
+        var sphereRadius = 1; // Raio da esfera central
+        var minDistanceFromSphere = 3.5; // Ajustado para 3.5 como um meio termo mais próximo
+        var totalRadius = sphereRadius + minDistanceFromSphere; // Raio total a partir do centro para iniciar o posicionamento dos cubos
+        var numCubes = projects.length;
+        var minDistanceBetweenCubes = 2; // Distância mínima entre os cubos
+        var radiusMultiplier = 1; // Valor inicial que não altera o raio
+        
+        for (var i = 0; i < numCubes; i++) {
+            var position, isTooClose;
+            do {
+                position = new THREE.Vector3(
+                    (Math.random() - 0.5) * 2 * totalRadius,
+                    (Math.random() - 0.5) * 2 * totalRadius,
+                    (Math.random() - 0.5) * 2 * totalRadius
+                );
 
-            // Verifica se a posição está muito próxima de outros cubos
-            isTooClose = cubeArray.some(cube => position.distanceTo(cube.position) < minDistanceBetweenCubes);
-        } while (isTooClose || position.length() < totalRadius); // Garante distância mínima da esfera e entre cubos
+                // Verifica se a posição está muito próxima de outros cubos
+                isTooClose = cubeArray.some(cube => position.distanceTo(cube.position) < minDistanceBetweenCubes);
+            } while (isTooClose || position.length() < totalRadius); // Garante distância mínima da esfera e entre cubos
 
-        // Criar cubo normal
-        var cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-        var cubeMaterial = new THREE.MeshPhysicalMaterial({
-            color: 0xFFFFFF, 
-            roughness: 0.5,
-            metalness: 0.1,
-            reflectivity: 0.9,
-            transparent: true,
-            opacity: 0.8,
-            transmission: 0.9,
-            side: THREE.DoubleSide // Renderiza ambos os lados do material
-        });
-        var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-        cube.position.copy(position);
-        cube.userData.project = projects[i];
-        scene.add(cube);
-        cubeArray.push(cube);
-        cube.visible = false; // Isso oculta o cubo
+            // Criar cubo normal
+            var cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+            var cubeMaterial = new THREE.MeshPhysicalMaterial({
+                color: 0xFFFFFF, 
+                roughness: 0.5,
+                metalness: 0.1,
+                reflectivity: 0.9,
+                transparent: true,
+                opacity: 0.8,
+                transmission: 0.9,
+                side: THREE.DoubleSide // Renderiza ambos os lados do material
+            });
+            var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+            cube.position.copy(position);
+            
+            // Adicionar dados do projeto e ID ao cubo
+            cube.userData.project = projects[i];
+            cube.userData.projectId = projects[i].id;
+            
+            scene.add(cube);
+            cubeArray.push(cube);
+            cube.visible = false; // Isso oculta o cubo
+        }
     }
-}
 		
 		// Função para redefinir a câmera para a vista original
         function resetCamera() {
@@ -750,14 +760,14 @@ function onDocumentMouseMove(event) {
     event.preventDefault();
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
+    
     raycaster.setFromCamera(mouse, camera);
     var intersects = raycaster.intersectObjects(cubeArray);
-
+    
     if (intersects.length > 0) {
         if (INTERSECTED != intersects[0].object) {
             if (INTERSECTED) INTERSECTED.material.color.setHex(INTERSECTED.currentHex);
-
+            
             INTERSECTED = intersects[0].object;
             INTERSECTED.currentHex = INTERSECTED.material.color.getHex();
             INTERSECTED.material.color.setHex(0xff0000);
@@ -811,11 +821,11 @@ function onDocumentMouseUp(event) {
     event.preventDefault();
     raycaster.setFromCamera(mouse, camera);
     var intersects = raycaster.intersectObjects(cubeArray);
-
+    
     if (intersects.length > 0) {
         if (!cubeFocused) {
             selectedCube = intersects[0].object;
-
+            
             var cubeCenter = new THREE.Vector3();
             selectedCube.geometry.computeBoundingBox();
             selectedCube.geometry.boundingBox.getCenter(cubeCenter);
@@ -833,6 +843,7 @@ function onDocumentMouseUp(event) {
             cubeFocused = true;
         } else {
             var pageName = projectToPageMap[selectedCube.userData.project.name];
+            
             if (pageName) {
                 gsap.to(renderer.domElement, {
                     opacity: 0,
@@ -842,6 +853,18 @@ function onDocumentMouseUp(event) {
                         window.location.href = pageName;
                     }
                 });
+            } else {
+                const projectId = selectedCube.userData.projectId;
+                if (projectId) {
+                    gsap.to(renderer.domElement, {
+                        opacity: 0,
+                        duration: 1,
+                        ease: "power1.inOut",
+                        onComplete: function() {
+                            window.location.href = `project.html?id=${projectId}`;
+                        }
+                    });
+                }
             }
         }
     } else if (cubeFocused) {
@@ -1090,3 +1113,16 @@ document.getElementById('skyboxButton').addEventListener('click', function() {
     //     }, 1000);
     // });
 </script>
+
+<!-- Adicionar IDs aos cubos existentes -->
+// Esta função deve ser chamada após a criação dos cubos
+function assignProjectIdsToExistingCubes() {
+    // Atribuir IDs sequenciais aos cubos existentes
+    for (let i = 0; i < cubeArray.length; i++) {
+        // Adiciona apenas o ID, sem modificar nenhuma outra propriedade
+        if (cubeArray[i].userData) {
+            cubeArray[i].userData.projectId = (i + 1).toString();
+        }
+    }
+    console.log("IDs atribuídos aos cubos sem interferir nas animações");
+}

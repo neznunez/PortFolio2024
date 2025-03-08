@@ -1,0 +1,26 @@
+[
+    {
+        "id": "1",
+        "title": "Projeto de Exemplo: Sistema de Gestão Inteligente",
+        "description": "Este é um exemplo de descrição de projeto para visualização do layout. Um sistema completo de gestão empresarial desenvolvido com tecnologias modernas como React, Node.js e MongoDB. O sistema inclui módulos de gestão financeira, controle de estoque, recursos humanos e análise de dados em tempo real.\n\nO projeto foi desenvolvido utilizando metodologias ágeis, com foco em usabilidade e performance. A interface foi projetada seguindo princípios de UX/UI modernos, garantindo uma experiência intuitiva para o usuário final.\n\nRecursos principais:\n• Dashboard interativo com métricas em tempo real\n• Sistema de autenticação seguro com múltiplos níveis de acesso\n• Relatórios personalizáveis com exportação em diversos formatos\n• Integração com APIs externas para automação de processos\n• Aplicativo mobile para acesso remoto às funcionalidades principais",
+        "images": ["desertdawn/desertdawn_bk.jpg", "desertdawn/desertdawn_dn.jpg", "desertdawn/desertdawn_ft.jpg"]
+    },
+    {
+        "id": "2",
+        "title": "Projeto de Visualização de Dados",
+        "description": "Uma plataforma avançada de visualização de dados que transforma informações complexas em gráficos interativos e dashboards personalizáveis. Desenvolvida com D3.js e Vue.js, esta solução permite que usuários sem conhecimento técnico criem visualizações poderosas.\n\nO sistema suporta múltiplas fontes de dados, incluindo bancos de dados SQL, NoSQL, APIs RESTful e arquivos CSV/Excel. Os usuários podem criar, salvar e compartilhar suas visualizações, além de exportá-las em diversos formatos.\n\nCaracterísticas principais:\n• Biblioteca com mais de 50 tipos de gráficos e visualizações\n• Sistema de arrastar e soltar para criação de dashboards\n• Atualizações em tempo real dos dados\n• Filtros avançados e análises estatísticas\n• Exportação para PDF, PNG, SVG e HTML interativo",
+        "images": ["Park2/posx.jpg", "Park2/negy.jpg", "Park2/posz.jpg"]
+    },
+    {
+        "id": "3",
+        "title": "Aplicativo de Realidade Aumentada",
+        "description": "Um aplicativo inovador de realidade aumentada que transforma a maneira como os usuários interagem com o ambiente ao seu redor. Desenvolvido com ARKit, ARCore e Unity, este aplicativo combina o mundo real com elementos virtuais para criar experiências imersivas.\n\nO aplicativo inclui recursos de reconhecimento de imagem, rastreamento de objetos 3D e posicionamento preciso de elementos virtuais no espaço real. É compatível com iOS e Android, oferecendo uma experiência consistente em diferentes dispositivos.\n\nFuncionalidades destacadas:\n• Reconhecimento facial com filtros em tempo real\n• Medição precisa de objetos e espaços\n• Visualização de produtos em 3D antes da compra\n• Jogos interativos baseados na localização\n• Navegação interna com direções sobrepostas ao mundo real",
+        "images": ["Rainbow/rainbow_ft.png", "Rainbow/rainbow_up.png", "Rainbow/rainbow_lf.png"]
+    },
+    {
+        "id": "4",
+        "title": "Plataforma de Aprendizado Online",
+        "description": "Uma plataforma educacional completa que conecta estudantes e professores em um ambiente virtual de aprendizado. Desenvolvida com tecnologias modernas como React, Node.js e MongoDB, oferece uma experiência de aprendizado personalizada e interativa.\n\nA plataforma inclui recursos para criação de cursos, gerenciamento de aulas, avaliações automatizadas e acompanhamento do progresso dos alunos. Também oferece integração com ferramentas populares como Google Classroom, Microsoft Teams e Zoom.\n\nRecursos educacionais:\n• Sistema de videoaulas com transcrição automática\n• Fóruns de discussão e salas de estudo virtuais\n• Quizzes interativos e exercícios práticos\n• Certificados digitais com verificação blockchain\n• Análise de desempenho com recomendações personalizadas",
+        "images": ["Lycksele3/posx.jpg", "Lycksele3/posy.jpg", "Lycksele3/posz.jpg"]
+    }
+] 
