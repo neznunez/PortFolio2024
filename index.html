@@ -193,6 +193,23 @@
                 box-shadow: 0 0 15px rgba(51, 255, 51, 0.7);
             }
         }
+
+        /* Efeito de pulso para as notificações */
+        .notification-pulse {
+            animation: notification-pulse 2s infinite;
+        }
+
+        @keyframes notification-pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(51, 255, 51, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(51, 255, 51, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(51, 255, 51, 0);
+            }
+        }
     </style>
 </head>
 <body>
@@ -368,8 +385,14 @@
                         mixer.clipAction(clip).play();
                     });
 
-                    // Armazenar o mixer para uso na função animate global
-                    window.modelMixer = mixer;
+                    // Atualizar animações na função de animação
+                    function animate() {
+                        requestAnimationFrame(animate);
+                        mixer.update(0.01); // Atualize o mixer com o tempo delta
+                        renderer.render(scene, camera);
+                    }
+
+                    animate();
 
                     // Iniciar com a câmera focada na cabeça
                     animateCameraToPosition(0, 0, 5);
@@ -430,6 +453,11 @@
             setTimeout(function() {
                 loadRandomSkybox();
             }, 500);
+            
+            // Após a criação dos cubos, atribuir IDs
+            setTimeout(function() {
+                assignProjectIdsToExistingCubes();
+            }, 1000); // Atraso para garantir que não interfira com outras inicializações
             
             animate();
         }
@@ -836,12 +864,6 @@ function onDocumentMouseUp(event) {
 	  
   function animate() {
     requestAnimationFrame(animate);
-    
-    // Atualizar o mixer do modelo, se existir
-    if (window.modelMixer) {
-        window.modelMixer.update(0.01);
-    }
-    
     renderer.render(scene, camera);
     
     // Lógica de rotação dos cubos
@@ -1061,3 +1083,24 @@ document.getElementById('skyboxButton').addEventListener('click', function() {
     CLIQUE FORA DO CUBO<br>
     <span style="font-size: 12px; opacity: 0.8;">para voltar</span>
 </div>
+
+<script>
+    // Adicione isso no início do seu script
+    // window.addEventListener('load', function() {
+    //     setTimeout(function() {
+    //     }, 1000);
+    // });
+</script>
+
+<!-- Adicionar IDs aos cubos existentes -->
+// Esta função deve ser chamada após a criação dos cubos
+function assignProjectIdsToExistingCubes() {
+    // Atribuir IDs sequenciais aos cubos existentes
+    for (let i = 0; i < cubeArray.length; i++) {
+        // Adiciona apenas o ID, sem modificar nenhuma outra propriedade
+        if (cubeArray[i].userData) {
+            cubeArray[i].userData.projectId = (i + 1).toString();
+        }
+    }
+    console.log("IDs atribuídos aos cubos sem interferir nas animações");
+}
