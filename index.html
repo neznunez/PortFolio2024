@@ -7,13 +7,14 @@
 	 <link rel="stylesheet" href="landing.css">
 	
     <style>
-        body {
+        body, html {
             margin: 0;
             overflow: hidden;
+            height: 100%;
             font-family: Arial, sans-serif;
         }
         
-        #loading-screen {
+        #loading-screen, .loading-screen {
             position: fixed;
             top: 0;
             left: 0;
@@ -24,16 +25,19 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 9999;
             color: #33ff33;
             font-family: 'Courier New', monospace;
         }
         
-        body, html {
-            margin: 0;
-            overflow: hidden;
-            height: 100%;
+        #loading-screen {
+            z-index: 9999;
         }
+        
+        .loading-screen {
+            z-index: 2000;
+            transition: opacity 1.5s ease-out;
+        }
+        
         canvas {
             display: block;
             width: 100%;
@@ -70,22 +74,6 @@
             height: 100%;
             object-fit: cover;
             border-radius: 10px;
-        }
-        /* Loading Screen */
-        .loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #000;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            transition: opacity 1.5s ease-out;
-            font-family: 'Courier New', monospace;
         }
         .loading-text {
             color: #33ff33;
@@ -168,7 +156,9 @@
         }
 
         /* Estilo para a notificação inicial */
-        .initial-notification {
+        .initial-notification,
+        .navigation-notification,
+        .return-notification {
             position: fixed;
             top: 20px;
             right: 20px;
@@ -204,48 +194,6 @@
             }
         }
 
-        /* Estilo para a notificação de navegação */
-        .navigation-notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background-color: rgba(0, 0, 0, 0.8);
-            color: #33ff33;
-            border: 2px solid #33ff33;
-            padding: 15px;
-            border-radius: 10px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            text-align: right;
-            z-index: 9999;
-            box-shadow: 0 0 15px rgba(51, 255, 51, 0.7);
-            max-width: 250px;
-            pointer-events: none;
-            text-shadow: 0 0 5px #33ff33;
-            letter-spacing: 1px;
-        }
-
-        /* Estilo para a notificação de retorno */
-        .return-notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background-color: rgba(0, 0, 0, 0.8);
-            color: #33ff33;
-            border: 2px solid #33ff33;
-            padding: 15px;
-            border-radius: 10px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            text-align: right;
-            z-index: 9999;
-            box-shadow: 0 0 15px rgba(51, 255, 51, 0.7);
-            max-width: 250px;
-            pointer-events: none;
-            text-shadow: 0 0 5px #33ff33;
-            letter-spacing: 1px;
-        }
-
         /* Efeito de pulso para as notificações */
         .notification-pulse {
             animation: notification-pulse 2s infinite;
@@ -266,14 +214,13 @@
 </head>
 <body>
    <script src="ReLibs/three.min.js"></script>
-    <script src="ReLibs/OrbitControls.js"></script>
-	<script src="ReLibs/gsap.min.js"></script>
-    <script src="ReLibs/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/vanilla-tilt@1.7.0/dist/vanilla-tilt.min.js"></script>
+   <script src="ReLibs/OrbitControls.js"></script>
+   <script src="ReLibs/gsap.min.js"></script>
+   <script src="ReLibs/GLTFLoader.js"></script>
+   <script src="https://cdn.jsdelivr.net/npm/vanilla-tilt@1.7.0/dist/vanilla-tilt.min.js"></script>
 
-
-	 <!-- Botão Skybox -->
-    <button id="skyboxButton" class="skybox-button">SKYBOX</button>
+   <!-- Botão Skybox -->
+   <button id="skyboxButton" class="skybox-button">SKYBOX</button>
 	
   <script>
         var scene, camera, renderer, controls;
@@ -287,6 +234,7 @@
         var initialCameraPosition, initialCameraQuaternion;
         var model; // Referência ao modelo 3D da cabeça para uso em animações
 	    var scaleFactor = 1; // Escala inicial normal, sem expansão
+        var mouseDown = false; // Declaração da variável mouseDown
 	  
  // Lista dos conjuntos de skyboxes
       var skyboxes = [
@@ -577,17 +525,26 @@ function handleHeadClick() {
 
 // Função para mostrar a notificação de navegação
 function showNavigationNotification() {
-    // Criar o elemento de notificação
+    // Criar o elemento de notificação para navegação
     var notification = document.createElement('div');
     notification.className = 'navigation-notification notification-pulse';
     notification.innerHTML = 'CLIQUE E ARRASTE<br><span style="font-size: 12px; opacity: 0.8;">para navegar pelo ambiente</span>';
     notification.style.opacity = "0";
     document.body.appendChild(notification);
     
+    // Criar o elemento de notificação para "Clique no cubo para abrir um projeto"
+    var cubeNotification = document.createElement('div');
+    cubeNotification.className = 'navigation-notification notification-pulse';
+    cubeNotification.innerHTML = 'CLIQUE NO CUBO<br><span style="font-size: 12px; opacity: 0.8;">para abrir um projeto</span>';
+    cubeNotification.style.opacity = "0";
+    cubeNotification.style.top = "80px"; // Posicionar abaixo da primeira notificação
+    document.body.appendChild(cubeNotification);
+    
     // Forçar um reflow
     void notification.offsetWidth;
+    void cubeNotification.offsetWidth;
     
-    // Animar a entrada da notificação
+    // Animar a entrada das notificações
     gsap.to(notification, {
         opacity: 1,
         scale: 1,
@@ -595,7 +552,15 @@ function showNavigationNotification() {
         ease: "power3.out"
     });
     
-    // Configurar o timeout para remover a notificação
+    gsap.to(cubeNotification, {
+        opacity: 1,
+        scale: 1,
+        duration: 0.2,
+        delay: 0.2,
+        ease: "power3.out"
+    });
+    
+    // Configurar o timeout para remover as notificações
     setTimeout(function() {
         gsap.to(notification, {
             opacity: 0,
@@ -608,7 +573,19 @@ function showNavigationNotification() {
                 }
             }
         });
-    }, 3000); // A notificação ficará visível por 3 segundos
+        
+        gsap.to(cubeNotification, {
+            opacity: 0,
+            y: -20,
+            duration: 0.2,
+            ease: "power3.in",
+            onComplete: function() {
+                if (cubeNotification.parentNode) {
+                    cubeNotification.parentNode.removeChild(cubeNotification);
+                }
+            }
+        });
+    }, 3000);
 }
 
         function addLighting() {
@@ -796,13 +773,15 @@ function onDocumentMouseMove(event) {
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    var intersects = raycaster.intersectObject(model, true);
-
-    if (intersects.length > 0) {
+    
+    // Verificar se clicou na cabeça
+    var intersectsHead = raycaster.intersectObject(model, true);
+    if (intersectsHead.length > 0) {
         handleHeadClick(); // Chama a função se a cabeça foi clicada
-    } else {
-        mouseDown = true; // Mantém essa linha se você tiver lógica dependente de mouseDown
+        return;
     }
+    
+    mouseDown = true;
 }
 
 	  
@@ -1109,7 +1088,6 @@ document.getElementById('skyboxButton').addEventListener('click', function() {
     // Adicione isso no início do seu script
     // window.addEventListener('load', function() {
     //     setTimeout(function() {
-    //         showInitialNotification();
     //     }, 1000);
     // });
 </script>
