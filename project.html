@@ -459,14 +459,14 @@
             event.preventDefault();
             // Tenta usar GSAP se carregado, senão faz direto
             if (typeof gsap !== 'undefined') {
-                gsap.to(document.body, {
-                    opacity: 0,
+            gsap.to(document.body, {
+                opacity: 0,
                     duration: 0.5, // Mais rápido
-                    ease: "power1.inOut",
-                    onComplete: function() {
-                        window.location.href = 'index.html';
-                    }
-                });
+                ease: "power1.inOut",
+                onComplete: function() {
+                    window.location.href = 'index.html';
+                }
+            });
             } else {
                  window.location.href = 'index.html';
             }
@@ -670,15 +670,15 @@
                 .catch((error) => {
                     // Falha no login
                     console.error("Erro no login do admin:", error);
-                    passwordField.style.borderColor = 'red';
-                    passwordField.style.boxShadow = '0 0 10px rgba(255, 0, 0, 0.5)';
+                passwordField.style.borderColor = 'red';
+                passwordField.style.boxShadow = '0 0 10px rgba(255, 0, 0, 0.5)';
                     passwordField.value = ''; // Limpar campo
                     passwordField.placeholder = 'Email ou senha inválidos';
-                    
-                    // Restaurar o estilo após um tempo
-                    setTimeout(() => {
-                        passwordField.style.borderColor = '#33ff33';
-                        passwordField.style.boxShadow = 'none';
+                
+                // Restaurar o estilo após um tempo
+                setTimeout(() => {
+                    passwordField.style.borderColor = '#33ff33';
+                    passwordField.style.boxShadow = 'none';
                         passwordField.placeholder = 'Senha de Admin';
                     }, 2000);
                     showNotification(`Falha no login: ${error.message}`, 'error');
@@ -698,14 +698,14 @@
 
             // Habilitar edição e aplicar estilo
             if (titleElement) {
-                titleElement.contentEditable = 'true';
-                titleElement.style.border = '1px dashed #33ff33';
-                titleElement.style.padding = '5px';
+            titleElement.contentEditable = 'true';
+            titleElement.style.border = '1px dashed #33ff33';
+            titleElement.style.padding = '5px';
             }
             if (descriptionElement) {
-                descriptionElement.contentEditable = 'true';
-                descriptionElement.style.border = '1px dashed #33ff33';
-                descriptionElement.style.padding = '5px';
+            descriptionElement.contentEditable = 'true';
+            descriptionElement.style.border = '1px dashed #33ff33';
+            descriptionElement.style.padding = '5px';
                  // Converter <br> para \n para edição mais fácil no textarea implícito
                  // descriptionElement.textContent = descriptionElement.innerHTML.replace(/<br\s*[/]?>/gi, '\n'); 
                  // ^^ Considerar se a edição direta do HTML com <br> é preferível
@@ -713,29 +713,29 @@
             
             // Adicionar indicador de modo de edição (se não existir)
             if (!document.getElementById('edit-mode-indicator')) {
-                const editIndicator = document.createElement('div');
-                editIndicator.id = 'edit-mode-indicator';
-                editIndicator.textContent = 'MODO DE EDIÇÃO';
-                editIndicator.style.cssText = `
-                    position: absolute;
-                    top: 10px;
-                    right: 20px;
-                    background-color: rgba(51, 255, 51, 0.2);
-                    color: #33ff33;
-                    padding: 5px 10px;
-                    border-radius: 4px;
-                    font-family: 'Courier New', monospace;
-                    font-size: 14px;
-                    font-weight: bold;
-                    border: 1px solid #33ff33;
-                    z-index: 1000;
-                `;
-                document.body.appendChild(editIndicator);
+            const editIndicator = document.createElement('div');
+            editIndicator.id = 'edit-mode-indicator';
+            editIndicator.textContent = 'MODO DE EDIÇÃO';
+            editIndicator.style.cssText = `
+                position: absolute;
+                top: 10px;
+                right: 20px;
+                background-color: rgba(51, 255, 51, 0.2);
+                color: #33ff33;
+                padding: 5px 10px;
+                border-radius: 4px;
+                font-family: 'Courier New', monospace;
+                font-size: 14px;
+                font-weight: bold;
+                border: 1px solid #33ff33;
+                z-index: 1000;
+            `;
+            document.body.appendChild(editIndicator);
             }
             
             // Adicionar botão de salvar (se não existir)
             if (!document.getElementById('save-changes-button')) {
-                addSaveButton();
+            addSaveButton();
             }
         }
 
@@ -873,12 +873,12 @@
             const descriptionElement = document.getElementById('project-description');
             
             // Usar textContent para obter o texto puro, sem HTML interno
-            const newTitle = titleElement.textContent.trim(); 
+            const newTitle = titleElement.textContent.trim();
             // Para descrição, pegar innerHTML e converter <br> de volta para \n
             const newDescriptionHTML = descriptionElement.innerHTML; // Pega o HTML como editado
             // Converter <br> para \n para salvar no Firestore
             const newDescriptionForFirestore = newDescriptionHTML.replace(/<br\s*[/]?>/gi, '\n').trim();
-
+            
             const urlParams = new URLSearchParams(window.location.search);
             const projectId = urlParams.get('id');
             
@@ -895,7 +895,7 @@
             const originalText = saveButton.textContent;
             saveButton.textContent = 'Salvando...';
             saveButton.disabled = true;
-
+            
             // Atualizar o documento no Firestore
             db.collection("projetos").doc(projectId).update({
                 title: newTitle,
@@ -903,10 +903,10 @@
             })
             .then(() => {
                 console.log("Documento atualizado com sucesso no Firestore!");
-                showNotification('Alterações salvas com sucesso!', 'success');
+                        showNotification('Alterações salvas com sucesso!', 'success');
                 // Manter os valores na tela como estão (já foram editados)
                 // Apenas desabilitar o modo de edição
-                disableEditMode(); 
+                        disableEditMode();
             })
             .catch((error) => {
                 console.error("Erro ao atualizar documento no Firestore:", error);

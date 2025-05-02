@@ -1124,6 +1124,387 @@ function showNavigationNotification() {
     document.addEventListener('mousedown', onDocumentMouseDown, true); // Modifiquei para 'true' para capturar eventos de forma mais precisa
     document.addEventListener('mouseup', onDocumentMouseUp, false);
     window.addEventListener('resize', onWindowResize, false);
+
+    // Adicionar listener para botão Skybox (se existir)
+    const skyboxButton = document.getElementById('skyboxButton');
+    if (skyboxButton) {
+        skyboxButton.addEventListener('click', loadRandomSkybox);
+    }
+    // --- INÍCIO: Novo Listener para "admin" ---
+    let keySequence = '';
+    const targetSequence = 'admin';
+    document.addEventListener('keydown', function(event) {
+        // Evitar interferir se um campo de texto estiver focado (ex: campo de senha)
+        if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || event.target.isContentEditable) {
+             keySequence = ''; // Resetar se estiver digitando em outro lugar
+             return;
+        }
+        
+        keySequence += event.key.toLowerCase();
+        if (keySequence.length > targetSequence.length) {
+            keySequence = keySequence.slice(-targetSequence.length);
+        }
+        
+        if (keySequence === targetSequence) {
+            console.log('Sequência "admin" detectada em index.html');
+            // Verificar se o usuário já está logado como admin
+            if (isAdminLoggedIn) {
+                 console.log("Admin já está logado.");
+                 keySequence = ''; // Limpar sequência
+                 return; // Não mostrar campo de senha se já logado
+            }
+            showPasswordField(); // Chama a função para mostrar campo de senha
+            keySequence = ''; // Limpar sequência
+        }
+        // Resetar sequência se digitar algo diferente
+        if (targetSequence.indexOf(keySequence) !== 0) {
+             keySequence = '';
+        }
+    });
+    // --- FIM: Novo Listener para "admin" ---
+
+    // --- INÍCIO: Novas Funções de Autenticação e Logout para index.html ---
+
+    // Variável global para estado de login (a ser atualizada pelo onAuthStateChanged)
+    let isAdminLoggedIn = false;
+
+    // Adiciona e mostra o campo de senha do admin
+    function showPasswordField() {
+        // Remover campo existente se houver (para evitar duplicação)
+        const existingContainer = document.getElementById('admin-password-container-index');
+        if (existingContainer) existingContainer.remove();
+
+        const container = document.createElement('div');
+        container.id = 'admin-password-container-index';
+        container.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.85);
+            border: 2px solid #33ff33;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(51, 255, 51, 0.7);
+            z-index: 10000;
+            text-align: center;
+        `;
+
+        const label = document.createElement('label');
+        label.textContent = 'Senha Admin:';
+        label.style.cssText = `
+            color: #33ff33;
+            display: block;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+        `;
+
+        const input = document.createElement('input');
+        input.type = 'password';
+        input.id = 'admin-password-index';
+        input.style.cssText = `
+            padding: 8px;
+            background-color: #111;
+            border: 1px solid #33ff33;
+            color: #33ff33;
+            font-family: 'Courier New', monospace;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            width: calc(100% - 20px);
+        `;
+
+        // Adicionar listener para pressionar Enter
+        input.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                validateAdminPassword();
+            }
+        });
+
+        // Botão para fechar (opcional)
+        const closeButton = document.createElement('button');
+        closeButton.textContent = 'X';
+        closeButton.style.cssText = `
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #ff3333;
+            border: none;
+            color: black;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            line-height: 18px;
+        `;
+        closeButton.onclick = () => container.remove();
+
+        container.appendChild(label);
+        container.appendChild(input);
+        container.appendChild(closeButton);
+        document.body.appendChild(container);
+        input.focus(); // Focar no campo de senha
+    }
+
+    // Validar a senha de administrador com Firebase Auth
+    function validateAdminPassword() {
+        const passwordField = document.getElementById('admin-password-index');
+        const passwordContainer = document.getElementById('admin-password-container-index');
+        if (!passwordField || !passwordContainer) return; // Sair se os elementos não existirem
+        
+        const password = passwordField.value;
+        const adminEmail = "jvnunes066@gmail.com"; // Email do admin
+        
+        if (!auth) { // Verificar se auth foi inicializado
+             console.error("Firebase Auth não está pronto.");
+             showNotification("Erro: Serviço de autenticação não disponível", "error", true); // true para index.html
+             return;
+        }
+
+        auth.signInWithEmailAndPassword(adminEmail, password)
+            .then((userCredential) => {
+                console.log("Admin logado com sucesso em index.html:", userCredential.user.uid);
+                if (passwordContainer) passwordContainer.remove();
+                showNotification('Login de Admin realizado com sucesso!', 'success', true); // true para index.html
+            })
+            .catch((error) => {
+                console.error("Erro no login do admin em index.html:", error);
+                passwordField.style.borderColor = 'red';
+                passwordField.placeholder = 'Senha inválida';
+                passwordField.value = '';
+                setTimeout(() => {
+                     if(passwordField) { // Verificar se ainda existe
+                        passwordField.style.borderColor = '#33ff33';
+                        passwordField.placeholder = '';
+                     }
+                }, 2000);
+                showNotification(`Falha no login: ${error.code}`, 'error', true); // true para index.html
+            });
+    }
+
+    // Função para mostrar notificações (versão simples para index.html)
+    function showNotification(message, type = 'info', isIndex = false) {
+        console.log(`Notificação Index (${type}): ${message}`);
+        // Criar elemento de notificação visual
+         const notification = document.createElement('div');
+         notification.textContent = message;
+         notification.style.cssText = `
+             position: fixed;
+             bottom: ${isIndex ? '70px' : '20px'}; /* Posição diferente para index */
+             left: 50%;
+             transform: translateX(-50%);
+             padding: 10px 20px;
+             border-radius: 5px;
+             background-color: ${type === 'error' ? 'rgba(255, 0, 0, 0.8)' : (type === 'success' ? 'rgba(0, 200, 0, 0.8)' : 'rgba(0, 0, 0, 0.8)')};
+             color: white;
+             font-family: 'Courier New', monospace;
+             z-index: 10001;
+             opacity: 0;
+             transition: opacity 0.5s ease;
+         `;
+         document.body.appendChild(notification);
+         // Fade in
+         setTimeout(() => notification.style.opacity = 1, 10);
+         // Fade out and remove
+         setTimeout(() => {
+             notification.style.opacity = 0;
+             setTimeout(() => notification.remove(), 500);
+         }, 3000); // Mostrar por 3 segundos
+    }
+
+
+    // --- Listener de Autenticação para index.html ---
+    if (typeof auth !== 'undefined') {
+        auth.onAuthStateChanged((user) => {
+            const logoutButton = document.getElementById('logout-button-index');
+            const createButton = document.getElementById('create-project-button'); // Botão que vamos criar depois
+
+            if (user && user.uid === ADMIN_UID) {
+                console.log("Admin está logado em index.html.");
+                isAdminLoggedIn = true;
+                if (logoutButton) logoutButton.style.display = 'inline-block';
+                if (createButton) createButton.style.display = 'inline-block'; // Mostrar botão Criar
+                // Remover campo de senha se ainda estiver visível
+                const passContainer = document.getElementById('admin-password-container-index');
+                if (passContainer) passContainer.remove();
+            } else {
+                if (user) {
+                    console.log("Usuário logado não é admin em index.html.");
+                } else {
+                    console.log("Nenhum usuário logado em index.html.");
+                }
+                isAdminLoggedIn = false;
+                if (logoutButton) logoutButton.style.display = 'none';
+                if (createButton) createButton.style.display = 'none'; // Esconder botão Criar
+            }
+        });
+    } else {
+        console.error("Auth não definido, não é possível adicionar listener de estado.");
+    }
+    // --- Fim Listener de Autenticação ---
+
+    // --- Botão e Função de Logout para index.html ---
+    function addLogoutButtonIndex() {
+         if (document.getElementById('logout-button-index')) return; // Evitar duplicados
+
+        const logoutButton = document.createElement('button');
+        logoutButton.id = 'logout-button-index';
+        logoutButton.textContent = 'Logout Admin';
+        logoutButton.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px; /* Perto do canto inferior direito */
+            padding: 10px 15px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #ff6b6b; /* Vermelho para logout */
+            border: 2px solid #ff6b6b;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+            text-shadow: 0 0 5px #ff6b6b;
+            z-index: 999;
+            display: none; /* Começa escondido */
+        `;
+         logoutButton.addEventListener('mouseover', function() {
+            this.style.backgroundColor = 'rgba(255, 107, 107, 0.2)';
+            this.style.transform = 'scale(1.05)';
+        });
+        logoutButton.addEventListener('mouseout', function() {
+            this.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+            this.style.transform = 'scale(1)';
+        });
+        logoutButton.addEventListener('click', logoutAdminIndex);
+        document.body.appendChild(logoutButton);
+    }
+
+    function logoutAdminIndex() {
+        if (!auth) return;
+        auth.signOut()
+            .then(() => {
+                console.log("Admin deslogado (index.html).");
+                showNotification('Logout realizado.', 'success', true);
+                // onAuthStateChanged cuidará de esconder os botões de admin
+            })
+            .catch((error) => {
+                console.error("Erro ao fazer logout (index.html):", error);
+                showNotification(`Erro no logout: ${error.message}`, 'error', true);
+            });
+    }
+    // --- Fim Logout ---
+
+    // --- Botão Criar Novo Projeto (NOVO) ---
+    function addCreateProjectButton() {
+        if (document.getElementById('create-project-button')) return; // Evitar duplicados
+
+        const createButton = document.createElement('button');
+        createButton.id = 'create-project-button';
+        createButton.textContent = 'Criar Novo Projeto';
+        createButton.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 180px; /* Ajustar para ficar à esquerda do botão Logout */
+            padding: 10px 15px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #33ff33; /* Verde para ação principal */
+            border: 2px solid #33ff33;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(51, 255, 51, 0.5);
+            text-shadow: 0 0 5px #33ff33;
+            z-index: 999;
+            display: none; /* Começa escondido */
+        `;
+        createButton.addEventListener('mouseover', function() {
+            this.style.backgroundColor = 'rgba(51, 255, 51, 0.2)';
+            this.style.transform = 'scale(1.05)';
+        });
+        createButton.addEventListener('mouseout', function() {
+            this.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+            this.style.transform = 'scale(1)';
+        });
+        createButton.addEventListener('click', createNewProject); // Chama a função de criar projeto
+        document.body.appendChild(createButton);
+    }
+    // --- Fim Botão Criar Novo Projeto ---
+
+    // --- Função para Criar Novo Projeto no Firestore (NOVO) ---
+    function createNewProject() {
+        if (!isAdminLoggedIn) {
+            showNotification("Apenas admins podem criar projetos.", "error", true);
+            return;
+        }
+        if (!db) {
+             showNotification("Erro: Conexão com banco de dados não disponível.", "error", true);
+            return;
+        }
+
+        const createButton = document.getElementById('create-project-button');
+        if (createButton) createButton.disabled = true; // Desabilitar temporariamente
+        showNotification("Criando novo projeto...", "info", true);
+
+        // 1. Buscar IDs existentes
+        db.collection("projetos").get()
+            .then((snapshot) => {
+                let maxId = 0;
+                snapshot.forEach(doc => {
+                    const numericId = parseInt(doc.id);
+                    if (!isNaN(numericId) && numericId > maxId) {
+                        maxId = numericId;
+                    }
+                });
+
+                // 2. Determinar novo ID
+                const newId = maxId + 1;
+                const newIdString = newId.toString(); // newIdString é definida aqui
+
+                // 3. Criar novo documento com dados padrão
+                const newProjectData = {
+                    title: "Novo Projeto " + newIdString,
+                    description: "Descreva seu projeto aqui.\nUse \\n para novas linhas.",
+                };
+                
+                // Retornar a Promise do .set() E o newIdString para o próximo .then()
+                return db.collection("projetos").doc(newIdString).set(newProjectData)
+                         .then(() => newIdString); // Passa o ID adiante após o set ser bem-sucedido
+            })
+            .then((passedNewIdString) => { // Recebe o ID como argumento
+                // Agora usamos passedNewIdString
+                console.log(`Novo projeto com ID ${passedNewIdString} criado no Firestore.`);
+                showNotification(`Projeto ${passedNewIdString} criado com sucesso!`, "success", true);
+                // O listener onSnapshot já deve ter detectado e adicionado o cubo.
+            })
+            .catch((error) => {
+                console.error("Erro ao criar novo projeto:", error);
+                // O erro pode acontecer na leitura ou na escrita, a mensagem de erro geral é mais segura
+                showNotification(`Erro ao criar projeto: ${error.message}`, "error", true); 
+            })
+            .finally(() => {
+                 if (createButton) createButton.disabled = false; // Reabilitar botão
+            });
+    }
+    // --- Fim Função Criar Novo Projeto ---
+
+    // Chamar a adição dos botões (eles ficarão escondidos até o login)
+    if (document.body) {
+         addLogoutButtonIndex();
+         addCreateProjectButton(); // Adicionar chamada para o novo botão
+    } else {
+         document.addEventListener('DOMContentLoaded', () => {
+             addLogoutButtonIndex();
+             addCreateProjectButton(); // Adicionar chamada para o novo botão
+         });
+    }
+
+    // --- FIM: Novas Funções de Autenticação e Logout para index.html ---
 }
 
 	  
@@ -1531,3 +1912,236 @@ function assignProjectIdsToExistingCubes() {
     }
     console.log("IDs atribuídos aos cubos sem interferir nas animações");
 }
+
+// --- INÍCIO: Novas Funções de Autenticação para index.html ---
+
+// Adiciona e mostra o campo de senha do admin
+function showPasswordField() {
+    // Remover campo existente se houver (para evitar duplicação)
+    const existingContainer = document.getElementById('admin-password-container-index');
+    if (existingContainer) existingContainer.remove();
+
+    const container = document.createElement('div');
+    container.id = 'admin-password-container-index';
+    container.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 20px;
+        background-color: rgba(0, 0, 0, 0.85);
+        border: 2px solid #33ff33;
+        border-radius: 8px;
+        box-shadow: 0 0 15px rgba(51, 255, 51, 0.7);
+        z-index: 10000;
+        text-align: center;
+    `;
+
+    const label = document.createElement('label');
+    label.textContent = 'Senha Admin:';
+    label.style.cssText = `
+        color: #33ff33;
+        display: block;
+        margin-bottom: 10px;
+        font-family: 'Courier New', monospace;
+        font-size: 16px;
+    `;
+
+    const input = document.createElement('input');
+    input.type = 'password';
+    input.id = 'admin-password-index';
+    input.style.cssText = `
+        padding: 8px;
+        background-color: #111;
+        border: 1px solid #33ff33;
+        color: #33ff33;
+        font-family: 'Courier New', monospace;
+        border-radius: 4px;
+        margin-bottom: 10px;
+        width: calc(100% - 20px);
+    `;
+
+    // Adicionar listener para pressionar Enter
+    input.addEventListener('keypress', function(event) {
+        if (event.key === 'Enter') {
+            validateAdminPassword();
+        }
+    });
+    
+    // Botão para fechar (opcional)
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'X';
+    closeButton.style.cssText = `
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: #ff3333;
+        border: none;
+        color: black;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-weight: bold;
+        line-height: 18px;
+    `;
+    closeButton.onclick = () => container.remove();
+
+    container.appendChild(label);
+    container.appendChild(input);
+    container.appendChild(closeButton);
+    document.body.appendChild(container);
+    input.focus(); // Focar no campo de senha
+}
+
+// Validar a senha de administrador com Firebase Auth
+function validateAdminPassword() {
+    const passwordField = document.getElementById('admin-password-index');
+    const passwordContainer = document.getElementById('admin-password-container-index');
+    if (!passwordField || !passwordContainer) return; // Sair se os elementos não existirem
+    
+    const password = passwordField.value;
+    const adminEmail = "jvnunes066@gmail.com"; // Email do admin
+    
+    if (!auth) { // Verificar se auth foi inicializado
+         console.error("Firebase Auth não está pronto.");
+         showNotification("Erro: Serviço de autenticação não disponível", "error", true); // true para index.html
+         return;
+    }
+
+    auth.signInWithEmailAndPassword(adminEmail, password)
+        .then((userCredential) => {
+            console.log("Admin logado com sucesso em index.html:", userCredential.user.uid);
+            if (passwordContainer) passwordContainer.remove();
+            showNotification('Login de Admin realizado com sucesso!', 'success', true); // true para index.html
+        })
+        .catch((error) => {
+            console.error("Erro no login do admin em index.html:", error);
+            passwordField.style.borderColor = 'red';
+            passwordField.placeholder = 'Senha inválida';
+            passwordField.value = '';
+            setTimeout(() => {
+                 if(passwordField) { // Verificar se ainda existe
+                    passwordField.style.borderColor = '#33ff33';
+                    passwordField.placeholder = '';
+                 }
+            }, 2000);
+            showNotification(`Falha no login: ${error.code}`, 'error', true); // true para index.html
+        });
+}
+
+// Função para mostrar notificações (versão simples para index.html)
+function showNotification(message, type = 'info', isIndex = false) {
+    console.log(`Notificação Index (${type}): ${message}`);
+    // Criar elemento de notificação visual
+     const notification = document.createElement('div');
+     notification.textContent = message;
+     notification.style.cssText = `
+         position: fixed;
+         bottom: ${isIndex ? '70px' : '20px'}; /* Posição diferente para index */
+         left: 50%;
+         transform: translateX(-50%);
+         padding: 10px 20px;
+         border-radius: 5px;
+         background-color: ${type === 'error' ? 'rgba(255, 0, 0, 0.8)' : (type === 'success' ? 'rgba(0, 200, 0, 0.8)' : 'rgba(0, 0, 0, 0.8)')};
+         color: white;
+         font-family: 'Courier New', monospace;
+         z-index: 10001;
+         opacity: 0;
+         transition: opacity 0.5s ease;
+     `;
+     document.body.appendChild(notification);
+     // Fade in
+     setTimeout(() => notification.style.opacity = 1, 10);
+     // Fade out and remove
+     setTimeout(() => {
+         notification.style.opacity = 0;
+         setTimeout(() => notification.remove(), 500);
+     }, 3000); // Mostrar por 3 segundos
+}
+
+// Variável global para estado de login (a ser atualizada pelo onAuthStateChanged)
+let isAdminLoggedIn = false; 
+
+// --- Listener de Autenticação para index.html (NOVO) ---
+if (typeof auth !== 'undefined') {
+    auth.onAuthStateChanged((user) => {
+        const logoutButton = document.getElementById('logout-button-index');
+        const createButton = document.getElementById('create-project-button'); // Botão que vamos criar
+
+        if (user && user.uid === ADMIN_UID) {
+            console.log("Admin está logado em index.html.");
+            isAdminLoggedIn = true;
+            if (logoutButton) logoutButton.style.display = 'inline-block';
+            if (createButton) createButton.style.display = 'inline-block'; // Mostrar botão Criar
+            // Remover campo de senha se ainda estiver visível
+            const passContainer = document.getElementById('admin-password-container-index');
+            if (passContainer) passContainer.remove();
+        } else {
+            if (user) {
+                console.log("Usuário logado não é admin em index.html.");
+            } else {
+                console.log("Nenhum usuário logado em index.html.");
+            }
+            isAdminLoggedIn = false;
+            if (logoutButton) logoutButton.style.display = 'none';
+            if (createButton) createButton.style.display = 'none'; // Esconder botão Criar
+        }
+    });
+} else {
+    console.error("Auth não definido, não é possível adicionar listener de estado.");
+}
+// --- Fim Listener de Autenticação ---
+
+// --- Botão e Função de Logout para index.html (NOVO) ---
+function addLogoutButtonIndex() {
+     if (document.getElementById('logout-button-index')) return; // Evitar duplicados
+
+    const logoutButton = document.createElement('button');
+    logoutButton.id = 'logout-button-index';
+    logoutButton.textContent = 'Logout Admin';
+    logoutButton.style.cssText = `
+        position: fixed;
+        bottom: 20px; 
+        right: 20px; /* Perto do canto inferior direito */
+        padding: 10px 15px;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: #ff6b6b; /* Vermelho para logout */
+        border: 2px solid #ff6b6b;
+        border-radius: 5px;
+        font-family: 'Courier New', monospace;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+        text-shadow: 0 0 5px #ff6b6b;
+        z-index: 999;
+        display: none; /* Começa escondido */
+    `;
+     logoutButton.addEventListener('mouseover', function() {
+        this.style.backgroundColor = 'rgba(255, 107, 107, 0.2)';
+        this.style.transform = 'scale(1.05)';
+    });
+    logoutButton.addEventListener('mouseout', function() {
+        this.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        this.style.transform = 'scale(1)';
+    });
+    logoutButton.addEventListener('click', logoutAdminIndex);
+    document.body.appendChild(logoutButton);
+}
+
+function logoutAdminIndex() {
+    if (!auth) return;
+    auth.signOut()
+        .then(() => {
+            console.log("Admin deslogado (index.html).");
+            showNotification('Logout realizado.', 'success', true);
+            // onAuthStateChanged cuidará de esconder os botões de admin
+        })
+        .catch((error) => {
+            console.error("Erro ao fazer logout (index.html):", error);
+            showNotification(`Erro no logout: ${error.message}`, 'error', true);
+        });
+}
+// --- FIM: Novas Funções de Autenticação para index.html ---
