@@ -219,10 +219,423 @@
    <script src="ReLibs/GLTFLoader.js"></script>
    <script src="https://cdn.jsdelivr.net/npm/vanilla-tilt@1.7.0/dist/vanilla-tilt.min.js"></script>
 
+   <!-- Firebase SDK -->
+   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
    <!-- Botão Skybox -->
    <button id="skyboxButton" class="skybox-button">SKYBOX</button>
 	
   <script>
+        // --- Firebase Configuration ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyDSgff-2XhWgAhfzB8U6MjHvpMr61v28so",
+          authDomain: "portfolio-neznunez.firebaseapp.com",
+          projectId: "portfolio-neznunez",
+          storageBucket: "portfolio-neznunez.firebasestorage.app",
+          messagingSenderId: "182523090058",
+          appId: "1:182523090058:web:a0b9aea951268c056d4973",
+          measurementId: "G-XWH6S0H7WN"
+        };
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        const ADMIN_UID = "eeT0iJOXYlU7g7l6fh9hL5kCLDL2"; // User's Admin UID
+        // --- End Firebase Configuration ---
+
+        // Verificar a conexão com o Firestore e resolver problemas
+        function verificarFirestore() {
+            console.log("Verificando conexão com o Firestore...");
+            
+            // Verificar a coleção projects
+            db.collection("projetos").get()
+                .then(snapshot => {
+                    console.log(`Verificação do Firestore: ${snapshot.size} projetos encontrados`);
+                    
+                    if (snapshot.size === 0) {
+                        console.log("Nenhum projeto encontrado no Firestore. Carregando do projects.json...");
+                        
+                        // Carregar dados do projects.json
+                        fetch('projects.json')
+                            .then(response => response.json())
+                            .then(projects => {
+                                console.log("Dados carregados:", projects);
+                                
+                                // Adicionar projetos ao Firestore
+                                const batch = db.batch();
+                                projects.forEach(project => {
+                                    console.log("Adicionando projeto:", project.id, project.title);
+                                    const ref = db.collection("projetos").doc(project.id);
+                                    batch.set(ref, project);
+                                });
+                                
+                                return batch.commit();
+                            })
+                            .then(() => {
+                                console.log("Projetos adicionados ao Firestore com sucesso!");
+                            })
+                            .catch(error => {
+                                console.error("Erro ao adicionar projetos:", error);
+                            });
+                    } else {
+                        console.log("Projetos existentes no Firestore:");
+                        snapshot.forEach(doc => {
+                            console.log(`- ID: ${doc.id}, Título: ${doc.data().title || doc.data().name || 'Sem título'}`);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error("Erro ao verificar o Firestore:", error);
+                });
+        }
+        
+        // Chamar a verificação na inicialização
+        // verificarFirestore(); // Comentado temporariamente para isolar o erro 400
+
+        // --- Firebase Helper Functions ---
+
+        // Função para criar e adicionar um cubo à cena
+        function createAndAddCube(projectId, projectData) {
+             console.log("Adicionando cubo para o projeto:", projectId);
+             
+             // Verificar se o projectData tem um título válido
+             const projectTitle = projectData.title || projectData.name || "Projeto " + projectId;
+             console.log("Título do projeto:", projectTitle);
+             
+             // --- Logic adapted from the original loop in addCubesAroundSphere ---
+             var position, isTooClose;
+             // Define constants needed for positioning (or get from global scope if they still exist)
+             var sphereRadius = 1;
+             var minDistanceFromSphere = 3.5;
+             var totalRadius = sphereRadius + minDistanceFromSphere;
+             var minDistanceBetweenCubes = 2;
+
+             // Find a valid position (ensure it's not too close to others)
+             let attempts = 0;
+             const MAX_ATTEMPTS = 100; // Prevent infinite loops
+             do {
+                 position = new THREE.Vector3(
+                     (Math.random() - 0.5) * 2 * totalRadius,
+                     (Math.random() - 0.5) * 2 * totalRadius,
+                     (Math.random() - 0.5) * 2 * totalRadius
+                 );
+                 // Check distance from center and other cubes
+                 isTooClose = cubeArray.some(existingCube => existingCube.position.distanceTo(position) < minDistanceBetweenCubes);
+                 attempts++;
+                 if (attempts > MAX_ATTEMPTS) {
+                     console.warn("Could not find a suitable position for cube", projectId, "after", MAX_ATTEMPTS, "attempts. Placing further out.");
+                     // Fallback: place it further out or handle differently
+                     totalRadius += 0.5; // Slightly increase radius for next attempt cycle (or just place it)
+                     position = position.normalize().multiplyScalar(totalRadius);
+                     isTooClose = false; // Force placement
+                 }
+             } while ((isTooClose || position.length() < minDistanceFromSphere) && attempts <= MAX_ATTEMPTS); // Check min distance from sphere center too
+
+
+             // Create geometry and material (reuse existing logic/style)
+             var cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+             var cubeMaterial = new THREE.MeshPhysicalMaterial({
+                 color: 0xFFFFFF, // Default color
+                 roughness: 0.5,
+                 metalness: 0.1,
+                 reflectivity: 0.9,
+                 transparent: true,
+                 opacity: 0.8,
+                 transmission: 0.9,
+                 side: THREE.DoubleSide
+             });
+             var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+             cube.position.copy(position);
+
+             // Store Firestore data in userData
+             cube.userData.projectId = projectId;
+             // Keep 'project' object for compatibility with existing tooltip/click logic
+             cube.userData.project = {
+                id: projectId,
+                name: projectTitle // Usar o título para o tooltip
+             };
+             
+             // Log para depuração dos dados do projeto
+             console.log("Dados de projeto configurados para o cubo:", {
+                 projectId: projectId,
+                 title: projectTitle,
+                 userData: cube.userData
+             });
+             // Store original hex color for hover effect reset
+             cube.currentHex = cubeMaterial.color.getHex();
+
+             scene.add(cube);
+             cubeArray.push(cube);
+             cube.visible = false; // Initially hidden
+        }
+
+        // Função para remover um cubo da cena
+        function removeCube(projectId) {
+             console.log("Removing cube for project:", projectId);
+             const index = cubeArray.findIndex(cube => cube.userData.projectId === projectId);
+             if (index !== -1) {
+                 const cubeToRemove = cubeArray[index];
+                 // Animate removal?
+                 gsap.to(cubeToRemove.scale, { x: 0, y: 0, z: 0, duration: 0.3, ease: "power1.in", onComplete: () => {
+                     scene.remove(cubeToRemove);
+                     // Optional: Dispose geometry/material
+                     if (cubeToRemove.geometry) cubeToRemove.geometry.dispose();
+                     if (cubeToRemove.material) {
+                         if (Array.isArray(cubeToRemove.material)) {
+                             cubeToRemove.material.forEach(m => m.dispose());
+                         } else {
+                             cubeToRemove.material.dispose();
+                         }
+                     }
+                 }});
+                 cubeArray.splice(index, 1);
+
+                 // If this was the intersected cube, clear INTERSECTED
+                 if (INTERSECTED === cubeToRemove) {
+                     INTERSECTED = null;
+                     tooltip.style.visibility = 'hidden';
+                 }
+                 // If this was the selected cube, reset focus state
+                 if (selectedCube === cubeToRemove) {
+                     resetCamera(); // Or handle focus reset appropriately
+                     cubeFocused = false;
+                     selectedCube = null;
+                 }
+             } else {
+                 console.log("Cube to remove not found:", projectId);
+             }
+        }
+
+         // Function to update cube data (e.g., for tooltips)
+        function updateCubeData(projectId, projectData) {
+             console.log("Atualizando dados do cubo para o projeto:", projectId);
+             
+             // Verificar se o projectData tem um título válido
+             const projectTitle = projectData.title || projectData.name || "Projeto " + projectId;
+             console.log("Novo título do projeto:", projectTitle);
+             
+             const cube = cubeArray.find(cube => cube.userData.projectId === projectId);
+             if (cube) {
+                 // Atualizar o userData usado pelo tooltip e outras interações
+                 if (!cube.userData.project) {
+                     cube.userData.project = {};
+                 }
+                 cube.userData.project.id = projectId;
+                 cube.userData.project.name = projectTitle;
+                 
+                 // Se este cubo estiver atualmente com INTERSECTED, atualize o tooltip imediatamente
+                 if (INTERSECTED === cube) {
+                    tooltip.innerHTML = projectTitle;
+                 }
+                 
+                 console.log("Dados do cubo atualizados:", cube.userData.project);
+             } else {
+                 console.warn("Cubo não encontrado para atualização:", projectId);
+             }
+        }
+
+
+        // Function to listen for real-time project updates from Firestore
+        function listenToProjects() {
+            console.log("Configurando listener do Firestore para projetos...");
+            
+            try {
+                // Verificar se existem projetos no Firestore
+                db.collection("projetos").get().then((snapshot) => {
+                    console.log(`Número de documentos na coleção projetos: ${snapshot.size}`);
+                    
+                    // Se não houver documentos, usar o fallback manual imediatamente
+                    if (snapshot.size === 0) {
+                        console.warn("Nenhum documento encontrado na coleção projetos. Usando fallback createCubesManually().");
+                        // NÃO tentar escrever dados de exemplo aqui devido a permissões.
+                        // Os dados devem ser inseridos no Firestore manualmente ou por um admin.
+                        createCubesManually(); 
+                    } else {
+                        // Se houver documentos, logar e configurar o listener principal
+                        console.log("Documentos encontrados na coleção projetos:");
+                        snapshot.forEach(doc => {
+                            console.log(`- ID: ${doc.id}, Título: ${doc.data().title || 'Sem título'}`);
+                        });
+                        setupFirestoreListener(); // Configura o listener onSnapshot
+                    }
+                }).catch((error) => {
+                    // Erro ao tentar LER a coleção inicialmente
+                    console.error("Erro ao verificar a coleção projetos (db.collection.get):", error);
+                    // Se a leitura inicial falhar (ex: regras impedem leitura), usar fallback
+                    createCubesManually();
+                });
+            } catch (error) {
+                // Erro mais geral na configuração
+                console.error("Erro crítico ao configurar o Firestore (try/catch geral):", error);
+                createCubesManually();
+            }
+        }
+
+        // Nova função para configurar o listener do Firestore
+        function setupFirestoreListener() {
+            console.log("Limpando cubos existentes e configurando listener do Firestore...");
+            
+            // Primeiro remova todos os cubos existentes para evitar duplicatas ao (re)carregar
+            while (cubeArray.length > 0) {
+                const cube = cubeArray.pop();
+                scene.remove(cube);
+                // Liberar memória (opcional, mas recomendado)
+                if (cube.geometry) cube.geometry.dispose();
+                if (cube.material) {
+                    if (Array.isArray(cube.material)) {
+                        cube.material.forEach(m => m.dispose());
+                    } else {
+                        cube.material.dispose();
+                    }
+                }
+            }
+            console.log("Cubos limpos. Configurando listener do Firestore...");
+            
+            // Configurar o listener para atualizações em tempo real
+            db.collection("projetos").onSnapshot((snapshot) => {
+                console.log(`Snapshot do Firestore recebido: ${snapshot.docChanges().length} mudanças.`);
+                
+                // Processar as mudanças detectadas pelo Firestore
+                snapshot.docChanges().forEach((change) => {
+                    const projectId = change.doc.id;
+                    const projectData = change.doc.data();
+                    
+                    console.log(`Tipo de mudança: ${change.type}, ID do Projeto: ${projectId}`);
+                    
+                    if (!projectData && change.type !== "removed") {
+                        console.warn("Recebido change sem dados para o projeto:", projectId, change.type);
+                        return; // Pular se não houver dados para added/modified
+                    }
+                    
+                    // Verificar se projectData tem um título válido
+                    if (projectData && !projectData.title && projectData.name) {
+                        projectData.title = projectData.name;
+                        console.log(`Usando campo 'name' como título para o projeto ${projectId}: ${projectData.title}`);
+                    }
+
+                    if (change.type === "added") {
+                        // Verificar se o cubo já existe para evitar duplicatas (deveria ser raro com a limpeza acima)
+                        if (!cubeArray.some(cube => cube.userData.projectId === projectId)) {
+                            console.log(`Criando cubo para o projeto adicionado: ${projectId}, título: ${projectData.title || 'Sem título'}`);
+                            createAndAddCube(projectId, projectData); // Esta função define visible = false
+                        } else {
+                            console.log("Cubo já existia para o projeto adicionado (inesperado após limpeza):", projectId, "- atualizando dados.");
+                            updateCubeData(projectId, projectData);
+                        }
+                    }
+                    if (change.type === "modified") {
+                       console.log(`Atualizando cubo para o projeto modificado: ${projectId}, título: ${projectData.title || 'Sem título'}`);
+                       updateCubeData(projectId, projectData); // Apenas atualiza dados, não visibilidade
+                    }
+                    if (change.type === "removed") {
+                       console.log(`Removendo cubo para o projeto: ${projectId}`);
+                       removeCube(projectId); // Remove o cubo da cena
+                    }
+                });
+
+                // Log dos cubos atuais na cena após processar mudanças
+                console.log(`Total de cubos na cena após snapshot: ${cubeArray.length}`);
+                cubeArray.forEach((cube, index) => {
+                    console.log(`- Cubo ${index}: ID=${cube.userData.projectId}, Título=${cube.userData.project?.name}, Visível=${cube.visible}`);
+                });
+
+            }, (error) => {
+                console.error("Erro ao ouvir mudanças no Firestore:", error);
+                // Se o listener falhar, tentar criar manualmente do JSON
+                 createCubesManually(); // Esta função precisa ser revisada também
+            });
+        }
+
+        // Função para criar cubos manualmente a partir do projects.json (Fallback)
+        function createCubesManually() {
+            console.log("Criando cubos manualmente a partir do projects.json (Fallback)...");
+            
+            // Limpar cubos existentes antes de criar do JSON
+            while (cubeArray.length > 0) {
+                const cube = cubeArray.pop();
+                scene.remove(cube);
+                if (cube.geometry) cube.geometry.dispose();
+                if (cube.material) {
+                    if (Array.isArray(cube.material)) {
+                        cube.material.forEach(m => m.dispose());
+                    } else {
+                        cube.material.dispose();
+                    }
+                }
+            }
+            console.log("Cubos limpos antes da criação manual.");
+
+            fetch('projects.json')
+                .then(response => response.json())
+                .then(projects => {
+                    console.log("Dados carregados do projects.json para criação manual:", projects);
+                    
+                    projects.forEach(project => {
+                        // Garantir que project contenha título antes de criar o cubo
+                        if (!project.title && project.name) {
+                            project.title = project.name; // Compatibilidade com formato antigo
+                        } else if (!project.title) {
+                            project.title = "Projeto " + project.id; // Título padrão se não houver
+                        }
+                        
+                        console.log("Criando cubo manualmente para projeto:", project.id, project.title);
+                        createAndAddCube(project.id, project); // Esta função define visible = false
+                    });
+
+                    // Log dos cubos criados manualmente
+                    console.log(`Total de cubos na cena após criação manual: ${cubeArray.length}`);
+                    cubeArray.forEach((cube, index) => {
+                        console.log(`- Cubo Manual ${index}: ID=${cube.userData.projectId}, Título=${cube.userData.project?.name}, Visível=${cube.visible}`);
+                    });
+                })
+                .catch(error => {
+                    console.error("Erro ao carregar projects.json para criação manual:", error);
+                    // Se até isso falhar, criar cubos padrão
+                    createDefaultCubes(); // Esta função também precisa ser revisada
+                });
+        }
+
+        // Função para criar cubos padrão se tudo falhar
+        function createDefaultCubes() {
+            console.log("Criando cubos padrão (Fallback final)...");
+
+            // Limpar cubos existentes antes de criar os padrão
+            while (cubeArray.length > 0) {
+                const cube = cubeArray.pop();
+                scene.remove(cube);
+                if (cube.geometry) cube.geometry.dispose();
+                if (cube.material) {
+                    if (Array.isArray(cube.material)) {
+                        cube.material.forEach(m => m.dispose());
+                    } else {
+                        cube.material.dispose();
+                    }
+                }
+            }
+            console.log("Cubos limpos antes da criação padrão.");
+
+            const defaultProjects = [
+                { id: '1', title: 'Projeto Padrão 1' },
+                { id: '2', title: 'Projeto Padrão 2' },
+                { id: '3', title: 'Projeto Padrão 3' },
+                { id: '4', title: 'Projeto Padrão 4' }
+            ];
+            
+            defaultProjects.forEach(project => {
+                console.log("Criando cubo padrão para:", project.id, project.title);
+                createAndAddCube(project.id, project); // Esta função define visible = false
+            });
+
+            // Log dos cubos padrão criados
+            console.log(`Total de cubos na cena após criação padrão: ${cubeArray.length}`);
+            cubeArray.forEach((cube, index) => {
+                console.log(`- Cubo Padrão ${index}: ID=${cube.userData.projectId}, Título=${cube.userData.project?.name}, Visível=${cube.visible}`);
+            });
+        }
+        // --- Fim Novas Funções Firebase ---
+
         var scene, camera, renderer, controls;
         var cubeArray = [];
         var raycaster, mouse;
@@ -443,7 +856,8 @@
 
             
             addLighting();
-            addCubesAroundSphere();
+            // addCubesAroundSphere(); // <-- Comentado/Removido: Não criamos mais cubos estaticamente aqui
+            listenToProjects(); // <-- Adicionado: Inicia o listener do Firestore
             setupEventListeners();
             
             // Carregar o modelo primeiro
@@ -455,9 +869,9 @@
             }, 500);
             
             // Após a criação dos cubos, atribuir IDs
-            setTimeout(function() {
-                assignProjectIdsToExistingCubes();
-            }, 1000); // Atraso para garantir que não interfira com outras inicializações
+            // setTimeout(function() { // <-- Comentado/Removido: IDs vêm do Firestore
+            //     assignProjectIdsToExistingCubes();
+            // }, 1000); // Atraso para garantir que não interfira com outras inicializações
             
             animate();
         }
@@ -602,7 +1016,10 @@ function showNavigationNotification() {
 }
 		
     function addCubesAroundSphere() {
-        // Array com os dados dos projetos
+        // ESTA FUNÇÃO AGORA ESTÁ VAZIA OU PODE SER REMOVIDA
+        // A LÓGICA DE CRIAÇÃO FOI MOVIDA PARA createAndAddCube e chamada pelo listenToProjects
+        /*
+        // Array com os dados dos projetos // <-- Removido
         var projects = [
             { id: '1', name: 'Projeto de Exemplo: Sistema de Gestão Inteligente' },
             { id: '2', name: 'Projeto de Visualização de Dados' },
@@ -615,15 +1032,15 @@ function showNavigationNotification() {
             { id: '9', name: 'Projeto 9' },
             { id: '10', name: 'Projeto 10' }
         ];
-        
+
         var sphereRadius = 1; // Raio da esfera central
         var minDistanceFromSphere = 3.5; // Ajustado para 3.5 como um meio termo mais próximo
         var totalRadius = sphereRadius + minDistanceFromSphere; // Raio total a partir do centro para iniciar o posicionamento dos cubos
         var numCubes = projects.length;
         var minDistanceBetweenCubes = 2; // Distância mínima entre os cubos
         var radiusMultiplier = 1; // Valor inicial que não altera o raio
-        
-        for (var i = 0; i < numCubes; i++) {
+
+        for (var i = 0; i < numCubes; i++) { // <-- Loop Removido
             var position, isTooClose;
             do {
                 position = new THREE.Vector3(
@@ -639,7 +1056,7 @@ function showNavigationNotification() {
             // Criar cubo normal
             var cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
             var cubeMaterial = new THREE.MeshPhysicalMaterial({
-                color: 0xFFFFFF, 
+                color: 0xFFFFFF,
                 roughness: 0.5,
                 metalness: 0.1,
                 reflectivity: 0.9,
@@ -650,15 +1067,16 @@ function showNavigationNotification() {
             });
             var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
             cube.position.copy(position);
-            
-            // Adicionar dados do projeto e ID ao cubo
+
+            // Adicionar dados do projeto e ID ao cubo // <-- Modificado
             cube.userData.project = projects[i];
             cube.userData.projectId = projects[i].id;
-            
+
             scene.add(cube);
             cubeArray.push(cube);
             cube.visible = false; // Isso oculta o cubo
         }
+        */
     }
 		
 		// Função para redefinir a câmera para a vista original
@@ -752,7 +1170,16 @@ function onDocumentMouseMove(event) {
 
         tooltip.style.left = event.clientX + 'px';
         tooltip.style.top = event.clientY + 'px';
-        tooltip.innerHTML = INTERSECTED.userData.project.name;
+        
+        // Garantir que o tooltip exiba o título correto do projeto do Firebase
+        if (INTERSECTED.userData && INTERSECTED.userData.project) {
+            tooltip.innerHTML = INTERSECTED.userData.project.name || "Projeto Sem Título";
+            // Log para depuração
+            console.log("Mostrando tooltip para:", INTERSECTED.userData.projectId, tooltip.innerHTML);
+        } else {
+            tooltip.innerHTML = "Projeto Desconhecido";
+        }
+        
         tooltip.style.visibility = 'visible';
     } else {
         if (INTERSECTED) INTERSECTED.material.color.setHex(INTERSECTED.currentHex);

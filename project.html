@@ -227,6 +227,11 @@
     </style>
 </head>
 <body>
+    <!-- Firebase SDK (Adicionado Agora) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
     <a href="index.html" class="back-button" id="back-button">Back</a>
     <div class="project-container">
         <div class="project-images-container">
@@ -277,36 +282,60 @@
 
     <!-- Script global para o carrossel -->
     <script>
-        // Variáveis globais para o carrossel
-        let slides;
-        let dots;
+        // --- Firebase Configuration ---
+        // !! Certifique-se que esta configuração está correta !!
+        const firebaseConfig = {
+            apiKey: "AIzaSyDSgff-2XhWgAhfzB8U6MjHvpMr61v28so",
+            authDomain: "portfolio-neznunez.firebaseapp.com",
+            projectId: "portfolio-neznunez",
+            storageBucket: "portfolio-neznunez.firebasestorage.app",
+            messagingSenderId: "182523090058",
+            appId: "1:182523090058:web:a0b9aea951268c056d4973",
+            measurementId: "G-XWH6S0H7WN"
+        };
+        
+        // Initialize Firebase
+        let db;
+        let auth;
+        const ADMIN_UID = "eeT0iJOXYlU7g7l6fh9hL5kCLDL2";
+
+        if (typeof firebase !== 'undefined') {
+             try {
+                 firebase.initializeApp(firebaseConfig);
+                 db = firebase.firestore();
+                 auth = firebase.auth();
+                 console.log("Firebase inicializado. db e auth configurados.");
+             } catch (error) {
+                 console.error("Erro ao inicializar Firebase:", error);
+                 document.getElementById('project-title').textContent = 'Erro crítico: Falha na inicialização do Firebase.';
+             }
+        } else {
+            console.error("Firebase SDK não carregado. Verifique os scripts.");
+             document.getElementById('project-title').textContent = 'Erro crítico: Firebase não carregado.';
+        }
+       
+        // --- Variáveis e Funções do Carrossel ---
+        let slides = [];
+        let dots = [];
         let currentSlide = 0;
 
-        // Função para mostrar um slide específico
         function showSlide(index) {
-            // Ocultar todos os slides
-            slides = document.querySelectorAll('.carousel-slide');
-            dots = document.querySelectorAll('.carousel-dot');
+            if (!slides || slides.length === 0 || !dots || dots.length === 0 || index < 0 || index >= slides.length) {
+                 console.warn("Tentativa de mostrar slide inválido:", index, "Slides:", slides?.length, "Dots:", dots?.length);
+                 return;
+            }
             
-            slides.forEach(slide => {
-                slide.classList.remove('active');
-            });
+            slides.forEach(slide => slide.classList.remove('active'));
+            dots.forEach(dot => dot.classList.remove('active'));
             
-            // Desativar todos os dots
-            dots.forEach(dot => {
-                dot.classList.remove('active');
-            });
-            
-            // Mostrar o slide atual
             slides[index].classList.add('active');
             dots[index].classList.add('active');
             
-            // Atualizar o índice atual
             currentSlide = index;
         }
 
-        // Função para ir para o slide anterior
         function prevSlide() {
+            if (!slides || slides.length === 0) return;
             let newIndex = currentSlide - 1;
             if (newIndex < 0) {
                 newIndex = slides.length - 1;
@@ -315,8 +344,8 @@
             console.log('Botão anterior clicado, indo para slide', newIndex);
         }
 
-        // Função para ir para o próximo slide
         function nextSlide() {
+             if (!slides || slides.length === 0) return;
             let newIndex = currentSlide + 1;
             if (newIndex >= slides.length) {
                 newIndex = 0;
@@ -325,102 +354,155 @@
             console.log('Botão próximo clicado, indo para slide', newIndex);
         }
 
-        // Inicializar o carrossel quando o DOM estiver pronto
+        // --- Função Auxiliar ---
+        function formatDescription(text) {
+            if (!text) return '';
+            return text.replace(/\n/g, '<br>'); // Substitui \n literal por <br>
+        }
+
+        // --- Lógica Principal (Carregamento de Dados e Inicialização) ---
         document.addEventListener('DOMContentLoaded', function() {
-            slides = document.querySelectorAll('.carousel-slide');
-            dots = document.querySelectorAll('.carousel-dot');
             
-            // Adicionar eventos aos dots
-            dots.forEach((dot, index) => {
-                dot.addEventListener('click', function() {
-                    showSlide(index);
-                });
-            });
-            
-            // Mostrar o primeiro slide
-            showSlide(0);
-            
-            // Adicionar classe visible para animar a entrada do carrossel
-            document.querySelector('.carousel-container').classList.add('visible');
-            
+            if (typeof firebase === 'undefined' || typeof db === 'undefined') {
+                 console.error("Firebase não inicializado no DOMContentLoaded.");
+                 document.getElementById('project-title').textContent = 'Erro: Firebase não inicializado.';
+                 return;
+            }
+
+            // Elementos do DOM
+            const titleElement = document.getElementById('project-title');
+            const descriptionElement = document.getElementById('project-description');
+            const slidesContainer = document.getElementById('carousel-slides');
+            const dotsContainer = document.getElementById('carousel-dots');
+            const carouselNav = document.querySelector('.carousel-nav');
+            const carouselContainer = document.querySelector('.carousel-container');
+
+            // Obter ID do Projeto
             const urlParams = new URLSearchParams(window.location.search);
             const projectId = urlParams.get('id');
 
+            // Limpar Conteúdo Inicial
+            titleElement.textContent = 'Carregando...';
+            descriptionElement.innerHTML = '';
+            slidesContainer.innerHTML = ''; // Limpa slides estáticos
+            dotsContainer.innerHTML = '';   // Limpa dots estáticos
+            if(carouselNav) carouselNav.style.display = 'none';
+
+            // Validar ID
             if (!projectId) {
-                // Já temos conteúdo de exemplo no HTML
+                titleElement.textContent = 'Erro: ID do Projeto não encontrado na URL.';
                 return;
             }
 
-            fetch('projects.json')
-                .then(response => response.json())
-                .then(data => {
-                    const project = data.find(p => p.id == projectId);
-                    if (project) {
-                        document.getElementById('project-title').textContent = project.title;
-                        document.getElementById('project-description').textContent = project.description;
-                        
-                        // Limpar slides existentes
-                        const slidesContainer = document.getElementById('carousel-slides');
-                        slidesContainer.innerHTML = '';
-                        
-                        // Limpar dots existentes
-                        const dotsContainer = document.getElementById('carousel-dots');
-                        dotsContainer.innerHTML = '';
-                        
-                        // Adicionar imagens ao carrossel
-                        project.images.forEach((image, index) => {
-                            // Criar slide
-                            const slide = document.createElement('div');
-                            slide.className = 'carousel-slide' + (index === 0 ? ' active' : '');
-                            
-                            // Criar imagem
-                            const img = document.createElement('img');
-                            img.src = image;
-                            img.alt = `${project.title} - Imagem ${index + 1}`;
-                            
-                            // Adicionar imagem ao slide
-                            slide.appendChild(img);
-                            
-                            // Adicionar slide ao container
-                            slidesContainer.appendChild(slide);
-                            
-                            // Criar dot para o slide
-                            const dot = document.createElement('div');
-                            dot.className = 'carousel-dot' + (index === 0 ? ' active' : '');
-                            dot.setAttribute('data-index', index);
-                            
-                            // Adicionar evento ao dot
-                            dot.addEventListener('click', function() {
-                                showSlide(index);
-                            });
-                            
-                            // Adicionar dot ao container
-                            dotsContainer.appendChild(dot);
-                        });
-                        
-                        // Mostrar os elementos com fade-in
-                        document.querySelectorAll('.fade-in').forEach(el => {
-                            el.classList.add('visible');
-                        });
-                        
-                        // Reinicializar o carrossel
-                        showSlide(0);
+            console.log(`Buscando projeto com ID: ${projectId} no Firestore...`);
+
+            // Buscar Dados do Firestore
+            db.collection("projetos").doc(projectId).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        console.log("Dados do projeto encontrados:", doc.data());
+                        const projectData = doc.data();
+
+                        // Atualizar Título e Descrição
+                        titleElement.textContent = projectData.title || "Título não encontrado";
+                        descriptionElement.innerHTML = formatDescription(projectData.description) || "Descrição não disponível.";
+
+                        // Construir Caminhos das Imagens Locais
+                        const imageBaseFolder = `images/projects/${projectId}`;
+                        // Lista de arquivos vazia, como solicitado
+                        const imageFiles = []; 
+                        const imagePaths = imageFiles.map(file => `${imageBaseFolder}/${file}`);
+                        console.log("Tentando carregar imagens locais:", imagePaths);
+
+                        let loadedImageCount = 0; // Contador para saber quando inicializar o carrossel
+
+                        // Adicionar Imagens ao Carrossel (com verificação)
+                        slidesContainer.innerHTML = ''; // Garantir que está limpo
+                        dotsContainer.innerHTML = '';   // Garantir que está limpo
+
+                        if (imagePaths.length === 0) {
+                             slidesContainer.innerHTML = '<p style="color:white; text-align:center;">Nenhuma imagem configurada (imageFiles está vazio).</p>';
+                             if(carouselNav) carouselNav.style.display = 'none';
+                        } else {
+                           // ... (lógica para carregar imagens, que não será executada agora) ...
+                        }
+
+                        // Animar entrada do conteúdo
+                         if(carouselContainer) carouselContainer.classList.add('visible');
+                         titleElement.classList.add('visible');
+                         descriptionElement.classList.add('visible');
+
+
+                    } else {
+                        // Documento não Encontrado
+                        console.error(`Erro: Projeto com ID '${projectId}' não encontrado no Firestore.`);
+                        titleElement.textContent = 'Projeto não encontrado';
+                        descriptionElement.textContent = 'O projeto solicitado não existe ou foi removido.';
+                         slidesContainer.innerHTML = '';
+                         dotsContainer.innerHTML = '';
+                         if(carouselNav) carouselNav.style.display = 'none';
                     }
                 })
-                .catch(error => console.error('Erro ao carregar os dados do projeto:', error));
+                .catch((error) => {
+                    // Erro na Busca do Firestore
+                    console.error("Erro ao buscar dados do projeto no Firestore:", error);
+                    titleElement.textContent = 'Erro ao Carregar Projeto';
+                    descriptionElement.textContent = 'Ocorreu um erro ao tentar buscar os detalhes do projeto. Verifique o console.';
+                     slidesContainer.innerHTML = '';
+                     dotsContainer.innerHTML = '';
+                     if(carouselNav) carouselNav.style.display = 'none';
+                });
         });
 
+        // --- Botão Voltar ---
         document.getElementById('back-button').addEventListener('click', function(event) {
             event.preventDefault();
-            gsap.to(document.body, {
-                opacity: 0,
-                duration: 1,
-                ease: "power1.inOut",
-                onComplete: function() {
-                    window.location.href = 'index.html';
+            // Tenta usar GSAP se carregado, senão faz direto
+            if (typeof gsap !== 'undefined') {
+                gsap.to(document.body, {
+                    opacity: 0,
+                    duration: 0.5, // Mais rápido
+                    ease: "power1.inOut",
+                    onComplete: function() {
+                        window.location.href = 'index.html';
+                    }
+                });
+            } else {
+                 window.location.href = 'index.html';
+            }
+        });
+
+        // --- Listener de Autenticação (Adicionado) ---
+        if (typeof auth !== 'undefined') {
+            auth.onAuthStateChanged((user) => {
+                const logoutButton = document.getElementById('logout-button'); // Buscar botão de logout
+                
+                if (user) {
+                    // Usuário está logado
+                    console.log("Usuário logado:", user.uid);
+                    if (user.uid === ADMIN_UID) {
+                        console.log("É o admin! Habilitando modo de edição.");
+                        isAdminLoggedIn = true;
+                        enableEditMode();
+                        if (logoutButton) logoutButton.style.display = 'inline-block'; // Mostrar botão logout
+                    } else {
+                        console.log("Usuário logado não é o admin.");
+                        isAdminLoggedIn = false;
+                        disableEditMode();
+                        if (logoutButton) logoutButton.style.display = 'none';
+                    }
+                } else {
+                    // Usuário está deslogado
+                    console.log("Nenhum usuário logado.");
+                    isAdminLoggedIn = false;
+                    disableEditMode();
+                    if (logoutButton) logoutButton.style.display = 'none'; // Esconder botão logout
                 }
             });
-        });
+        } else {
+            console.error("Objeto 'auth' não foi inicializado, onAuthStateChanged não pode ser configurado.");
+        }
+        // --- Fim Listener de Autenticação ---
     </script>
 
     <script src="libs/gsap.min.js"></script>
@@ -569,68 +651,122 @@
         // Validar a senha de administrador
         function validateAdminPassword() {
             const passwordField = document.getElementById('admin-password');
+            const passwordContainer = document.getElementById('admin-password-container');
             const password = passwordField.value;
             
-            if (password === adminPassword) {
-                enableEditMode();
-                
-                // Remover o campo de senha
-                const passwordContainer = document.getElementById('admin-password-container');
-                passwordContainer.remove();
-            } else {
-                // Indicar senha incorreta
-                passwordField.style.borderColor = 'red';
-                passwordField.style.boxShadow = '0 0 10px rgba(255, 0, 0, 0.5)';
-                
-                // Limpar o campo
-                passwordField.value = '';
-                
-                // Restaurar o estilo após um tempo
-                setTimeout(() => {
-                    passwordField.style.borderColor = '#33ff33';
-                    passwordField.style.boxShadow = 'none';
-                }, 1500);
-            }
+            // Usar o email correto do admin
+            const adminEmail = "jvnunes066@gmail.com"; // Atualizado!
+            const adminAttemptPassword = password; 
+
+            // Tentar fazer login com Firebase Auth
+            firebase.auth().signInWithEmailAndPassword(adminEmail, adminAttemptPassword)
+                .then((userCredential) => {
+                    // Login bem-sucedido!
+                    console.log("Admin logado com sucesso:", userCredential.user.uid);
+                    // A função onAuthStateChanged cuidará de habilitar o modo de edição
+                    if (passwordContainer) passwordContainer.remove(); // Remover campo de senha
+                    showNotification('Login de Admin realizado com sucesso!', 'success');
+                })
+                .catch((error) => {
+                    // Falha no login
+                    console.error("Erro no login do admin:", error);
+                    passwordField.style.borderColor = 'red';
+                    passwordField.style.boxShadow = '0 0 10px rgba(255, 0, 0, 0.5)';
+                    passwordField.value = ''; // Limpar campo
+                    passwordField.placeholder = 'Email ou senha inválidos';
+                    
+                    // Restaurar o estilo após um tempo
+                    setTimeout(() => {
+                        passwordField.style.borderColor = '#33ff33';
+                        passwordField.style.boxShadow = 'none';
+                        passwordField.placeholder = 'Senha de Admin';
+                    }, 2000);
+                    showNotification(`Falha no login: ${error.message}`, 'error');
+                });
         }
 
         // Habilitar o modo de edição
         function enableEditMode() {
-            adminMode = true;
+            // Somente habilitar se isAdminLoggedIn for true
+            if (!isAdminLoggedIn) return;
             
-            // Tornar o título editável
+            console.log("Habilitando modo de edição visualmente...");
+            adminMode = true; // Manter para referência se necessário
+            
             const titleElement = document.getElementById('project-title');
-            titleElement.contentEditable = 'true';
-            titleElement.style.border = '1px dashed #33ff33';
-            titleElement.style.padding = '5px';
-            
-            // Tornar a descrição editável
             const descriptionElement = document.getElementById('project-description');
-            descriptionElement.contentEditable = 'true';
-            descriptionElement.style.border = '1px dashed #33ff33';
-            descriptionElement.style.padding = '5px';
+
+            // Habilitar edição e aplicar estilo
+            if (titleElement) {
+                titleElement.contentEditable = 'true';
+                titleElement.style.border = '1px dashed #33ff33';
+                titleElement.style.padding = '5px';
+            }
+            if (descriptionElement) {
+                descriptionElement.contentEditable = 'true';
+                descriptionElement.style.border = '1px dashed #33ff33';
+                descriptionElement.style.padding = '5px';
+                 // Converter <br> para \n para edição mais fácil no textarea implícito
+                 // descriptionElement.textContent = descriptionElement.innerHTML.replace(/<br\s*[/]?>/gi, '\n'); 
+                 // ^^ Considerar se a edição direta do HTML com <br> é preferível
+            }
             
-            // Adicionar indicador de modo de edição
-            const editIndicator = document.createElement('div');
-            editIndicator.id = 'edit-mode-indicator';
-            editIndicator.textContent = 'MODO DE EDIÇÃO';
-            editIndicator.style.cssText = `
-                position: absolute;
-                top: 10px;
-                right: 20px;
-                background-color: rgba(51, 255, 51, 0.2);
-                color: #33ff33;
-                padding: 5px 10px;
-                border-radius: 4px;
-                font-family: 'Courier New', monospace;
-                font-size: 14px;
-                font-weight: bold;
-                border: 1px solid #33ff33;
-                z-index: 1000;
-            `;
-            document.body.appendChild(editIndicator);
+            // Adicionar indicador de modo de edição (se não existir)
+            if (!document.getElementById('edit-mode-indicator')) {
+                const editIndicator = document.createElement('div');
+                editIndicator.id = 'edit-mode-indicator';
+                editIndicator.textContent = 'MODO DE EDIÇÃO';
+                editIndicator.style.cssText = `
+                    position: absolute;
+                    top: 10px;
+                    right: 20px;
+                    background-color: rgba(51, 255, 51, 0.2);
+                    color: #33ff33;
+                    padding: 5px 10px;
+                    border-radius: 4px;
+                    font-family: 'Courier New', monospace;
+                    font-size: 14px;
+                    font-weight: bold;
+                    border: 1px solid #33ff33;
+                    z-index: 1000;
+                `;
+                document.body.appendChild(editIndicator);
+            }
             
-            // Adicionar botão de salvar
-            addSaveButton();
+            // Adicionar botão de salvar (se não existir)
+            if (!document.getElementById('save-changes-button')) {
+                addSaveButton();
+            }
+        }
+
+        // Desabilitar o modo de edição
+        function disableEditMode() {
+            console.log("Desabilitando modo de edição visualmente...");
+            adminMode = false;
+            
+            const titleElement = document.getElementById('project-title');
+            const descriptionElement = document.getElementById('project-description');
+            
+            // Remover editabilidade e estilo
+             if (titleElement) {
+                titleElement.contentEditable = 'false';
+                titleElement.style.border = 'none';
+                titleElement.style.padding = '0';
+            }
+            if (descriptionElement) {
+                descriptionElement.contentEditable = 'false';
+                descriptionElement.style.border = 'none';
+                descriptionElement.style.padding = '0';
+                // Se usamos textContent para editar, precisamos reconverter para HTML com <br>
+                // descriptionElement.innerHTML = formatDescription(descriptionElement.textContent);
+                // ^^ Necessário se a edição usou textContent
+            }
+            
+            // Remover indicador e botão
+            const editIndicator = document.getElementById('edit-mode-indicator');
+            if (editIndicator) editIndicator.remove();
+            const saveButton = document.getElementById('save-changes-button');
+            if (saveButton) saveButton.remove();
         }
 
         // Adicionar botão de salvar
@@ -674,102 +810,115 @@
             document.body.appendChild(saveButton);
         }
 
-        // Salvar as alterações
+        // Adicionar Botão de Logout (HTML)
+        const logoutButton = document.createElement('button');
+        logoutButton.id = 'logout-button';
+        logoutButton.textContent = 'Logout Admin';
+        logoutButton.style.cssText = `
+            position: absolute;
+            top: 10px;
+            left: 100px; /* Ajustar posição conforme necessário */
+            color: #ff6b6b; /* Cor diferente para logout */
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s ease;
+            z-index: 2;
+            text-transform: none;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: 2px solid #ff6b6b;
+            box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+            text-shadow: 0 0 5px #ff6b6b;
+            cursor: pointer;
+            display: none; /* Começa escondido, onAuthStateChanged controla */
+        `;
+        logoutButton.addEventListener('mouseover', function() {
+            this.style.backgroundColor = 'rgba(255, 107, 107, 0.2)';
+            this.style.transform = 'scale(1.05)';
+        });
+        logoutButton.addEventListener('mouseout', function() {
+            this.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+            this.style.transform = 'scale(1)';
+        });
+        logoutButton.addEventListener('click', logoutAdmin); // Chama a função de logout
+        document.body.insertBefore(logoutButton, document.getElementById('back-button').nextSibling); // Insere após o botão Back
+
+        // Função para fazer Logout
+        function logoutAdmin() {
+            if (!auth) return;
+            auth.signOut()
+                .then(() => {
+                    console.log("Admin deslogado com sucesso.");
+                    // onAuthStateChanged vai detectar e chamar disableEditMode
+                    showNotification('Logout realizado.', 'success');
+                })
+                .catch((error) => {
+                    console.error("Erro ao fazer logout:", error);
+                    showNotification(`Erro no logout: ${error.message}`, 'error');
+                });
+        }
+
+        // Salvar as alterações no Firestore
         function saveChanges() {
-            // Obter os valores editados
+            // Verificar se é admin antes de salvar
+            if (!isAdminLoggedIn) {
+                showNotification('Erro: Apenas administradores podem salvar.', 'error');
+                return;
+            }
+
             const titleElement = document.getElementById('project-title');
             const descriptionElement = document.getElementById('project-description');
-            const newTitle = titleElement.textContent.trim();
-            const newDescription = descriptionElement.textContent.trim();
             
-            // Obter o ID do projeto atual
+            // Usar textContent para obter o texto puro, sem HTML interno
+            const newTitle = titleElement.textContent.trim(); 
+            // Para descrição, pegar innerHTML e converter <br> de volta para \n
+            const newDescriptionHTML = descriptionElement.innerHTML; // Pega o HTML como editado
+            // Converter <br> para \n para salvar no Firestore
+            const newDescriptionForFirestore = newDescriptionHTML.replace(/<br\s*[/]?>/gi, '\n').trim();
+
             const urlParams = new URLSearchParams(window.location.search);
             const projectId = urlParams.get('id');
             
             if (!projectId) {
-                showNotification('Erro: ID do projeto não encontrado', 'error');
+                showNotification('Erro: ID do projeto não encontrado para salvar.', 'error');
+                return;
+            }
+            if (!db) { // Verificar se db está inicializado
+                showNotification('Erro: Conexão com banco de dados não disponível.', 'error');
                 return;
             }
             
-            // Mostrar indicador de carregamento
             const saveButton = document.getElementById('save-changes-button');
             const originalText = saveButton.textContent;
             saveButton.textContent = 'Salvando...';
             saveButton.disabled = true;
-            
-            // Carregar os dados atuais
-            fetch('projects.json')
-                .then(response => response.json())
-                .then(data => {
-                    // Encontrar o projeto a ser atualizado
-                    const projectIndex = data.findIndex(p => p.id === projectId);
-                    
-                    if (projectIndex === -1) {
-                        showNotification('Erro: Projeto não encontrado', 'error');
-                        return;
-                    }
-                    
-                    // Atualizar os dados
-                    data[projectIndex].title = newTitle;
-                    data[projectIndex].description = newDescription;
-                    
-                    // Aqui você implementaria a lógica para salvar os dados no servidor
-                    // Como estamos trabalhando com um arquivo JSON estático, vamos simular o salvamento
-                    
-                    // Simular um atraso de rede
-                    setTimeout(() => {
-                        // Restaurar o botão
-                        saveButton.textContent = originalText;
-                        saveButton.disabled = false;
-                        
-                        // Mostrar notificação de sucesso
-                        showNotification('Alterações salvas com sucesso!', 'success');
-                        
-                        // Desabilitar o modo de edição
-                        disableEditMode();
-                        
-                        // Atualizar a interface com os novos dados
-                        titleElement.textContent = newTitle;
-                        descriptionElement.textContent = newDescription;
-                    }, 1500);
-                })
-                .catch(error => {
-                    console.error('Erro ao carregar os dados do projeto:', error);
-                    showNotification('Erro ao salvar as alterações', 'error');
-                    
-                    // Restaurar o botão
+
+            // Atualizar o documento no Firestore
+            db.collection("projetos").doc(projectId).update({
+                title: newTitle,
+                description: newDescriptionForFirestore // Salvar com \n
+            })
+            .then(() => {
+                console.log("Documento atualizado com sucesso no Firestore!");
+                showNotification('Alterações salvas com sucesso!', 'success');
+                // Manter os valores na tela como estão (já foram editados)
+                // Apenas desabilitar o modo de edição
+                disableEditMode(); 
+            })
+            .catch((error) => {
+                console.error("Erro ao atualizar documento no Firestore:", error);
+                showNotification(`Erro ao salvar: ${error.message}`, 'error');
+            })
+            .finally(() => {
+                 // Restaurar o botão independentemente de sucesso ou falha
+                if (saveButton) { // Verificar se o botão ainda existe (pode ter sido removido pelo logout)
                     saveButton.textContent = originalText;
                     saveButton.disabled = false;
-                });
-        }
-
-        // Desabilitar o modo de edição
-        function disableEditMode() {
-            adminMode = false;
-            
-            // Remover a editabilidade do título
-            const titleElement = document.getElementById('project-title');
-            titleElement.contentEditable = 'false';
-            titleElement.style.border = 'none';
-            titleElement.style.padding = '0';
-            
-            // Remover a editabilidade da descrição
-            const descriptionElement = document.getElementById('project-description');
-            descriptionElement.contentEditable = 'false';
-            descriptionElement.style.border = 'none';
-            descriptionElement.style.padding = '0';
-            
-            // Remover o indicador de modo de edição
-            const editIndicator = document.getElementById('edit-mode-indicator');
-            if (editIndicator) {
-                editIndicator.remove();
-            }
-            
-            // Remover o botão de salvar
-            const saveButton = document.getElementById('save-changes-button');
-            if (saveButton) {
-                saveButton.remove();
-            }
+                }
+            });
         }
 
         // Mostrar notificação
