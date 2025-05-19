@@ -649,6 +649,7 @@
         var mixer; // <-- ADICIONAR ESTA LINHA (mixer global)
 	    var scaleFactor = 1; // Escala inicial normal, sem expansão
         var mouseDown = false; // Declaração da variável mouseDown
+        var clock = new THREE.Clock(); // <-- ADICIONAR ESTA LINHA
 	  
  // Lista dos conjuntos de skyboxes
       var skyboxes = [
@@ -1639,18 +1640,21 @@ function onDocumentMouseUp(event) {
   function animate() {
     requestAnimationFrame(animate);
     
-    // ATUALIZAR MIXER SE EXISTIR
+    const deltaTime = clock.getDelta(); // <-- ADICIONAR ESTA LINHA
+
     if (mixer) {
-        mixer.update(0.016); // Usar um delta time aproximado para 60fps (1/60)
+        mixer.update(deltaTime); // <-- MODIFICAR AQUI: usar deltaTime
     }
 
     renderer.render(scene, camera);
     
     // Lógica de rotação dos cubos
-    angle += rotationSpeed;
     cubeArray.forEach(cube => {
         var radius = Math.sqrt(cube.position.x * cube.position.x + cube.position.z * cube.position.z);
-        var currentAngle = Math.atan2(cube.position.z, cube.position.x) + rotationSpeed;
+        // Calcula o incremento do ângulo para este frame usando deltaTime
+        // rotationSpeed (ex: 0.005) agora é interpretado como radianos por segundo.
+        let angleIncrement = rotationSpeed * deltaTime; 
+        var currentAngle = Math.atan2(cube.position.z, cube.position.x) + angleIncrement;
         cube.position.x = Math.cos(currentAngle) * radius;
         cube.position.z = Math.sin(currentAngle) * radius;
     });
