@@ -641,7 +641,7 @@
         var raycaster, mouse;
         var tooltip;
         var INTERSECTED;
-        var rotationSpeed = 0.5;
+        var rotationSpeed = 0.005;
         var angle = 0;
         var selectedCube = null;
         var initialCameraPosition, initialCameraQuaternion;
@@ -1640,10 +1640,10 @@ function onDocumentMouseUp(event) {
   function animate() {
     requestAnimationFrame(animate);
     
-    const deltaTime = clock.getDelta(); // <-- ADICIONAR ESTA LINHA
+    const deltaTime = clock.getDelta();
 
     if (mixer) {
-        mixer.update(deltaTime); // <-- MODIFICAR AQUI: usar deltaTime
+        mixer.update(deltaTime); 
     }
 
     renderer.render(scene, camera);
@@ -1651,10 +1651,8 @@ function onDocumentMouseUp(event) {
     // Lógica de rotação dos cubos
     cubeArray.forEach(cube => {
         var radius = Math.sqrt(cube.position.x * cube.position.x + cube.position.z * cube.position.z);
-        // Calcula o incremento do ângulo para este frame usando deltaTime
-        // rotationSpeed (ex: 0.005) agora é interpretado como radianos por segundo.
-        let angleIncrement = rotationSpeed * deltaTime; 
-        var currentAngle = Math.atan2(cube.position.z, cube.position.x) + angleIncrement;
+        // Calcula o incremento do ângulo para este frame usando rotationSpeed diretamente
+        var currentAngle = Math.atan2(cube.position.z, cube.position.x) + rotationSpeed;
         cube.position.x = Math.cos(currentAngle) * radius;
         cube.position.z = Math.sin(currentAngle) * radius;
     });
