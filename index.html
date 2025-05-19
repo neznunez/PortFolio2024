@@ -728,7 +728,7 @@
             
             var loadingText = document.createElement('div');
             loadingText.className = 'loading-text';
-            loadingText.textContent = 'CARREGANDO...';
+            // loadingText.textContent = 'CARREGANDO...'; // Modificado abaixo
             
             var loadingBarContainer = document.createElement('div');
             loadingBarContainer.className = 'loading-bar-container';
@@ -751,20 +751,22 @@
                 loadingText.style.visibility = loadingText.style.visibility === 'hidden' ? 'visible' : 'hidden';
             }, 800);
             
-            // Animar a barra de progresso
-            var progress = 0;
-            var loadingInterval = setInterval(function() {
-                progress += Math.random() * 5;
-                if (progress > 90) {
-                    progress = 90; // Mantém em 90% até o carregamento real terminar
-                    clearInterval(loadingInterval);
-                }
-                loadingBar.style.width = progress + '%';
-                loadingPercentage.textContent = Math.round(progress) + '%';
-            }, 300);
+            // // Animar a barra de progresso // <-- REMOVER ESTA SIMULAÇÃO
+            // var progress = 0;
+            // var loadingInterval = setInterval(function() {
+            //     progress += Math.random() * 5;
+            //     if (progress > 90) {
+            //         progress = 90; // Mantém em 90% até o carregamento real terminar
+            //         clearInterval(loadingInterval);
+            //     }
+            //     loadingBar.style.width = progress + '%';
+            //     loadingPercentage.textContent = Math.round(progress) + '%';
+            // }, 300);
             
             var loader = new THREE.GLTFLoader();
             var modelPath = 'models/Nezpivot.glb'; // Modelo atual
+            
+            loadingText.textContent = 'Initiating neural interface...'; // Texto inicial MODIFICADO
             
             // Adicionar eventos de progresso ao carregador
             loader.load(
@@ -807,9 +809,35 @@
                 function (xhr) {
                     if (xhr.lengthComputable) {
                         var percentComplete = xhr.loaded / xhr.total * 100;
-                        // Atualizar a barra de progresso com o progresso real
                         loadingBar.style.width = Math.min(percentComplete, 100) + '%';
                         loadingPercentage.textContent = Math.round(percentComplete) + '%';
+                        
+                        // Atualizar texto de carregamento com mais detalhes
+                        var loadedMB = (xhr.loaded / (1024 * 1024)).toFixed(1);
+                        var totalMB = (xhr.total / (1024 * 1024)).toFixed(1);
+                        loadingText.textContent = `Loading neural interface... ${loadedMB}MB / ${totalMB}MB`; // MODIFICADO
+                        
+                        // Parar de piscar quando o download estiver em progresso e visível
+                        if (loadingText.style.visibility === 'hidden') {
+                            loadingText.style.visibility = 'visible';
+                        }
+                        if (percentComplete > 0 && blinkInterval) {
+                             clearInterval(blinkInterval);
+                             blinkInterval = null; // Evitar que seja limpo de novo
+                             loadingText.style.visibility = 'visible'; // Garantir visibilidade
+                        }
+                    } else {
+                        // Se o tamanho total não for computável, mostrar um texto genérico
+                        // ou tentar estimar com base no progresso anterior se houver
+                        loadingText.textContent = 'Loading neural interface...'; // MODIFICADO
+                        if (blinkInterval){ // Manter piscando se não houver progresso computável
+                             // Não limpa o blinkInterval aqui
+                        } else if (!blinkInterval && loadingText.style.visibility === 'hidden') {
+                            // Reiniciar o pisca-pisca se ele parou e agora não temos progresso computável
+                             blinkInterval = setInterval(function() {
+                                loadingText.style.visibility = loadingText.style.visibility === 'hidden' ? 'visible' : 'hidden';
+                            }, 800);
+                        }
                     }
                 }, 
                 function (error) {
