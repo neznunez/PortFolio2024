@@ -646,6 +646,7 @@
         var selectedCube = null;
         var initialCameraPosition, initialCameraQuaternion;
         var model; // Referência ao modelo 3D da cabeça para uso em animações
+        var mixer; // <-- ADICIONAR ESTA LINHA (mixer global)
 	    var scaleFactor = 1; // Escala inicial normal, sem expansão
         var mouseDown = false; // Declaração da variável mouseDown
 	  
@@ -793,19 +794,10 @@
                     }, 800);
                     
                     // Configurar animações
-                    var mixer = new THREE.AnimationMixer(model);
+                    mixer = new THREE.AnimationMixer(model); // <-- USAR MIXER GLOBAL
                     gltf.animations.forEach((clip) => {
                         mixer.clipAction(clip).play();
                     });
-
-                    // Atualizar animações na função de animação
-                    function animate() {
-                        requestAnimationFrame(animate);
-                        mixer.update(0.01); // Atualize o mixer com o tempo delta
-                        renderer.render(scene, camera);
-                    }
-
-                    animate();
 
                     // Iniciar com a câmera focada na cabeça
                     animateCameraToPosition(0, 0, 5);
@@ -1015,70 +1007,6 @@ function showNavigationNotification() {
     scene.add(directionalLight);
 }
 		
-    function addCubesAroundSphere() {
-        // ESTA FUNÇÃO AGORA ESTÁ VAZIA OU PODE SER REMOVIDA
-        // A LÓGICA DE CRIAÇÃO FOI MOVIDA PARA createAndAddCube e chamada pelo listenToProjects
-        /*
-        // Array com os dados dos projetos // <-- Removido
-        var projects = [
-            { id: '1', name: 'Projeto de Exemplo: Sistema de Gestão Inteligente' },
-            { id: '2', name: 'Projeto de Visualização de Dados' },
-            { id: '3', name: 'Aplicativo de Realidade Aumentada' },
-            { id: '4', name: 'Plataforma de Aprendizado Online' },
-            { id: '5', name: 'Projeto 5' },
-            { id: '6', name: 'Projeto 6' },
-            { id: '7', name: 'Projeto 7' },
-            { id: '8', name: 'Projeto 8' },
-            { id: '9', name: 'Projeto 9' },
-            { id: '10', name: 'Projeto 10' }
-        ];
-
-        var sphereRadius = 1; // Raio da esfera central
-        var minDistanceFromSphere = 3.5; // Ajustado para 3.5 como um meio termo mais próximo
-        var totalRadius = sphereRadius + minDistanceFromSphere; // Raio total a partir do centro para iniciar o posicionamento dos cubos
-        var numCubes = projects.length;
-        var minDistanceBetweenCubes = 2; // Distância mínima entre os cubos
-        var radiusMultiplier = 1; // Valor inicial que não altera o raio
-
-        for (var i = 0; i < numCubes; i++) { // <-- Loop Removido
-            var position, isTooClose;
-            do {
-                position = new THREE.Vector3(
-                    (Math.random() - 0.5) * 2 * totalRadius,
-                    (Math.random() - 0.5) * 2 * totalRadius,
-                    (Math.random() - 0.5) * 2 * totalRadius
-                );
-
-                // Verifica se a posição está muito próxima de outros cubos
-                isTooClose = cubeArray.some(cube => position.distanceTo(cube.position) < minDistanceBetweenCubes);
-            } while (isTooClose || position.length() < totalRadius); // Garante distância mínima da esfera e entre cubos
-
-            // Criar cubo normal
-            var cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-            var cubeMaterial = new THREE.MeshPhysicalMaterial({
-                color: 0xFFFFFF,
-                roughness: 0.5,
-                metalness: 0.1,
-                reflectivity: 0.9,
-                transparent: true,
-                opacity: 0.8,
-                transmission: 0.9,
-                side: THREE.DoubleSide // Renderiza ambos os lados do material
-            });
-            var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-            cube.position.copy(position);
-
-            // Adicionar dados do projeto e ID ao cubo // <-- Modificado
-            cube.userData.project = projects[i];
-            cube.userData.projectId = projects[i].id;
-
-            scene.add(cube);
-            cubeArray.push(cube);
-            cube.visible = false; // Isso oculta o cubo
-        }
-        */
-    }
-		
 		// Função para redefinir a câmera para a vista original
         function resetCamera() {
             gsap.to(camera.position, {
@@ -1128,7 +1056,22 @@ function showNavigationNotification() {
     // Adicionar listener para botão Skybox (se existir)
     const skyboxButton = document.getElementById('skyboxButton');
     if (skyboxButton) {
-        skyboxButton.addEventListener('click', loadRandomSkybox);
+        // SUBSTITUIR O LISTENER ANTIGO PELO NOVO COMPLETO
+        skyboxButton.addEventListener('click', function() {
+            loadRandomSkybox();
+            
+            // Efeito visual de clique
+            gsap.to(this, { // 'this' aqui será o skyboxButton
+                scale: 0.95,
+                duration: 0.1,
+                onComplete: function() {
+                    gsap.to(skyboxButton, { // Usar a variável skyboxButton já capturada
+                        scale: 1,
+                        duration: 0.2
+                    });
+                }
+            });
+        });
     }
     // --- INÍCIO: Novo Listener para "admin" ---
     let keySequence = '';
@@ -1695,6 +1638,12 @@ function onDocumentMouseUp(event) {
 	  
   function animate() {
     requestAnimationFrame(animate);
+    
+    // ATUALIZAR MIXER SE EXISTIR
+    if (mixer) {
+        mixer.update(0.016); // Usar um delta time aproximado para 60fps (1/60)
+    }
+
     renderer.render(scene, camera);
     
     // Lógica de rotação dos cubos
@@ -1890,25 +1839,6 @@ document.addEventListener('keydown', function(event) {
     });
 </script>
 
-<script>
-document.getElementById('skyboxButton').addEventListener('click', function() {
-    // Carregar um novo skybox aleatório
-    loadRandomSkybox();
-    
-    // Efeito visual de clique
-    gsap.to(this, {
-        scale: 0.95,
-        duration: 0.1,
-        onComplete: function() {
-            gsap.to(document.getElementById('skyboxButton'), {
-                scale: 1,
-                duration: 0.2
-            });
-        }
-    });
-});
-</script>
-
 <!-- Adicione isso logo após a abertura da tag body -->
 <div id="returnNotification" class="return-notification notification-pulse" style="opacity: 0;">
     CLIQUE FORA DO CUBO<br>
@@ -1923,263 +1853,3 @@ document.getElementById('skyboxButton').addEventListener('click', function() {
     // });
 </script>
 
-<!-- Adicionar IDs aos cubos existentes -->
-// Esta função deve ser chamada após a criação dos cubos
-function assignProjectIdsToExistingCubes() {
-    // Atribuir IDs sequenciais aos cubos existentes
-    for (let i = 0; i < cubeArray.length; i++) {
-        // Adiciona apenas o ID, sem modificar nenhuma outra propriedade
-        if (cubeArray[i].userData) {
-            cubeArray[i].userData.projectId = (i + 1).toString();
-        }
-    }
-    console.log("IDs atribuídos aos cubos sem interferir nas animações");
-}
-
-// --- INÍCIO: Novas Funções de Autenticação para index.html ---
-
-// Adiciona e mostra o campo de senha do admin
-function showPasswordField() {
-    // Remover campo existente se houver (para evitar duplicação)
-    const existingContainer = document.getElementById('admin-password-container-index');
-    if (existingContainer) existingContainer.remove();
-
-    const container = document.createElement('div');
-    container.id = 'admin-password-container-index';
-    container.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        padding: 20px;
-        background-color: rgba(0, 0, 0, 0.85);
-        border: 2px solid #33ff33;
-        border-radius: 8px;
-        box-shadow: 0 0 15px rgba(51, 255, 51, 0.7);
-        z-index: 10000;
-        text-align: center;
-    `;
-
-    const label = document.createElement('label');
-    label.textContent = 'Senha Admin:';
-    label.style.cssText = `
-        color: #33ff33;
-        display: block;
-        margin-bottom: 10px;
-        font-family: 'Courier New', monospace;
-        font-size: 16px;
-    `;
-
-    const input = document.createElement('input');
-    input.type = 'password';
-    input.id = 'admin-password-index';
-    input.style.cssText = `
-        padding: 8px;
-        background-color: #111;
-        border: 1px solid #33ff33;
-        color: #33ff33;
-        font-family: 'Courier New', monospace;
-        border-radius: 4px;
-        margin-bottom: 10px;
-        width: calc(100% - 20px);
-    `;
-
-    // Adicionar listener para pressionar Enter
-    input.addEventListener('keypress', function(event) {
-        if (event.key === 'Enter') {
-            validateAdminPassword();
-        }
-    });
-    
-    // Botão para fechar (opcional)
-    const closeButton = document.createElement('button');
-    closeButton.textContent = 'X';
-    closeButton.style.cssText = `
-        position: absolute;
-        top: 5px;
-        right: 5px;
-        background: #ff3333;
-        border: none;
-        color: black;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        cursor: pointer;
-        font-weight: bold;
-        line-height: 18px;
-    `;
-    closeButton.onclick = () => container.remove();
-
-    container.appendChild(label);
-    container.appendChild(input);
-    container.appendChild(closeButton);
-    document.body.appendChild(container);
-    input.focus(); // Focar no campo de senha
-}
-
-// Validar a senha de administrador com Firebase Auth
-function validateAdminPassword() {
-    const passwordField = document.getElementById('admin-password-index');
-    const passwordContainer = document.getElementById('admin-password-container-index');
-    if (!passwordField || !passwordContainer) return; // Sair se os elementos não existirem
-    
-    const password = passwordField.value;
-    const adminEmail = "jvnunes066@gmail.com"; // Email do admin
-    
-    if (!auth) { // Verificar se auth foi inicializado
-         console.error("Firebase Auth não está pronto.");
-         showNotification("Erro: Serviço de autenticação não disponível", "error", true); // true para index.html
-         return;
-    }
-
-    auth.signInWithEmailAndPassword(adminEmail, password)
-        .then((userCredential) => {
-            console.log("Admin logado com sucesso em index.html:", userCredential.user.uid);
-            if (passwordContainer) passwordContainer.remove();
-            showNotification('Login de Admin realizado com sucesso!', 'success', true); // true para index.html
-        })
-        .catch((error) => {
-            console.error("Erro no login do admin em index.html:", error);
-            passwordField.style.borderColor = 'red';
-            passwordField.placeholder = 'Senha inválida';
-            passwordField.value = '';
-            setTimeout(() => {
-                 if(passwordField) { // Verificar se ainda existe
-                    passwordField.style.borderColor = '#33ff33';
-                    passwordField.placeholder = '';
-                 }
-            }, 2000);
-            showNotification(`Falha no login: ${error.code}`, 'error', true); // true para index.html
-        });
-}
-
-// Função para mostrar notificações (versão simples para index.html)
-function showNotification(message, type = 'info', isIndex = false) {
-    console.log(`Notificação Index (${type}): ${message}`);
-    
-    // Remover notificação anterior se existir
-    const existingNotification = document.getElementById('index-notification');
-    if (existingNotification) existingNotification.remove();
-
-    // Criar elemento de notificação visual
-     const notification = document.createElement('div');
-     notification.id = 'index-notification'; // Adicionar ID para remoção
-     notification.textContent = message;
-     let bgColor;
-     switch (type) {
-        case 'error': bgColor = 'rgba(220, 53, 69, 0.85)'; break; // Vermelho bootstrap danger
-        case 'success': bgColor = 'rgba(40, 167, 69, 0.85)'; break; // Verde bootstrap success
-        default: bgColor = 'rgba(0, 0, 0, 0.8)'; // Preto/cinza padrão
-     }
-     notification.style.cssText = `
-         position: fixed;
-         bottom: 70px; /* Posição acima dos botões de admin */
-         left: 50%;
-         transform: translateX(-50%);
-         padding: 10px 20px;
-         border-radius: 5px;
-         background-color: ${bgColor};
-         color: white;
-         font-family: 'Courier New', monospace;
-         font-size: 14px;
-         z-index: 10001;
-         opacity: 0;
-         transition: opacity 0.4s ease-in-out;
-         text-align: center;
-         max-width: 80%;
-     `;
-     document.body.appendChild(notification);
-     // Fade in
-     setTimeout(() => notification.style.opacity = 1, 10);
-     // Fade out and remove (aumentar tempo para ler)
-     setTimeout(() => {
-         notification.style.opacity = 0;
-         setTimeout(() => notification.remove(), 500);
-     }, 3500); // Mostrar por 3.5 segundos
-}
-
-// Variável global para estado de login (a ser atualizada pelo onAuthStateChanged)
-let isAdminLoggedIn = false; 
-
-// --- Listener de Autenticação para index.html (NOVO) ---
-if (typeof auth !== 'undefined') {
-    auth.onAuthStateChanged((user) => {
-        const logoutButton = document.getElementById('logout-button-index');
-        const createButton = document.getElementById('create-project-button'); // Botão que vamos criar
-
-        if (user && user.uid === ADMIN_UID) {
-            console.log("Admin está logado em index.html.");
-            isAdminLoggedIn = true;
-            if (logoutButton) logoutButton.style.display = 'inline-block';
-            if (createButton) createButton.style.display = 'inline-block'; // Mostrar botão Criar
-            // Remover campo de senha se ainda estiver visível
-            const passContainer = document.getElementById('admin-password-container-index');
-            if (passContainer) passContainer.remove();
-        } else {
-            if (user) {
-                console.log("Usuário logado não é admin em index.html.");
-            } else {
-                console.log("Nenhum usuário logado em index.html.");
-            }
-            isAdminLoggedIn = false;
-            if (logoutButton) logoutButton.style.display = 'none';
-            if (createButton) createButton.style.display = 'none'; // Esconder botão Criar
-        }
-    });
-} else {
-    console.error("Auth não definido, não é possível adicionar listener de estado.");
-}
-// --- Fim Listener de Autenticação ---
-
-// --- Botão e Função de Logout para index.html (NOVO) ---
-function addLogoutButtonIndex() {
-     if (document.getElementById('logout-button-index')) return; // Evitar duplicados
-
-    const logoutButton = document.createElement('button');
-    logoutButton.id = 'logout-button-index';
-    logoutButton.textContent = 'Logout Admin';
-    logoutButton.style.cssText = `
-        position: fixed;
-        bottom: 20px; 
-        right: 20px; /* Perto do canto inferior direito */
-        padding: 10px 15px;
-        background-color: rgba(0, 0, 0, 0.7);
-        color: #ff6b6b; /* Vermelho para logout */
-        border: 2px solid #ff6b6b;
-        border-radius: 5px;
-        font-family: 'Courier New', monospace;
-        font-size: 16px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
-        text-shadow: 0 0 5px #ff6b6b;
-        z-index: 999;
-        display: none; /* Começa escondido */
-    `;
-     logoutButton.addEventListener('mouseover', function() {
-        this.style.backgroundColor = 'rgba(255, 107, 107, 0.2)';
-        this.style.transform = 'scale(1.05)';
-    });
-    logoutButton.addEventListener('mouseout', function() {
-        this.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-        this.style.transform = 'scale(1)';
-    });
-    logoutButton.addEventListener('click', logoutAdminIndex);
-    document.body.appendChild(logoutButton);
-}
-
-function logoutAdminIndex() {
-    if (!auth) return;
-    auth.signOut()
-        .then(() => {
-            console.log("Admin deslogado (index.html).");
-            showNotification('Logout realizado.', 'success', true);
-            // onAuthStateChanged cuidará de esconder os botões de admin
-        })
-        .catch((error) => {
-            console.error("Erro ao fazer logout (index.html):", error);
-            showNotification(`Erro no logout: ${error.message}`, 'error', true);
-        });
-}
-// --- FIM: Novas Funções de Autenticação para index.html ---
