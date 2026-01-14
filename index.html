@@ -76,29 +76,30 @@
             border-radius: 10px;
         }
         .loading-text {
-            color: #33ff33;
+            color: #ffffff;
             font-size: 24px;
             margin-bottom: 20px;
             letter-spacing: 2px;
             text-transform: uppercase;
             font-weight: bold;
-            text-shadow: 0 0 5px #33ff33;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
         }
         .loading-bar-container {
             width: 300px;
             height: 20px;
             background-color: #111;
-            border: 2px solid #33ff33;
-            box-shadow: 0 0 10px #33ff33;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
             overflow: hidden;
             position: relative;
         }
         .loading-bar {
             height: 100%;
             width: 0%;
-            background-color: #33ff33;
+            background-color: #ffffff;
             position: relative;
-            box-shadow: 0 0 15px #33ff33;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+            transition: width 0.3s ease-out;
         }
         .loading-bar::after {
             content: "";
@@ -109,10 +110,10 @@
             bottom: 0;
             background: repeating-linear-gradient(
                 45deg,
-                #33ff33,
-                #33ff33 10px,
-                #2dd32d 10px,
-                #2dd32d 20px
+                #ffffff,
+                #ffffff 10px,
+                #e0e0e0 10px,
+                #e0e0e0 20px
             );
             opacity: 0.3;
         }
@@ -121,7 +122,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            color: #11ff00;
+            color: #ffffff;
             font-weight: bold;
             mix-blend-mode: difference;
         }
@@ -163,18 +164,18 @@
             top: 20px;
             right: 20px;
             background-color: rgba(0, 0, 0, 0.8);
-            color: #33ff33;
-            border: 2px solid #33ff33;
+            color: #ffffff;
+            border: none;
             padding: 15px;
             border-radius: 10px;
             font-family: 'Courier New', monospace;
             font-size: 14px;
             text-align: right;
             z-index: 9999;
-            box-shadow: 0 0 15px rgba(51, 255, 51, 0.7);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
             max-width: 250px;
             pointer-events: none;
-            text-shadow: 0 0 5px #33ff33;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
             letter-spacing: 1px;
         }
 
@@ -184,13 +185,13 @@
 
         @keyframes pulse {
             0% {
-                box-shadow: 0 0 15px rgba(51, 255, 51, 0.7);
+                box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
             }
             50% {
-                box-shadow: 0 0 25px rgba(51, 255, 51, 0.9);
+                box-shadow: 0 0 25px rgba(255, 255, 255, 0.5);
             }
             100% {
-                box-shadow: 0 0 15px rgba(51, 255, 51, 0.7);
+                box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
             }
         }
 
@@ -201,14 +202,108 @@
 
         @keyframes notification-pulse {
             0% {
-                box-shadow: 0 0 0 0 rgba(51, 255, 51, 0.7);
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.3);
             }
             70% {
-                box-shadow: 0 0 0 10px rgba(51, 255, 51, 0);
+                box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
             }
             100% {
-                box-shadow: 0 0 0 0 rgba(51, 255, 51, 0);
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
             }
+        }
+
+        /* Modal de criação de projeto */
+        #create-project-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+        }
+
+        #create-project-modal .modal-content {
+            background-color: rgba(20, 20, 20, 0.95);
+            border: 2px solid #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+        }
+
+        #create-project-modal .modal-title {
+            color: #ffffff;
+            font-family: 'Courier New', monospace;
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+
+        #create-project-modal .modal-input {
+            width: 100%;
+            padding: 12px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 2px solid #ffffff;
+            border-radius: 5px;
+            color: #ffffff;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            margin-bottom: 20px;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        #create-project-modal .modal-input:focus {
+            border-color: #ffffff;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        #create-project-modal .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        #create-project-modal .modal-button {
+            padding: 10px 20px;
+            border: 2px solid #ffffff;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #create-project-modal .modal-button-primary {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+
+        #create-project-modal .modal-button-primary:hover:not(:disabled) {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        #create-project-modal .modal-button-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #create-project-modal .modal-button-secondary {
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #ffffff;
+        }
+
+        #create-project-modal .modal-button-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.1);
         }
     </style>
 </head>
@@ -366,9 +461,38 @@
              // Store original hex color for hover effect reset
              cube.currentHex = cubeMaterial.color.getHex();
 
-             scene.add(cube);
-             cubeArray.push(cube);
-             cube.visible = false; // Initially hidden
+            // ✅ Inicializar com escala 0 e opacidade 0 para animação
+            cube.scale.set(0, 0, 0);
+            cube.material.opacity = 0;
+            
+            scene.add(cube);
+            cubeArray.push(cube);
+            
+            // ✅ Cubos começam invisíveis - só aparecem quando clicar na cabeça
+            cube.visible = false;
+        }
+        
+        // ✅ Função para animar entrada do cubo (chamada quando necessário)
+        function animateCubeEntry(cube) {
+            // Tornar visível antes da animação
+            cube.visible = true;
+            
+            // Animação de escala (0 → 1)
+            gsap.to(cube.scale, {
+                x: 1,
+                y: 1,
+                z: 1,
+                duration: 0.6,
+                ease: "back.out(1.7)", // Efeito de "bounce"
+                delay: 0.1
+            });
+            
+            // Animação de fade (opacidade 0 → 0.8)
+            gsap.to(cube.material, {
+                opacity: 0.8,
+                duration: 0.5,
+                ease: "power2.out"
+            });
         }
 
         // Função para remover um cubo da cena
@@ -441,16 +565,21 @@
         function listenToProjects() {
             console.log("Configurando listener do Firestore para projetos...");
             
+            // ✅ Marcar Firestore como iniciado (10% imediato)
+            loadingProgress.firestore = 10;
+            updateLoadingProgress();
+            
             try {
                 // Verificar se existem projetos no Firestore
                 db.collection("projetos").get().then((snapshot) => {
                     console.log(`Número de documentos na coleção projetos: ${snapshot.size}`);
                     
+                    // ✅ Marcar Firestore como completo (100%)
+                    markComponentComplete('firestore');
+                    
                     // Se não houver documentos, usar o fallback manual imediatamente
                     if (snapshot.size === 0) {
                         console.warn("Nenhum documento encontrado na coleção projetos. Usando fallback createCubesManually().");
-                        // NÃO tentar escrever dados de exemplo aqui devido a permissões.
-                        // Os dados devem ser inseridos no Firestore manualmente ou por um admin.
                         createCubesManually(); 
                     } else {
                         // Se houver documentos, logar e configurar o listener principal
@@ -463,12 +592,15 @@
                 }).catch((error) => {
                     // Erro ao tentar LER a coleção inicialmente
                     console.error("Erro ao verificar a coleção projetos (db.collection.get):", error);
-                    // Se a leitura inicial falhar (ex: regras impedem leitura), usar fallback
+                    // ✅ Marcar como completo mesmo com erro
+                    markComponentComplete('firestore');
                     createCubesManually();
                 });
             } catch (error) {
                 // Erro mais geral na configuração
                 console.error("Erro crítico ao configurar o Firestore (try/catch geral):", error);
+                // ✅ Marcar como completo mesmo com erro
+                markComponentComplete('firestore');
                 createCubesManually();
             }
         }
@@ -520,6 +652,15 @@
                         if (!cubeArray.some(cube => cube.userData.projectId === projectId)) {
                             console.log(`Criando cubo para o projeto adicionado: ${projectId}, título: ${projectData.title || 'Sem título'}`);
                             createAndAddCube(projectId, projectData); // Esta função define visible = false
+                            
+                            // ✅ Se já clicou na cabeça, mostrar o novo cubo imediatamente com animação
+                            if (headClicked) {
+                                const newCube = cubeArray.find(cube => cube.userData.projectId === projectId);
+                                if (newCube) {
+                                    animateCubeEntry(newCube);
+                                }
+                            }
+                            // Se não clicou na cabeça, o cubo fica invisível e aparecerá quando clicar
                         } else {
                             console.log("Cubo já existia para o projeto adicionado (inesperado após limpeza):", projectId, "- atualizando dados.");
                             updateCubeData(projectId, projectData);
@@ -647,9 +788,96 @@
         var initialCameraPosition, initialCameraQuaternion;
         var model; // Referência ao modelo 3D da cabeça para uso em animações
         var mixer; // <-- ADICIONAR ESTA LINHA (mixer global)
+        var headClicked = false; // ✅ Flag para rastrear se já clicou na cabeça
 	    var scaleFactor = 1; // Escala inicial normal, sem expansão
         var mouseDown = false; // Declaração da variável mouseDown
         var clock = new THREE.Clock(); // <-- ADICIONAR ESTA LINHA
+        
+        // ✅ Sistema de Progresso Global
+        var loadingProgress = {
+            model: 0,        // 0-100% do modelo (peso 70%)
+            skybox: 0,       // 0-100% do skybox (peso 20%)
+            firestore: 0,   // 0-100% do Firestore (peso 10%)
+            total: 0         // Progresso total calculado
+        };
+        
+        var loadingScreen = null;
+        var loadingBar = null;
+        var loadingPercentage = null;
+        var loadingText = null;
+        var blinkInterval = null;
+        
+        // ✅ Função para atualizar progresso total
+        function updateLoadingProgress() {
+            // Pesos: Modelo 70%, Skybox 20%, Firestore 10%
+            loadingProgress.total = 
+                (loadingProgress.model * 0.70) + 
+                (loadingProgress.skybox * 0.20) + 
+                (loadingProgress.firestore * 0.10);
+            
+            if (loadingBar && loadingPercentage) {
+                var displayPercent = Math.min(Math.round(loadingProgress.total), 99); // Máximo 99% até tudo carregar
+                loadingBar.style.width = displayPercent + '%';
+                loadingPercentage.textContent = displayPercent + '%';
+            }
+        }
+        
+        // ✅ Função para marcar componente como completo
+        function markComponentComplete(component) {
+            loadingProgress[component] = 100;
+            updateLoadingProgress();
+            
+            // ✅ Verificar se TUDO está completo
+            if (loadingProgress.model === 100 && 
+                loadingProgress.skybox === 100 && 
+                loadingProgress.firestore === 100) {
+                completeLoading();
+            }
+        }
+        
+        // ✅ Função para completar loading (só quando tudo estiver 100%)
+        function completeLoading() {
+            if (!loadingScreen) return;
+            
+            // Parar piscar
+            if (blinkInterval) {
+                clearInterval(blinkInterval);
+                blinkInterval = null;
+            }
+            
+            // Mostrar 100%
+            loadingBar.style.width = '100%';
+            loadingPercentage.textContent = '100%';
+            loadingText.textContent = 'Complete!';
+            loadingText.style.visibility = 'visible';
+            
+            // ✅ Garantir que o modelo está visível antes de esconder o loading
+            if (model) {
+                model.visible = true;
+            }
+            
+            // ✅ Fade-out imediato (sem delay para mostrar "100%")
+            setTimeout(function() {
+                loadingScreen.style.opacity = '0';
+                setTimeout(function() {
+                    if (loadingScreen && loadingScreen.parentNode) {
+                        document.body.removeChild(loadingScreen);
+                        loadingScreen = null;
+                    }
+                }, 300);
+            }, 0); // Sem delay - transição imediata
+        }
+        
+        // ✅ Função helper para parar piscar
+        function stopBlinking() {
+            if (blinkInterval) {
+                clearInterval(blinkInterval);
+                blinkInterval = null;
+                if (loadingText) {
+                    loadingText.style.visibility = 'visible';
+                }
+            }
+        }
 	  
  // Lista dos conjuntos de skyboxes
       var skyboxes = [
@@ -686,169 +914,136 @@
             var selectedSkybox = skyboxes[randomIndex];
             
             var loader = new THREE.CubeTextureLoader();
-            loader.load(selectedSkybox, function(texture) {
-                scene.background = texture;
-                
-                // Aplicar o mapa de ambiente aos materiais, exceto aos olhos
-                scene.traverse(function(child) {
-                    if (child.isMesh) {
-                        // Verificar se o objeto é parte dos olhos
-                        const isEyePart = child.name && (
-                            child.name.toLowerCase().includes('eye') || 
-                            child.name.toLowerCase().includes('olho')
-                        );
-                        
-                        // Só aplicar o envMap se não for parte dos olhos
-                        if (!isEyePart) {
-                            if (child.material) {
-                                if (Array.isArray(child.material)) {
-                                    child.material.forEach(mat => {
-                                        if (mat) {
-                                            mat.envMap = texture;
-                                            mat.envMapIntensity = 1.0;
-                                        }
-                                    });
-                                } else if (child.material) {
-                                    child.material.envMap = texture;
-                                    child.material.envMapIntensity = 1.0;
-                                }
+            loader.load(
+                selectedSkybox, 
+                function(texture) {
+                    scene.background = texture;
+                    
+                    // Aplicar o mapa de ambiente aos materiais, exceto aos olhos
+                    scene.traverse(function(child) {
+                        if (child.isMesh) {
+                            const isEyePart = child.name && (
+                                child.name.toLowerCase().includes('eye') || 
+                                child.name.toLowerCase().includes('olho')
+                            );
+                            
+                            if (!isEyePart && child.material) {
+                                const materials = Array.isArray(child.material) 
+                                    ? child.material 
+                                    : [child.material];
+                                
+                                materials.forEach(mat => {
+                                    if (mat && (mat.isMeshStandardMaterial || mat.isMeshPhysicalMaterial)) {
+                                        mat.envMap = texture;
+                                        mat.envMapIntensity = 1.0;
+                                        mat.needsUpdate = true;
+                                    }
+                                });
                             }
                         }
+                    });
+                    
+                    // ✅ Marcar skybox como completo (20% do total)
+                    markComponentComplete('skybox');
+                },
+                // ✅ Callback de progresso do skybox
+                function(xhr) {
+                    if (xhr.lengthComputable && xhr.total > 0) {
+                        // Atualizar progresso do skybox (0-100%)
+                        loadingProgress.skybox = (xhr.loaded / xhr.total) * 100;
+                        updateLoadingProgress();
                     }
-                });
-            }, undefined, function(error) {
-                console.error('Erro ao carregar o skybox:', error);
-            });
+                },
+                function(error) {
+                    console.error('Erro ao carregar o skybox:', error);
+                    // ✅ Marcar como completo mesmo com erro (para não travar)
+                    markComponentComplete('skybox');
+                }
+            );
         }
 		
 		   function addModel() {
-            // Mostrar a tela de carregamento
-            var loadingScreen = document.createElement('div');
-            loadingScreen.className = 'loading-screen';
-            
-            var loadingText = document.createElement('div');
-            loadingText.className = 'loading-text';
-            // loadingText.textContent = 'CARREGANDO...'; // Modificado abaixo
-            
-            var loadingBarContainer = document.createElement('div');
-            loadingBarContainer.className = 'loading-bar-container';
-            
-            var loadingBar = document.createElement('div');
-            loadingBar.className = 'loading-bar';
-            
-            var loadingPercentage = document.createElement('div');
-            loadingPercentage.className = 'loading-percentage';
-            loadingPercentage.textContent = '0%';
-            
-            loadingBarContainer.appendChild(loadingBar);
-            loadingBarContainer.appendChild(loadingPercentage);
-            loadingScreen.appendChild(loadingText);
-            loadingScreen.appendChild(loadingBarContainer);
-            document.body.appendChild(loadingScreen);
-            
-            // Efeito de texto piscando
-            var blinkInterval = setInterval(function() {
-                loadingText.style.visibility = loadingText.style.visibility === 'hidden' ? 'visible' : 'hidden';
-            }, 800);
-            
-            // // Animar a barra de progresso // <-- REMOVER ESTA SIMULAÇÃO
-            // var progress = 0;
-            // var loadingInterval = setInterval(function() {
-            //     progress += Math.random() * 5;
-            //     if (progress > 90) {
-            //         progress = 90; // Mantém em 90% até o carregamento real terminar
-            //         clearInterval(loadingInterval);
-            //     }
-            //     loadingBar.style.width = progress + '%';
-            //     loadingPercentage.textContent = Math.round(progress) + '%';
-            // }, 300);
+            // ✅ Criar tela de loading (se ainda não existe)
+            if (!loadingScreen) {
+                loadingScreen = document.createElement('div');
+                loadingScreen.className = 'loading-screen';
+                
+                loadingText = document.createElement('div');
+                loadingText.className = 'loading-text';
+                loadingText.textContent = 'Loading';
+                
+                var loadingBarContainer = document.createElement('div');
+                loadingBarContainer.className = 'loading-bar-container';
+                
+                loadingBar = document.createElement('div');
+                loadingBar.className = 'loading-bar';
+                
+                loadingPercentage = document.createElement('div');
+                loadingPercentage.className = 'loading-percentage';
+                loadingPercentage.textContent = '0%';
+                
+                loadingBarContainer.appendChild(loadingBar);
+                loadingBarContainer.appendChild(loadingPercentage);
+                loadingScreen.appendChild(loadingText);
+                loadingScreen.appendChild(loadingBarContainer);
+                document.body.appendChild(loadingScreen);
+                
+                // Iniciar piscar
+                blinkInterval = setInterval(function() {
+                    loadingText.style.visibility = loadingText.style.visibility === 'hidden' ? 'visible' : 'hidden';
+                }, 800);
+            }
             
             var loader = new THREE.GLTFLoader();
-            var modelPath = 'models/Nezpivot.glb'; // Modelo atual
+            var modelPath = 'models/Nezpivot.glb';
             
-            loadingText.textContent = 'Initiating neural interface...'; // Texto inicial MODIFICADO
-            
-            // Adicionar eventos de progresso ao carregador
             loader.load(
                 modelPath, 
                 function (gltf) {
-                    // Modelo carregado com sucesso
+                    // Modelo carregado
                     model = gltf.scene;
-                    model.position.set(0, -3, 0); // Ajustado o Y para -3 para descer o modelo
-                    model.scale.set(1.2, 1.2, 1.2); // Escala normal desde o início
-                    
-                    // Adicionar o modelo à cena
+                    model.position.set(0, -3, 0);
+                    model.scale.set(1.2, 1.2, 1.2);
                     scene.add(model);
                     
-                    // Completar a barra de progresso
-                    loadingBar.style.width = '100%';
-                    loadingPercentage.textContent = '100%';
+                    // ✅ Marcar modelo como completo (70% do total)
+                    markComponentComplete('model');
                     
-                    // Parar o efeito de piscar
-                    clearInterval(blinkInterval);
-                    loadingText.style.visibility = 'visible';
-                    
-                    // Após um pequeno delay, fazer o fade-out da tela de carregamento
-                    setTimeout(function() {
-                        loadingScreen.style.opacity = '0';
-                        setTimeout(function() {
-                            document.body.removeChild(loadingScreen);
-                        }, 1500);
-                    }, 800);
+                    // Parar piscar quando modelo começar a carregar
+                    stopBlinking();
                     
                     // Configurar animações
-                    mixer = new THREE.AnimationMixer(model); // <-- USAR MIXER GLOBAL
+                    mixer = new THREE.AnimationMixer(model);
                     gltf.animations.forEach((clip) => {
                         mixer.clipAction(clip).play();
                     });
 
-                    // Iniciar com a câmera focada na cabeça
                     animateCameraToPosition(0, 0, 5);
                 }, 
-                // Callback de progresso
+                // ✅ Callback de progresso do modelo
                 function (xhr) {
-                    if (xhr.lengthComputable) {
-                        var percentComplete = xhr.loaded / xhr.total * 100;
-                        loadingBar.style.width = Math.min(percentComplete, 100) + '%';
-                        loadingPercentage.textContent = Math.round(percentComplete) + '%';
+                    if (xhr.lengthComputable && xhr.total > 0) {
+                        // Atualizar progresso do modelo (0-100%)
+                        loadingProgress.model = (xhr.loaded / xhr.total) * 100;
+                        updateLoadingProgress();
                         
-                        // Atualizar texto de carregamento com mais detalhes
-                        var loadedMB = (xhr.loaded / (1024 * 1024)).toFixed(1);
-                        var totalMB = (xhr.total / (1024 * 1024)).toFixed(1);
-                        loadingText.textContent = `Loading neural interface... ${loadedMB}MB / ${totalMB}MB`; // MODIFICADO
+                        // ✅ Atualizar texto (sem MB)
+                        loadingText.textContent = 'Loading';
                         
-                        // Parar de piscar quando o download estiver em progresso e visível
-                        if (loadingText.style.visibility === 'hidden') {
-                            loadingText.style.visibility = 'visible';
-                        }
-                        if (percentComplete > 0 && blinkInterval) {
-                             clearInterval(blinkInterval);
-                             blinkInterval = null; // Evitar que seja limpo de novo
-                             loadingText.style.visibility = 'visible'; // Garantir visibilidade
-                        }
+                        // ✅ Parar piscar quando houver progresso
+                        stopBlinking();
                     } else {
-                        // Se o tamanho total não for computável, mostrar um texto genérico
-                        // ou tentar estimar com base no progresso anterior se houver
-                        loadingText.textContent = 'Loading neural interface...'; // MODIFICADO
-                        if (blinkInterval){ // Manter piscando se não houver progresso computável
-                             // Não limpa o blinkInterval aqui
-                        } else if (!blinkInterval && loadingText.style.visibility === 'hidden') {
-                            // Reiniciar o pisca-pisca se ele parou e agora não temos progresso computável
-                             blinkInterval = setInterval(function() {
-                                loadingText.style.visibility = loadingText.style.visibility === 'hidden' ? 'visible' : 'hidden';
-                            }, 800);
-                        }
+                        loadingText.textContent = 'Loading';
                     }
                 }, 
                 function (error) {
                     console.error(error);
+                    stopBlinking();
                     loadingText.textContent = 'ERRO';
                     loadingText.style.color = '#ff3333';
                     loadingText.style.textShadow = '0 0 5px #ff3333';
                     loadingBar.style.backgroundColor = '#ff3333';
                     loadingBar.style.boxShadow = '0 0 15px #ff3333';
-                    clearInterval(blinkInterval);
-                    loadingText.style.visibility = 'visible';
                 }
             );
         }
@@ -877,17 +1072,24 @@
 
             
             addLighting();
-            // addCubesAroundSphere(); // <-- Comentado/Removido: Não criamos mais cubos estaticamente aqui
-            listenToProjects(); // <-- Adicionado: Inicia o listener do Firestore
             setupEventListeners();
             
-            // Carregar o modelo primeiro
-            addModel();
+            // ✅ Inicializar progresso
+            loadingProgress = {
+                model: 0,
+                skybox: 0,
+                firestore: 0,
+                total: 0
+            };
             
-            // Carregar o skybox depois do modelo
+            // ✅ Carregar tudo em paralelo
+            addModel();              // Inicia carregamento do modelo
+            loadRandomSkybox();      // Inicia carregamento do skybox (sem delay)
+            
+            // ✅ Firestore depois (não bloqueia visual)
             setTimeout(function() {
-                loadRandomSkybox();
-            }, 500);
+                listenToProjects();
+            }, 100);
             
             // Após a criação dos cubos, atribuir IDs
             // setTimeout(function() { // <-- Comentado/Removido: IDs vêm do Firestore
@@ -914,17 +1116,13 @@ function handleHeadClick() {
         });
     }
 
-    // Tornar todos os objetos visíveis
+    // ✅ Marcar que já clicou na cabeça
+    headClicked = true;
+
+    // ✅ Tornar todos os cubos visíveis com animação
     cubeArray.forEach(cube => {
-        cube.visible = true;
-        gsap.fromTo(cube.scale, 
-            { x: 0, y: 0, z: 0 }, 
-            { x: 1, y: 1, z: 1, duration: 0.5, ease: "back.out(1.7)" }
-        );
-        gsap.fromTo(cube.material, 
-            { opacity: 0 }, 
-            { opacity: 1, duration: 0.5, ease: "power1.inOut" }
-        );
+        // Usar a função de animação que já existe
+        animateCubeEntry(cube);
     });
 
     // Mostrar a notificação de navegação após um pequeno atraso
@@ -1423,29 +1621,140 @@ function showNavigationNotification() {
     }
     // --- Fim Botão Criar Novo Projeto ---
 
-    // --- Função para Criar Novo Projeto no Firestore (NOVO) ---
+    // --- Event Listeners do Modal de Criação de Projeto ---
+    // Aguardar DOM estar pronto
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupModalListeners);
+    } else {
+        setupModalListeners();
+    }
+
+    function setupModalListeners() {
+        // Botão "Criar" do modal
+        const confirmButton = document.getElementById('confirm-create-button');
+        if (confirmButton) {
+            confirmButton.addEventListener('click', confirmCreateProject);
+        }
+        
+        // Botão "Cancelar"
+        const cancelButton = document.getElementById('cancel-create-button');
+        if (cancelButton) {
+            cancelButton.addEventListener('click', hideCreateProjectModal);
+        }
+        
+        // Enter no input também cria
+        const input = document.getElementById('project-name-input');
+        if (input) {
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    confirmCreateProject();
+                }
+            });
+        }
+        
+        // Fechar modal ao clicar fora
+        const modal = document.getElementById('create-project-modal');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) { // Clicou no overlay, não no conteúdo
+                    hideCreateProjectModal();
+                }
+            });
+        }
+        
+        // ESC para fechar modal
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('create-project-modal');
+                if (modal && modal.style.display === 'flex') {
+                    hideCreateProjectModal();
+                }
+            }
+        });
+    }
+    // --- Fim Event Listeners do Modal ---
+
+    // --- Funções do Modal de Criação de Projeto ---
+    function showCreateProjectModal() {
+        const modal = document.getElementById('create-project-modal');
+        const input = document.getElementById('project-name-input');
+        
+        if (!modal) return;
+        
+        // Mostrar modal com animação
+        modal.style.display = 'flex';
+        input.value = ''; // Limpar input
+        input.focus(); // Focar no input
+        
+        // Animação de entrada (GSAP)
+        gsap.fromTo(modal.querySelector('.modal-content'), 
+            { scale: 0.8, opacity: 0 },
+            { scale: 1, opacity: 1, duration: 0.3, ease: "power3.out" }
+        );
+    }
+
+    function hideCreateProjectModal() {
+        const modal = document.getElementById('create-project-modal');
+        if (!modal) return;
+        
+        // Animação de saída
+        gsap.to(modal.querySelector('.modal-content'), {
+            scale: 0.8,
+            opacity: 0,
+            duration: 0.2,
+            ease: "power3.in",
+            onComplete: () => {
+                modal.style.display = 'none';
+            }
+        });
+    }
+
+    // --- Função para Criar Novo Projeto no Firestore (MODIFICADA) ---
     function createNewProject() {
         if (!isAdminLoggedIn) {
             showNotification("Apenas admins podem criar projetos.", "error", true);
             return;
         }
         if (!db) {
-             showNotification("Erro: Conexão com banco de dados não disponível.", "error", true);
+            showNotification("Erro: Conexão com banco de dados não disponível.", "error", true);
             return;
         }
+        
+        // ✅ Mostrar modal ao invés de criar direto
+        showCreateProjectModal();
+    }
 
-        const createButton = document.getElementById('create-project-button');
-        const originalButtonText = createButton ? createButton.textContent : 'Criar Novo Projeto'; // Guardar texto original
-        if (createButton) {
-             createButton.disabled = true; 
-             createButton.textContent = 'Criando...'; // Mudar texto do botão
+    // ✅ Nova função para confirmar criação (chamada pelo botão "Criar" do modal)
+    function confirmCreateProject() {
+        const input = document.getElementById('project-name-input');
+        const projectName = input.value.trim();
+        
+        // Validação
+        if (!projectName || projectName.length === 0) {
+            showNotification("Por favor, digite um nome para o projeto.", "error", true);
+            return;
         }
-        showNotification("Buscando IDs existentes...", "info", true);
-
-        // 1. Buscar IDs existentes
+        
+        if (projectName.length > 50) {
+            showNotification("O nome do projeto deve ter no máximo 50 caracteres.", "error", true);
+            return;
+        }
+        
+        // Esconder modal
+        hideCreateProjectModal();
+        
+        // Desabilitar botão durante criação
+        const confirmButton = document.getElementById('confirm-create-button');
+        if (confirmButton) {
+            confirmButton.disabled = true;
+            confirmButton.textContent = 'Criando...';
+        }
+        
+        showNotification("Criando projeto...", "info", true);
+        
+        // Buscar IDs existentes e criar projeto
         db.collection("projetos").get()
             .then((snapshot) => {
-                console.log("Snapshot lido para encontrar max ID.");
                 let maxId = 0;
                 snapshot.forEach(doc => {
                     const numericId = parseInt(doc.id);
@@ -1453,40 +1762,35 @@ function showNavigationNotification() {
                         maxId = numericId;
                     }
                 });
-
-                // 2. Determinar novo ID
+                
                 const newId = maxId + 1;
                 const newIdString = newId.toString();
-                console.log(`Próximo ID determinado: ${newIdString}`);
-
-                // 3. Criar novo documento com dados padrão
+                
+                // ✅ Usar o nome do input ao invés de "Novo Projeto X"
                 const newProjectData = {
-                    title: "Novo Projeto " + newIdString,
+                    title: projectName, // ✅ Nome do input
                     description: "Descreva seu projeto aqui.\nUse \\n para novas linhas.",
                 };
                 
-                showNotification(`Criando documento ${newIdString} no Firestore...`, "info", true);
-                // Retornar a Promise do .set() E o newIdString para o próximo .then()
                 return db.collection("projetos").doc(newIdString).set(newProjectData)
-                         .then(() => newIdString); // Passa o ID adiante após o set ser bem-sucedido
+                    .then(() => newIdString);
             })
-            .then((passedNewIdString) => { 
-                console.log(`Novo projeto com ID ${passedNewIdString} criado no Firestore.`);
-                showNotification(`Projeto ${passedNewIdString} criado com sucesso!`, "success", true);
+            .then((newIdString) => {
+                showNotification(`Projeto "${projectName}" criado com sucesso!`, "success", true);
             })
             .catch((error) => {
-                console.error("Erro durante a criação do novo projeto:", error);
-                showNotification(`Erro ao criar projeto: ${error.message}`, "error", true); 
+                console.error("Erro ao criar projeto:", error);
+                showNotification(`Erro ao criar projeto: ${error.message}`, "error", true);
             })
             .finally(() => {
-                 // Restaurar botão
-                 if (createButton) { 
-                     createButton.disabled = false; 
-                     createButton.textContent = originalButtonText; // Restaurar texto original
-                 }
+                // Restaurar botão
+                if (confirmButton) {
+                    confirmButton.disabled = false;
+                    confirmButton.textContent = 'Criar';
+                }
             });
     }
-    // --- Fim Função Criar Novo Projeto ---
+    // --- Fim Funções de Criação de Projeto ---
 
     // Chamar a adição dos botões (eles ficarão escondidos até o login)
     if (document.body) {
@@ -1762,7 +2066,28 @@ document.addEventListener('keydown', function(event) {
     init();
     </script>
 	
-	
+    <!-- Modal de criação de projeto -->
+    <div id="create-project-modal">
+        <div class="modal-content">
+            <h2 class="modal-title">Criar Novo Projeto</h2>
+            <input 
+                type="text" 
+                id="project-name-input" 
+                class="modal-input" 
+                placeholder="Digite o nome do projeto..."
+                maxlength="50"
+            />
+            <div class="modal-buttons">
+                <button class="modal-button modal-button-secondary" id="cancel-create-button">
+                    Cancelar
+                </button>
+                <button class="modal-button modal-button-primary" id="confirm-create-button">
+                    Criar
+                </button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
 
