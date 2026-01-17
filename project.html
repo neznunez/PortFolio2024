@@ -158,9 +158,9 @@
         
         h1 {
             margin: 0 0 20px 0;
-            color: #33ff33;
+            color: #ffffff;
             font-size: 2.2rem;
-            text-shadow: 0 0 5px rgba(51, 255, 51, 0.5);
+            text-shadow: none;
         }
         
         p {
@@ -185,7 +185,7 @@
             position: absolute;
             top: 10px;
             left: 20px;
-            color: #33ff33;
+            color: #ffffff;
             text-decoration: none;
             font-size: 18px;
             font-weight: bold;
@@ -193,18 +193,18 @@
             transition: all 0.3s ease;
             z-index: 2;
             text-transform: none;
-            background-color: rgba(0, 0, 0, 0.7);
+            background-color: rgba(0, 0, 0, 0.8);
             padding: 5px 10px;
             border-radius: 8px;
-            border: 2px solid #33ff33;
-            box-shadow: 0 0 10px rgba(51, 255, 51, 0.5);
-            text-shadow: 0 0 5px #33ff33;
+            border: none;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
         }
         
         .back-button:hover {
-            background-color: rgba(51, 255, 51, 0.2);
+            background-color: rgba(255, 255, 255, 0.1);
             transform: scale(1.05);
-            box-shadow: 0 0 15px rgba(51, 255, 51, 0.7);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
         }
         
         .project-text-container::-webkit-scrollbar {
@@ -224,6 +224,87 @@
         .project-text-container::-webkit-scrollbar-thumb:hover {
             background: rgba(51, 255, 51, 0.7);
         }
+        
+        /* Estilos para upload de imagens */
+        .image-upload-container {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 10;
+            display: none;
+        }
+
+        .image-upload-container.visible {
+            display: block;
+        }
+
+        .image-upload-label {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
+        .image-upload-label:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: scale(1.05);
+        }
+
+        .image-upload-input {
+            display: none;
+        }
+
+        .image-list {
+            margin-top: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .image-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 5px;
+            margin: 5px 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            color: white;
+            font-size: 12px;
+        }
+
+        .image-item img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+
+        .delete-image-btn {
+            background-color: rgba(255, 0, 0, 0.3);
+            color: white;
+            border: 1px solid rgba(255, 0, 0, 0.5);
+            border-radius: 4px;
+            padding: 2px 8px;
+            cursor: pointer;
+            font-size: 10px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .delete-image-btn:hover {
+            background-color: rgba(255, 0, 0, 0.5);
+        }
     </style>
 </head>
 <body>
@@ -231,6 +312,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
     <a href="index.html" class="back-button" id="back-button">Back</a>
     <div class="project-container">
@@ -261,6 +343,14 @@
                     <div class="carousel-dot" data-index="1"></div>
                     <div class="carousel-dot" data-index="2"></div>
                 </div>
+            </div>
+            <!-- Container de upload de imagens (apenas para admin) -->
+            <div class="image-upload-container" id="image-upload-container">
+                <label for="image-upload-input" class="image-upload-label">
+                    📷 Adicionar Imagens
+                </label>
+                <input type="file" id="image-upload-input" class="image-upload-input" accept="image/*" multiple>
+                <div class="image-list" id="image-list"></div>
             </div>
         </div>
         <div class="project-text-container">
@@ -297,14 +387,17 @@
         // Initialize Firebase
         let db;
         let auth;
+        let storage;
         const ADMIN_UID = "eeT0iJOXYlU7g7l6fh9hL5kCLDL2";
+        let isAdminLoggedIn = false;
 
         if (typeof firebase !== 'undefined') {
              try {
                  firebase.initializeApp(firebaseConfig);
                  db = firebase.firestore();
                  auth = firebase.auth();
-                 console.log("Firebase inicializado. db e auth configurados.");
+                 storage = firebase.storage();
+                 console.log("Firebase inicializado. db, auth e storage configurados.");
              } catch (error) {
                  console.error("Erro ao inicializar Firebase:", error);
                  document.getElementById('project-title').textContent = 'Erro crítico: Falha na inicialização do Firebase.';
@@ -320,6 +413,15 @@
         let currentSlide = 0;
 
         function showSlide(index) {
+            // Recarregar arrays caso tenham sido atualizados
+            const slidesContainer = document.getElementById('carousel-slides');
+            const dotsContainer = document.getElementById('carousel-dots');
+            
+            if (slidesContainer && dotsContainer) {
+                slides = Array.from(slidesContainer.querySelectorAll('.carousel-slide'));
+                dots = Array.from(dotsContainer.querySelectorAll('.carousel-dot'));
+            }
+            
             if (!slides || slides.length === 0 || !dots || dots.length === 0 || index < 0 || index >= slides.length) {
                  console.warn("Tentativa de mostrar slide inválido:", index, "Slides:", slides?.length, "Dots:", dots?.length);
                  return;
@@ -328,10 +430,11 @@
             slides.forEach(slide => slide.classList.remove('active'));
             dots.forEach(dot => dot.classList.remove('active'));
             
-            slides[index].classList.add('active');
-            dots[index].classList.add('active');
-            
-            currentSlide = index;
+            if (slides[index] && dots[index]) {
+                slides[index].classList.add('active');
+                dots[index].classList.add('active');
+                currentSlide = index;
+            }
         }
 
         function prevSlide() {
@@ -359,6 +462,329 @@
             if (!text) return '';
             return text.replace(/\n/g, '<br>'); // Substitui \n literal por <br>
         }
+
+        // --- Funções de Upload de Imagens ---
+        
+        // Função para inicializar o upload de imagens
+        function initializeImageUpload() {
+            const uploadContainer = document.getElementById('image-upload-container');
+            const uploadInput = document.getElementById('image-upload-input');
+            const imageList = document.getElementById('image-list');
+            
+            if (!uploadContainer || !uploadInput || !imageList) return;
+            
+            // Mostrar container apenas para admin
+            if (isAdminLoggedIn) {
+                uploadContainer.classList.add('visible');
+            } else {
+                uploadContainer.classList.remove('visible');
+            }
+            
+            // Listener para seleção de arquivos
+            uploadInput.addEventListener('change', async function(e) {
+                const files = Array.from(e.target.files);
+                if (files.length === 0) return;
+                
+                // Validar tipos de arquivo
+                const validFiles = files.filter(file => file.type.startsWith('image/'));
+                if (validFiles.length === 0) {
+                    showNotification('Por favor, selecione apenas arquivos de imagem.', 'error');
+                    uploadInput.value = '';
+                    return;
+                }
+                
+                // Validar tamanho (máximo 5MB por imagem)
+                const oversizedFiles = validFiles.filter(file => file.size > 5 * 1024 * 1024);
+                if (oversizedFiles.length > 0) {
+                    showNotification('Algumas imagens são muito grandes (máximo 5MB por imagem).', 'error');
+                    uploadInput.value = '';
+                    return;
+                }
+                
+                const urlParams = new URLSearchParams(window.location.search);
+                const projectId = urlParams.get('id');
+                
+                if (!projectId) {
+                    showNotification('Erro: ID do projeto não encontrado.', 'error');
+                    return;
+                }
+                
+                showNotification(`Enviando ${validFiles.length} imagem(ns)...`, 'info');
+                
+                try {
+                    const uploadPromises = validFiles.map(file => uploadImageToStorage(projectId, file));
+                    const imageUrls = await Promise.all(uploadPromises);
+                    
+                    // Salvar URLs no Firestore
+                    await saveImageUrlsToFirestore(projectId, imageUrls);
+                    
+                    showNotification('Imagens adicionadas com sucesso!', 'success');
+                    
+                    // Aguardar um momento antes de recarregar para garantir que o Firestore foi atualizado
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Recarregar imagens do projeto
+                    await loadProjectImages(projectId);
+                    
+                    // Limpar input
+                    uploadInput.value = '';
+                } catch (error) {
+                    console.error('Erro ao fazer upload:', error);
+                    showNotification(`Erro ao fazer upload: ${error.message}`, 'error');
+                    uploadInput.value = '';
+                }
+            });
+        }
+
+        // Função para fazer upload de uma imagem para Firebase Storage
+        async function uploadImageToStorage(projectId, file) {
+            return new Promise((resolve, reject) => {
+                if (!storage) {
+                    reject(new Error('Firebase Storage não está inicializado.'));
+                    return;
+                }
+                
+                const timestamp = Date.now();
+                const fileName = `${timestamp}_${file.name}`;
+                const storageRef = storage.ref(`projects/${projectId}/${fileName}`);
+                
+                const uploadTask = storageRef.put(file);
+                
+                uploadTask.on(
+                    'state_changed',
+                    (snapshot) => {
+                        // Progresso do upload (opcional - pode ser usado para barra de progresso)
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        console.log(`Upload progress: ${progress.toFixed(2)}%`);
+                    },
+                    (error) => {
+                        console.error('Erro no upload:', error);
+                        reject(error);
+                    },
+                    () => {
+                        // Upload completo
+                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                            resolve(downloadURL);
+                        }).catch(reject);
+                    }
+                );
+            });
+        }
+
+        // Função para salvar URLs das imagens no Firestore
+        async function saveImageUrlsToFirestore(projectId, newImageUrls) {
+            if (!db) {
+                throw new Error('Firestore não está inicializado.');
+            }
+            
+            const projectRef = db.collection("projetos").doc(projectId);
+            
+            // Buscar imagens existentes
+            const projectDoc = await projectRef.get();
+            const existingImages = projectDoc.data()?.images || [];
+            
+            // Combinar com novas imagens
+            const allImages = [...existingImages, ...newImageUrls];
+            
+            // Atualizar no Firestore
+            await projectRef.update({
+                images: allImages
+            });
+        }
+
+        // Função para carregar imagens do Firestore
+        async function loadProjectImages(projectId) {
+            if (!db) {
+                console.error('Firestore não está inicializado.');
+                return;
+            }
+            
+            try {
+                const projectDoc = await db.collection("projetos").doc(projectId).get();
+                const projectData = projectDoc.data();
+                const imageUrls = projectData?.images || [];
+                
+                const slidesContainer = document.getElementById('carousel-slides');
+                const dotsContainer = document.getElementById('carousel-dots');
+                const carouselNav = document.querySelector('.carousel-nav');
+                
+                if (!slidesContainer || !dotsContainer) return;
+                
+                // Limpar slides existentes
+                slidesContainer.innerHTML = '';
+                dotsContainer.innerHTML = '';
+                
+                if (imageUrls.length === 0) {
+                    slidesContainer.innerHTML = '<p style="color:white; text-align:center; padding: 20px;">Nenhuma imagem configurada.</p>';
+                    if (carouselNav) carouselNav.style.display = 'none';
+                    
+                    // Atualizar lista de imagens para admin (vazia)
+                    if (isAdminLoggedIn) {
+                        updateImageList([]);
+                    }
+                    return;
+                }
+                
+                // Criar slides para cada imagem
+                imageUrls.forEach((url, index) => {
+                    const slide = document.createElement('div');
+                    slide.className = `carousel-slide ${index === 0 ? 'active' : ''}`;
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.alt = `Imagem ${index + 1}`;
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'cover';
+                    img.style.borderRadius = '8px';
+                    img.style.display = 'block';
+                    
+                    img.onload = function() {
+                        console.log(`Imagem ${index + 1} carregada com sucesso`);
+                    };
+                    
+                    img.onerror = function() {
+                        console.error(`Erro ao carregar imagem: ${url}`);
+                        slide.innerHTML = '<p style="color:white; text-align:center; padding: 20px;">Erro ao carregar imagem</p>';
+                    };
+                    
+                    slide.appendChild(img);
+                    slidesContainer.appendChild(slide);
+                    
+                    // Criar dot indicador
+                    const dot = document.createElement('div');
+                    dot.className = `carousel-dot ${index === 0 ? 'active' : ''}`;
+                    dot.setAttribute('data-index', index);
+                    dot.addEventListener('click', () => showSlide(index));
+                    dotsContainer.appendChild(dot);
+                });
+                
+                // Forçar atualização do DOM
+                void slidesContainer.offsetHeight;
+                
+                // Atualizar arrays globais do carrossel
+                slides = Array.from(slidesContainer.querySelectorAll('.carousel-slide'));
+                dots = Array.from(dotsContainer.querySelectorAll('.carousel-dot'));
+                
+                // Mostrar navegação se houver mais de uma imagem
+                if (carouselNav) {
+                    carouselNav.style.display = imageUrls.length > 1 ? 'flex' : 'none';
+                }
+                
+                // Reinicializar carrossel
+                currentSlide = 0;
+                if (imageUrls.length > 0 && slides.length > 0) {
+                    // Pequeno delay para garantir que as imagens estejam no DOM
+                    setTimeout(() => {
+                        showSlide(0);
+                    }, 50);
+                }
+                
+                // Atualizar lista de imagens para admin
+                if (isAdminLoggedIn) {
+                    updateImageList(imageUrls);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar imagens:', error);
+                const slidesContainer = document.getElementById('carousel-slides');
+                if (slidesContainer) {
+                    slidesContainer.innerHTML = '<p style="color:white; text-align:center; padding: 20px;">Erro ao carregar imagens.</p>';
+                }
+            }
+        }
+
+        // Função para atualizar a lista de imagens (para admin deletar)
+        function updateImageList(imageUrls) {
+            const imageList = document.getElementById('image-list');
+            if (!imageList) return;
+            
+            imageList.innerHTML = '';
+            
+            if (imageUrls.length === 0) {
+                imageList.innerHTML = '<p style="color: rgba(255,255,255,0.6); font-size: 11px; text-align: center; margin: 0;">Nenhuma imagem</p>';
+                return;
+            }
+            
+            imageUrls.forEach((url, index) => {
+                const item = document.createElement('div');
+                item.className = 'image-item';
+                item.innerHTML = `
+                    <img src="${url}" alt="Preview" onerror="this.style.display='none'">
+                    <span style="flex: 1; margin-left: 5px;">Imagem ${index + 1}</span>
+                    <button class="delete-image-btn" data-index="${index}">Deletar</button>
+                `;
+                
+                const deleteBtn = item.querySelector('.delete-image-btn');
+                deleteBtn.addEventListener('click', () => deleteImage(index));
+                
+                imageList.appendChild(item);
+            });
+        }
+
+        // Função para deletar uma imagem
+        async function deleteImage(imageIndex) {
+            if (!isAdminLoggedIn) {
+                showNotification('Apenas admins podem deletar imagens.', 'error');
+                return;
+            }
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const projectId = urlParams.get('id');
+            
+            if (!projectId) {
+                showNotification('Erro: ID do projeto não encontrado.', 'error');
+                return;
+            }
+            
+            if (!confirm('Tem certeza que deseja deletar esta imagem?')) {
+                return;
+            }
+            
+            try {
+                const projectRef = db.collection("projetos").doc(projectId);
+                const projectDoc = await projectRef.get();
+                const imageUrls = projectDoc.data()?.images || [];
+                
+                if (imageIndex < 0 || imageIndex >= imageUrls.length) {
+                    showNotification('Erro: Índice de imagem inválido.', 'error');
+                    return;
+                }
+                
+                // Obter URL da imagem a ser deletada
+                const imageUrlToDelete = imageUrls[imageIndex];
+                
+                // Tentar deletar do Storage (extrair path da URL)
+                try {
+                    const urlParts = imageUrlToDelete.split('/o/');
+                    if (urlParts.length > 1) {
+                        const pathPart = urlParts[1].split('?')[0];
+                        const decodedPath = decodeURIComponent(pathPart);
+                        const imageRef = storage.ref(decodedPath);
+                        await imageRef.delete();
+                    }
+                } catch (storageError) {
+                    console.warn('Erro ao deletar do Storage (continuando mesmo assim):', storageError);
+                    // Continuar mesmo se falhar no Storage, pois pode ser uma URL externa
+                }
+                
+                // Remover imagem do array
+                const updatedImages = imageUrls.filter((_, index) => index !== imageIndex);
+                
+                // Atualizar Firestore
+                await projectRef.update({
+                    images: updatedImages
+                });
+                
+                showNotification('Imagem deletada com sucesso!', 'success');
+                
+                // Recarregar imagens
+                loadProjectImages(projectId);
+            } catch (error) {
+                console.error('Erro ao deletar imagem:', error);
+                showNotification(`Erro ao deletar: ${error.message}`, 'error');
+            }
+        }
+
+        // --- Fim Funções de Upload de Imagens ---
 
         // --- Lógica Principal (Carregamento de Dados e Inicialização) ---
         document.addEventListener('DOMContentLoaded', function() {
@@ -407,25 +833,8 @@
                         titleElement.textContent = projectData.title || "Título não encontrado";
                         descriptionElement.innerHTML = formatDescription(projectData.description) || "Descrição não disponível.";
 
-                        // Construir Caminhos das Imagens Locais
-                        const imageBaseFolder = `images/projects/${projectId}`;
-                        // Lista de arquivos vazia, como solicitado
-                        const imageFiles = []; 
-                        const imagePaths = imageFiles.map(file => `${imageBaseFolder}/${file}`);
-                        console.log("Tentando carregar imagens locais:", imagePaths);
-
-                        let loadedImageCount = 0; // Contador para saber quando inicializar o carrossel
-
-                        // Adicionar Imagens ao Carrossel (com verificação)
-                        slidesContainer.innerHTML = ''; // Garantir que está limpo
-                        dotsContainer.innerHTML = '';   // Garantir que está limpo
-
-                        if (imagePaths.length === 0) {
-                             slidesContainer.innerHTML = '<p style="color:white; text-align:center;">Nenhuma imagem configurada (imageFiles está vazio).</p>';
-                             if(carouselNav) carouselNav.style.display = 'none';
-                        } else {
-                           // ... (lógica para carregar imagens, que não será executada agora) ...
-                        }
+                        // Carregar imagens do Firestore
+                        loadProjectImages(projectId);
 
                         // Animar entrada do conteúdo
                          if(carouselContainer) carouselContainer.classList.add('visible');
@@ -737,6 +1146,9 @@
             if (!document.getElementById('save-changes-button')) {
             addSaveButton();
             }
+            
+            // Inicializar upload de imagens
+            initializeImageUpload();
         }
 
         // Desabilitar o modo de edição
@@ -767,6 +1179,12 @@
             if (editIndicator) editIndicator.remove();
             const saveButton = document.getElementById('save-changes-button');
             if (saveButton) saveButton.remove();
+            
+            // Ocultar container de upload de imagens
+            const uploadContainer = document.getElementById('image-upload-container');
+            if (uploadContainer) {
+                uploadContainer.classList.remove('visible');
+            }
         }
 
         // Adicionar botão de salvar
@@ -949,6 +1367,16 @@
                 notification.style.backgroundColor = 'rgba(128, 0, 0, 0.8)';
                 notification.style.color = 'white';
                 notification.style.border = '1px solid #ff0000';
+            } else if (type === 'info') {
+                notification.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+                notification.style.color = 'white';
+                notification.style.border = 'none';
+                notification.style.boxShadow = '0 0 15px rgba(255, 255, 255, 0.3)';
+            } else {
+                // Padrão para outros tipos
+                notification.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+                notification.style.color = 'white';
+                notification.style.border = 'none';
             }
             
             // Adicionar à página

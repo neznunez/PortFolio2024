@@ -391,8 +391,108 @@
 
         // --- Firebase Helper Functions ---
 
+        // Função para preparar array de 6 imagens (repetir se necessário)
+        function prepareFaceImages(imageUrls) {
+            // Validar input
+            if (!imageUrls || !Array.isArray(imageUrls)) {
+                return new Array(6).fill(null);
+            }
+            
+            // Filtrar URLs válidas
+            const validUrls = imageUrls.filter(url => url && typeof url === 'string');
+            
+            if (validUrls.length === 0) {
+                return new Array(6).fill(null);
+            }
+            
+            if (validUrls.length >= 6) {
+                // Mais de 6: usar as 6 primeiras
+                return validUrls.slice(0, 6);
+            } else {
+                // Menos de 6: repetir para completar
+                const faces = [];
+                for (let i = 0; i < 6; i++) {
+                    faces.push(validUrls[i % validUrls.length]);
+                }
+                return faces;
+            }
+        }
+
+        // Função para carregar texturas nas faces do cubo
+        function loadCubeTextures(faceImages, materials) {
+            return new Promise((resolve) => {
+                let loadedCount = 0;
+                let errorCount = 0;
+                const totalFaces = 6;
+                const validImages = faceImages.filter(img => img !== null).length;
+                
+                // Se não houver imagens válidas, resolver imediatamente
+                if (validImages === 0) {
+                    resolve();
+                    return;
+                }
+                
+                // Usar o textureLoader global (definido em init())
+                if (!textureLoader) {
+                    textureLoader = new THREE.TextureLoader();
+                    textureLoader.setCrossOrigin('anonymous');
+                }
+                
+                for (let i = 0; i < totalFaces; i++) {
+                    if (faceImages[i] && materials[i]) {
+                        // Tentar carregar textura
+                        textureLoader.load(
+                            faceImages[i],
+                            (texture) => {
+                                // Sucesso: configurar textura
+                                try {
+                                    texture.wrapS = THREE.ClampToEdgeWrapping;
+                                    texture.wrapT = THREE.ClampToEdgeWrapping;
+                                    texture.minFilter = THREE.LinearFilter;
+                                    texture.magFilter = THREE.LinearFilter;
+                                    
+                                    materials[i].map = texture;
+                                    materials[i].needsUpdate = true;
+                                    
+                                    loadedCount++;
+                                } catch (error) {
+                                    console.warn(`Erro ao configurar textura da face ${i}:`, error);
+                                    errorCount++;
+                                }
+                                
+                                // Resolver quando todas tentarem carregar
+                                if (loadedCount + errorCount === validImages) {
+                                    resolve();
+                                }
+                            },
+                            undefined, // onProgress
+                            (error) => {
+                                // Erro ao carregar (CORS, 404, etc.)
+                                console.warn(`Erro ao carregar textura da face ${i} (${faceImages[i]}):`, error);
+                                errorCount++;
+                                
+                                // Manter material padrão (sem textura)
+                                // Não fazer nada, material já está configurado
+                                
+                                // Resolver quando todas tentarem carregar
+                                if (loadedCount + errorCount === validImages) {
+                                    resolve();
+                                }
+                            }
+                        );
+                    } else {
+                        // Sem imagem: contar como processado
+                        loadedCount++;
+                        if (loadedCount === totalFaces) {
+                            resolve();
+                        }
+                    }
+                }
+            });
+        }
+
         // Função para criar e adicionar um cubo à cena
-        function createAndAddCube(projectId, projectData) {
+        async function createAndAddCube(projectId, projectData) {
              console.log("Adicionando cubo para o projeto:", projectId);
              
              // Verificar se o projectData tem um título válido
@@ -428,20 +528,47 @@
                  }
              } while ((isTooClose || position.length() < minDistanceFromSphere) && attempts <= MAX_ATTEMPTS); // Check min distance from sphere center too
 
-
-             // Create geometry and material (reuse existing logic/style)
+             // Buscar imagens do Firestore
+             let imageUrls = [];
+             try {
+                 if (db) {
+                     const projectDoc = await db.collection("projetos").doc(projectId).get();
+                     if (projectDoc.exists) {
+                         imageUrls = projectDoc.data()?.images || [];
+                     }
+                 }
+             } catch (error) {
+                 console.warn(`Erro ao buscar imagens do projeto ${projectId}:`, error);
+                 // Continuar com material padrão
+             }
+             
+             // Preparar array de 6 imagens
+             const faceImages = prepareFaceImages(imageUrls);
+             
+             // Verificar se há imagens válidas
+             const hasImages = faceImages.some(img => img !== null);
+             
+             // Criar array de 6 materiais (um para cada face)
+             // Se tiver imagens: mais opaco (0.95) e menos transparente (0.3)
+             // Se não tiver imagens: material original (0.8) e mais transparente (0.9)
+             const materials = [];
+             for (let i = 0; i < 6; i++) {
+                 const material = new THREE.MeshPhysicalMaterial({
+                     color: 0xFFFFFF,
+                     roughness: 0.5,
+                     metalness: 0.1,
+                     reflectivity: 0.9,
+                     transparent: true,
+                     opacity: hasImages ? 0.95 : 0.8,
+                     transmission: hasImages ? 0.3 : 0.9,
+                     side: THREE.DoubleSide
+                 });
+                 materials.push(material);
+             }
+             
+             // Criar cubo com array de materiais
              var cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-             var cubeMaterial = new THREE.MeshPhysicalMaterial({
-                 color: 0xFFFFFF, // Default color
-                 roughness: 0.5,
-                 metalness: 0.1,
-                 reflectivity: 0.9,
-                 transparent: true,
-                 opacity: 0.8,
-                 transmission: 0.9,
-                 side: THREE.DoubleSide
-             });
-             var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+             var cube = new THREE.Mesh(cubeGeometry, materials);
              cube.position.copy(position);
 
              // Store Firestore data in userData
@@ -451,6 +578,8 @@
                 id: projectId,
                 name: projectTitle // Usar o título para o tooltip
              };
+             // Armazenar se o cubo tem imagens (para animação usar opacidade correta)
+             cube.userData.hasImages = hasImages;
              
              // Log para depuração dos dados do projeto
              console.log("Dados de projeto configurados para o cubo:", {
@@ -459,39 +588,60 @@
                  userData: cube.userData
              });
              // Store original hex color for hover effect reset
-             cube.currentHex = cubeMaterial.color.getHex();
+             // Para array de materiais, usar o primeiro
+             cube.currentHex = materials[0].color.getHex();
 
             // ✅ Inicializar com escala 0 e opacidade 0 para animação
             cube.scale.set(0, 0, 0);
-            cube.material.opacity = 0;
+            // Para array de materiais, ajustar opacidade de todos
+            materials.forEach(mat => mat.opacity = 0);
             
             scene.add(cube);
             cubeArray.push(cube);
             
             // ✅ Cubos começam invisíveis - só aparecem quando clicar na cabeça
             cube.visible = false;
+            
+            // Carregar texturas em background (não bloqueia criação do cubo)
+            loadCubeTextures(faceImages, materials).catch(error => {
+                console.warn(`Erro ao carregar texturas do cubo ${projectId}:`, error);
+                // Cubo continua funcionando com material padrão
+            });
         }
         
         // ✅ Função para animar entrada do cubo (chamada quando necessário)
         function animateCubeEntry(cube) {
+            if (!cube) return;
+            
             // Tornar visível antes da animação
             cube.visible = true;
+            
+            // Para array de materiais, animar todos
+            const materials = Array.isArray(cube.material) ? cube.material : [cube.material];
+            
+            // Verificar se o cubo tem imagens (armazenado no userData)
+            const hasImages = cube.userData.hasImages || false;
+            
+            // Opacidade final: 0.95 se tiver imagens, 0.8 se não tiver (material original)
+            const targetOpacity = hasImages ? 0.95 : 0.8;
             
             // Animação de escala (0 → 1)
             gsap.to(cube.scale, {
                 x: 1,
                 y: 1,
                 z: 1,
-                duration: 0.6,
+                duration: 0.8,
                 ease: "back.out(1.7)", // Efeito de "bounce"
                 delay: 0.1
             });
             
-            // Animação de fade (opacidade 0 → 0.8)
-            gsap.to(cube.material, {
-                opacity: 0.8,
-                duration: 0.5,
-                ease: "power2.out"
+            // Animação de fade para todos os materiais
+            materials.forEach(mat => {
+                gsap.to(mat, {
+                    opacity: targetOpacity,
+                    duration: 0.8,
+                    ease: "power2.out"
+                });
             });
         }
 
@@ -554,10 +704,36 @@
                     tooltip.innerHTML = projectTitle;
                  }
                  
+                 // NOVO: Atualizar texturas se imagens mudaram
+                 const newImageUrls = projectData.images || [];
+                 updateCubeTextures(cube, newImageUrls);
+                 
                  console.log("Dados do cubo atualizados:", cube.userData.project);
              } else {
                  console.warn("Cubo não encontrado para atualização:", projectId);
              }
+        }
+
+        // Função para atualizar texturas do cubo
+        async function updateCubeTextures(cube, imageUrls) {
+            if (!cube || !cube.material || !Array.isArray(cube.material)) {
+                return; // Cubo não tem array de materiais (cubo antigo ou erro)
+            }
+            
+            const faceImages = prepareFaceImages(imageUrls);
+            const hasImages = faceImages.some(img => img !== null);
+            
+            // Atualizar flag de imagens no userData
+            cube.userData.hasImages = hasImages;
+            
+            // Atualizar opacidade e transmissão baseado em ter imagens ou não
+            cube.material.forEach(mat => {
+                mat.opacity = hasImages ? 0.95 : 0.8;
+                mat.transmission = hasImages ? 0.3 : 0.9;
+                mat.needsUpdate = true;
+            });
+            
+            await loadCubeTextures(faceImages, cube.material);
         }
 
 
@@ -777,7 +953,7 @@
         }
         // --- Fim Novas Funções Firebase ---
 
-        var scene, camera, renderer, controls;
+        var scene, camera, renderer, controls, textureLoader;
         var cubeArray = [];
         var raycaster, mouse;
         var tooltip;
@@ -1061,6 +1237,10 @@
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             document.body.appendChild(renderer.domElement);
+
+            // TextureLoader global com CORS configurado
+            textureLoader = new THREE.TextureLoader();
+            textureLoader.setCrossOrigin('anonymous');
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.minDistance = 4;
@@ -1841,11 +2021,27 @@ function onDocumentMouseMove(event) {
     
     if (intersects.length > 0) {
         if (INTERSECTED != intersects[0].object) {
-            if (INTERSECTED) INTERSECTED.material.color.setHex(INTERSECTED.currentHex);
+            if (INTERSECTED) {
+                // Restaurar estado anterior (suporta array de materiais)
+                const prevMaterials = Array.isArray(INTERSECTED.material) ? INTERSECTED.material : [INTERSECTED.material];
+                prevMaterials.forEach(mat => {
+                    mat.color.setHex(INTERSECTED.currentHex);
+                    // Remover glow (emissive)
+                    mat.emissive.setHex(0x000000);
+                    mat.emissiveIntensity = 0;
+                });
+            }
             
             INTERSECTED = intersects[0].object;
-            INTERSECTED.currentHex = INTERSECTED.material.color.getHex();
-            INTERSECTED.material.color.setHex(0xff0000);
+            // Obter cor atual (usar primeiro material se for array)
+            const materials = Array.isArray(INTERSECTED.material) ? INTERSECTED.material : [INTERSECTED.material];
+            INTERSECTED.currentHex = materials[0].color.getHex();
+            // Aplicar efeito glow em todos os materiais
+            materials.forEach(mat => {
+                // Glow branco suave
+                mat.emissive.setHex(0xffffff);
+                mat.emissiveIntensity = 0.5;
+            });
         }
 
         tooltip.style.left = event.clientX + 'px';
@@ -1862,7 +2058,16 @@ function onDocumentMouseMove(event) {
         
         tooltip.style.visibility = 'visible';
     } else {
-        if (INTERSECTED) INTERSECTED.material.color.setHex(INTERSECTED.currentHex);
+        if (INTERSECTED) {
+            // Restaurar estado (suporta array de materiais)
+            const materials = Array.isArray(INTERSECTED.material) ? INTERSECTED.material : [INTERSECTED.material];
+            materials.forEach(mat => {
+                mat.color.setHex(INTERSECTED.currentHex);
+                // Remover glow (emissive)
+                mat.emissive.setHex(0x000000);
+                mat.emissiveIntensity = 0;
+            });
+        }
 
         INTERSECTED = null;
         tooltip.style.visibility = 'hidden';
