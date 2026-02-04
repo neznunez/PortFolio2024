@@ -2022,26 +2022,17 @@ function onDocumentMouseMove(event) {
     if (intersects.length > 0) {
         if (INTERSECTED != intersects[0].object) {
             if (INTERSECTED) {
-                // Restaurar estado anterior (suporta array de materiais)
+                // Restaurar cor anterior (suporta array de materiais)
                 const prevMaterials = Array.isArray(INTERSECTED.material) ? INTERSECTED.material : [INTERSECTED.material];
-                prevMaterials.forEach(mat => {
-                    mat.color.setHex(INTERSECTED.currentHex);
-                    // Remover glow (emissive)
-                    mat.emissive.setHex(0x000000);
-                    mat.emissiveIntensity = 0;
-                });
+                prevMaterials.forEach(mat => mat.color.setHex(INTERSECTED.currentHex));
             }
             
             INTERSECTED = intersects[0].object;
             // Obter cor atual (usar primeiro material se for array)
             const materials = Array.isArray(INTERSECTED.material) ? INTERSECTED.material : [INTERSECTED.material];
             INTERSECTED.currentHex = materials[0].color.getHex();
-            // Aplicar efeito glow em todos os materiais
-            materials.forEach(mat => {
-                // Glow branco suave
-                mat.emissive.setHex(0xffffff);
-                mat.emissiveIntensity = 0.5;
-            });
+            // Aplicar hover em todos os materiais
+            materials.forEach(mat => mat.color.setHex(0xff0000));
         }
 
         tooltip.style.left = event.clientX + 'px';
@@ -2059,14 +2050,9 @@ function onDocumentMouseMove(event) {
         tooltip.style.visibility = 'visible';
     } else {
         if (INTERSECTED) {
-            // Restaurar estado (suporta array de materiais)
+            // Restaurar cor (suporta array de materiais)
             const materials = Array.isArray(INTERSECTED.material) ? INTERSECTED.material : [INTERSECTED.material];
-            materials.forEach(mat => {
-                mat.color.setHex(INTERSECTED.currentHex);
-                // Remover glow (emissive)
-                mat.emissive.setHex(0x000000);
-                mat.emissiveIntensity = 0;
-            });
+            materials.forEach(mat => mat.color.setHex(INTERSECTED.currentHex));
         }
 
         INTERSECTED = null;
