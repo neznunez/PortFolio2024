@@ -866,18 +866,33 @@
         // --- Botão Voltar ---
         document.getElementById('back-button').addEventListener('click', function(event) {
             event.preventDefault();
+            
+            // Preferir voltar no histórico (melhor UX, pode reaproveitar cache do browser).
+            // Fallback: se abriu esta página direto (sem vir do site), ir para index.html.
+            const goBackOrIndex = () => {
+                try {
+                    const referrer = document.referrer || '';
+                    const sameOrigin = referrer.startsWith(window.location.origin);
+                    if (sameOrigin && window.history.length > 1) {
+                        window.history.back();
+                        return;
+                    }
+                } catch (e) {
+                    // Ignorar e usar fallback
+                }
+                window.location.href = 'index.html';
+            };
+
             // Tenta usar GSAP se carregado, senão faz direto
             if (typeof gsap !== 'undefined') {
-            gsap.to(document.body, {
-                opacity: 0,
+                gsap.to(document.body, {
+                    opacity: 0,
                     duration: 0.5, // Mais rápido
-                ease: "power1.inOut",
-                onComplete: function() {
-                    window.location.href = 'index.html';
-                }
-            });
+                    ease: "power1.inOut",
+                    onComplete: goBackOrIndex
+                });
             } else {
-                 window.location.href = 'index.html';
+                goBackOrIndex();
             }
         });
 
@@ -987,7 +1002,6 @@
         // Sistema de administração
         let adminKeySequence = '';
         let adminMode = false;
-        const adminPassword = 'ainda123'; // Senha atualizada
 
         // Detectar a digitação da palavra "admin"
         document.addEventListener('keydown', function(event) {

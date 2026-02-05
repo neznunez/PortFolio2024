@@ -646,6 +646,38 @@
             });
         }
 
+        // ✅ Se voltamos do project.html, revelar cubos automaticamente quando existirem
+        function scheduleAutoRevealCubes() {
+            if (!shouldResumeCubes) return;
+
+            // Esconder a notificação "CLIQUE NA CABEÇA" ao retomar (sem notificações)
+            const notification = document.querySelector('.initial-notification');
+            if (notification) {
+                notification.style.opacity = '0';
+                notification.style.display = 'none';
+            }
+
+            // Fluxo de retorno: esperar modelo + cubos, depois 2.1s (câmera em 0,0,5), depois animação de “puxar” câmera e revelar cubos
+            const startedAt = Date.now();
+            const interval = setInterval(() => {
+                if (typeof model !== 'undefined' && model != null && cubeArray && cubeArray.length > 0) {
+                    clearInterval(interval);
+                    shouldResumeCubes = false;
+                    try { sessionStorage.removeItem('resumeCubes'); } catch (e) {}
+                    // Câmera já está em (0,0,5); só disparar o afastar após breve delay
+                    setTimeout(function() {
+                        resumeHeadClickAnimation();
+                    }, 150);
+                    return;
+                }
+                if (Date.now() - startedAt > 10000) {
+                    clearInterval(interval);
+                    shouldResumeCubes = false;
+                    try { sessionStorage.removeItem('resumeCubes'); } catch (e) {}
+                }
+            }, 200);
+        }
+
         // Função para remover um cubo da cena
         function removeCube(projectId) {
              console.log("Removing cube for project:", projectId);
@@ -966,6 +998,14 @@
         var model; // Referência ao modelo 3D da cabeça para uso em animações
         var mixer; // <-- ADICIONAR ESTA LINHA (mixer global)
         var headClicked = false; // ✅ Flag para rastrear se já clicou na cabeça
+        // ✅ Primeira vez: loading bar aparece. Ao voltar da página de projeto: não mostrar loading, ir direto.
+        var shouldResumeCubes = false;
+        try {
+            shouldResumeCubes = sessionStorage.getItem('resumeCubes') === '1'; // só '1' quando voltamos de project.html
+            if (shouldResumeCubes) headClicked = true;
+        } catch (e) {
+            // Ignorar (pode falhar em ambientes restritos)
+        }
 	    var scaleFactor = 1; // Escala inicial normal, sem expansão
         var mouseDown = false; // Declaração da variável mouseDown
         var clock = new THREE.Clock(); // <-- ADICIONAR ESTA LINHA
@@ -1140,8 +1180,8 @@
         }
 		
 		   function addModel() {
-            // ✅ Criar tela de loading (se ainda não existe)
-            if (!loadingScreen) {
+            // ✅ Primeira visita: mostrar loading. Ao voltar do project: não criar (ir direto à cena).
+            if (!loadingScreen && !shouldResumeCubes) {
                 loadingScreen = document.createElement('div');
                 loadingScreen.className = 'loading-screen';
                 
@@ -1195,32 +1235,38 @@
                         mixer.clipAction(clip).play();
                     });
 
-                    animateCameraToPosition(0, 0, 5);
+                    // Ao voltar de project.html: câmera já começa em (0,0,5), sem animação de aproximar
+                    if (shouldResumeCubes) {
+                        camera.position.set(0, 0, 5);
+                        camera.lookAt(scene.position);
+                    } else {
+                        animateCameraToPosition(0, 0, 5);
+                    }
                 }, 
-                // ✅ Callback de progresso do modelo
+                // ✅ Callback de progresso do modelo (não atualizar UI quando voltando de project.html)
                 function (xhr) {
+                    if (shouldResumeCubes) return;
                     if (xhr.lengthComputable && xhr.total > 0) {
-                        // Atualizar progresso do modelo (0-100%)
                         loadingProgress.model = (xhr.loaded / xhr.total) * 100;
                         updateLoadingProgress();
-                        
-                        // ✅ Atualizar texto (sem MB)
-                        loadingText.textContent = 'Loading';
-                        
-                        // ✅ Parar piscar quando houver progresso
+                        if (loadingText) loadingText.textContent = 'Loading';
                         stopBlinking();
                     } else {
-                        loadingText.textContent = 'Loading';
+                        if (loadingText) loadingText.textContent = 'Loading';
                     }
                 }, 
                 function (error) {
                     console.error(error);
                     stopBlinking();
-                    loadingText.textContent = 'ERRO';
-                    loadingText.style.color = '#ff3333';
-                    loadingText.style.textShadow = '0 0 5px #ff3333';
-                    loadingBar.style.backgroundColor = '#ff3333';
-                    loadingBar.style.boxShadow = '0 0 15px #ff3333';
+                    if (loadingText) {
+                        loadingText.textContent = 'ERRO';
+                        loadingText.style.color = '#ff3333';
+                        loadingText.style.textShadow = '0 0 5px #ff3333';
+                    }
+                    if (loadingBar) {
+                        loadingBar.style.backgroundColor = '#ff3333';
+                        loadingBar.style.boxShadow = '0 0 15px #ff3333';
+                    }
                 }
             );
         }
@@ -1228,7 +1274,21 @@
         var composer;
 
         function init() {
-			
+            // Ao voltar de project.html: nunca mostrar loading — ir direto à cena
+            if (shouldResumeCubes) {
+                if (loadingScreen && loadingScreen.parentNode) {
+                    loadingScreen.parentNode.removeChild(loadingScreen);
+                }
+                loadingScreen = null;
+                loadingBar = null;
+                loadingPercentage = null;
+                loadingText = null;
+                if (blinkInterval) {
+                    clearInterval(blinkInterval);
+                    blinkInterval = null;
+                }
+            }
+
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.set(0, 0, 7);
@@ -1278,6 +1338,9 @@
             // }, 1000); // Atraso para garantir que não interfira com outras inicializações
             
             animate();
+
+            // ✅ Se voltamos de project.html, mostrar cubos automaticamente
+            scheduleAutoRevealCubes();
         }
 	  
 function handleHeadClick() {
@@ -1335,6 +1398,34 @@ function handleHeadClick() {
     setTimeout(function() {
         showNavigationNotification();
     }, 1000); // Espera 1 segundo após o clique para mostrar a nova notificação
+}
+
+// Igual ao handleHeadClick (câmera puxa + cubos aparecem), mas SEM notificações (uso ao voltar de project.html)
+function resumeHeadClickAnimation() {
+    headClicked = true;
+    if (cubeArray && cubeArray.length > 0) {
+        cubeArray.forEach(cube => {
+            if (cube && cube.visible === false) animateCubeEntry(cube);
+        });
+    }
+    gsap.to(camera.position, {
+        x: initialCameraPosition.x,
+        y: initialCameraPosition.y,
+        z: initialCameraPosition.z,
+        duration: 2,
+        ease: "power3.inOut",
+        onUpdate: function() {
+            camera.lookAt(scene.position);
+        }
+    });
+    gsap.to(camera.quaternion, {
+        x: initialCameraQuaternion.x,
+        y: initialCameraQuaternion.y,
+        z: initialCameraQuaternion.z,
+        w: initialCameraQuaternion.w,
+        duration: 2,
+        ease: "power3.inOut"
+    });
 }
 
 // Função para mostrar a notificação de navegação
@@ -2123,6 +2214,8 @@ function onDocumentMouseUp(event) {
             var pageName = projectToPageMap[selectedCube.userData.project.name];
             
             if (pageName) {
+                // ✅ Ao abrir projeto, marcar para retomar cubos ao voltar
+                try { sessionStorage.setItem('resumeCubes', '1'); } catch (e) {}
                 gsap.to(renderer.domElement, {
                     opacity: 0,
                     duration: 1,
@@ -2134,6 +2227,8 @@ function onDocumentMouseUp(event) {
             } else {
                 const projectId = selectedCube.userData.projectId;
                 if (projectId) {
+                    // ✅ Ao abrir projeto, marcar para retomar cubos ao voltar
+                    try { sessionStorage.setItem('resumeCubes', '1'); } catch (e) {}
                     gsap.to(renderer.domElement, {
                         opacity: 0,
                         duration: 1,
@@ -2364,6 +2459,14 @@ document.addEventListener('keydown', function(event) {
     window.addEventListener('load', function() {
         var notification = document.querySelector('.initial-notification');
         if (notification) {
+            // Se estamos retomando do project.html, não mostrar essa dica
+            try {
+                if (sessionStorage.getItem('resumeCubes') === '1') return;
+            } catch (e) {}
+            // Se já está em modo "cubos visíveis", também não mostrar
+            try {
+                if (typeof headClicked !== 'undefined' && headClicked) return;
+            } catch (e) {}
             setTimeout(function() {
                 gsap.to(notification, {
                     opacity: 1,
