@@ -13,6 +13,7 @@
             overflow: hidden;
             height: 100%;
             font-family: Arial, sans-serif;
+            background-color: #000;
         }
         
         #loading-screen, .loading-screen {
@@ -2351,8 +2352,24 @@ document.addEventListener('keydown', function(event) {
 });
 
     init();
+
+    // Corrige tela branca ao voltar via bfcache (produção): contexto WebGL perdido → recarrega
+    window.addEventListener('pageshow', function(e) {
+        if (e.persisted) {
+            try {
+                var canvas = typeof renderer !== 'undefined' && renderer && renderer.domElement;
+                if (canvas) {
+                    var gl = canvas.getContext && (canvas.getContext('webgl2') || canvas.getContext('webgl'));
+                    if (!gl || (gl.isContextLost && gl.isContextLost())) {
+                        window.location.reload();
+                        return;
+                    }
+                }
+            } catch (err) {}
+        }
+    });
     </script>
-	
+
     <!-- Modal de criação de projeto -->
     <div id="create-project-modal">
         <div class="modal-content">
