@@ -255,18 +255,27 @@
             max-width: 60%;
             position: relative;
             height: 100%;
+            min-height: 250px;
             overflow: hidden;
         }
         #project-panel .carousel-container {
             width: 100%;
             height: 100%;
+            min-height: 200px;
             position: relative;
             overflow: hidden;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background: rgba(0, 0, 0, 0.4);
+        }
+        #project-panel #panel-carousel-slides {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
         }
         #project-panel .carousel-slide {
             display: none;
@@ -2670,6 +2679,8 @@ document.addEventListener('keydown', function(event) {
                 slidesEl.innerHTML = '';
                 dotsEl.innerHTML   = '';
 
+                imageUrls = imageUrls.filter(function(u) { return u && typeof u === 'string'; });
+
                 if (!imageUrls.length) {
                     slidesEl.innerHTML = '<p style="color:white;text-align:center;padding:20px;">Nenhuma imagem configurada.</p>';
                     if (navEl) navEl.style.display = 'none';
@@ -2681,9 +2692,15 @@ document.addEventListener('keydown', function(event) {
                     var slide = document.createElement('div');
                     slide.className = 'carousel-slide' + (idx === 0 ? ' active' : '');
                     var img = document.createElement('img');
-                    img.src = url;
+                    img.crossOrigin = 'anonymous';
                     img.alt = 'Imagem ' + (idx + 1);
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'cover';
+                    img.style.borderRadius = '8px';
+                    img.style.display = 'block';
                     img.onerror = function() { slide.innerHTML = '<p style="color:white;text-align:center;padding:20px;">Erro ao carregar imagem</p>'; };
+                    img.src = url;
                     slide.appendChild(img);
                     slidesEl.appendChild(slide);
 
