@@ -214,6 +214,256 @@
             }
         }
 
+        /* ===== PAINEL DE PROJETO (SPA) ===== */
+        #project-panel {
+            position: fixed;
+            inset: 0;
+            z-index: 500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Roboto', sans-serif;
+            background-color: transparent;
+        }
+        #project-panel.visible {
+            display: flex;
+        }
+        #project-panel .project-container {
+            position: absolute;
+            width: 90%;
+            height: 75%;
+            top: 52%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: space-between;
+            z-index: 1;
+            backdrop-filter: blur(5px);
+            overflow: hidden;
+            padding: 20px;
+        }
+        #project-panel .project-images-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-right: 20px;
+            max-width: 60%;
+            position: relative;
+            height: 100%;
+            overflow: hidden;
+        }
+        #project-panel .carousel-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #project-panel .carousel-slide {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        #project-panel .carousel-slide.active {
+            display: block;
+            opacity: 1;
+        }
+        #project-panel .carousel-nav {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            transform: translateY(-50%);
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+            z-index: 10;
+        }
+        #project-panel .carousel-button {
+            background-color: rgba(255, 255, 255, 0.5);
+            color: #000;
+            border: none;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            border-radius: 50%;
+            z-index: 20;
+            pointer-events: auto;
+        }
+        #project-panel .carousel-button:hover {
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+        #project-panel .carousel-indicators {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            margin: 0;
+        }
+        #project-panel .carousel-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.5);
+            margin: 0 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        #project-panel .carousel-dot.active {
+            background-color: #33ff33;
+            box-shadow: 0 0 8px rgba(51, 255, 51, 0.7);
+        }
+        #project-panel .project-text-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+            padding-left: 20px;
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            height: 100%;
+            overflow-y: auto;
+        }
+        #project-panel .project-text-container::-webkit-scrollbar { width: 6px; }
+        #project-panel .project-text-container::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 3px; }
+        #project-panel .project-text-container::-webkit-scrollbar-thumb { background: rgba(51,255,51,0.5); border-radius: 3px; }
+        #project-panel .project-text-container::-webkit-scrollbar-thumb:hover { background: rgba(51,255,51,0.7); }
+        #project-panel .project-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            margin: 0;
+            display: block;
+        }
+        #project-panel #panel-project-title {
+            margin: 0 0 20px 0;
+            color: #ffffff;
+            font-size: 2.2rem;
+            text-shadow: none;
+        }
+        #project-panel #panel-project-description {
+            margin: 0;
+            color: white;
+            line-height: 1.6;
+            font-size: 1.1rem;
+        }
+        #project-panel .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        #project-panel .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        #project-panel .panel-back-button {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s ease;
+            z-index: 600;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: none;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+        }
+        #project-panel .panel-back-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: scale(1.05);
+        }
+        #project-panel .image-upload-container {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 10;
+            display: none;
+        }
+        #project-panel .image-upload-container.visible { display: block; }
+        #project-panel .image-upload-label {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+        #project-panel .image-upload-label:hover { background-color: rgba(255,255,255,0.1); transform: scale(1.05); }
+        #project-panel .image-upload-input { display: none; }
+        #project-panel .image-list {
+            margin-top: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 8px;
+            padding: 10px;
+        }
+        #project-panel .image-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 5px;
+            margin: 5px 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            color: white;
+            font-size: 12px;
+        }
+        #project-panel .image-item img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        #project-panel .delete-image-btn {
+            background-color: rgba(255, 0, 0, 0.3);
+            color: white;
+            border: 1px solid rgba(255, 0, 0, 0.5);
+            border-radius: 4px;
+            padding: 2px 8px;
+            cursor: pointer;
+            font-size: 10px;
+            font-family: 'Courier New', monospace;
+        }
+        #project-panel .delete-image-btn:hover { background-color: rgba(255, 0, 0, 0.5); }
+        /* ===== FIM PAINEL DE PROJETO ===== */
+
         /* Modal de criação de projeto */
         #create-project-modal {
             position: fixed;
@@ -320,6 +570,7 @@
    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
    <!-- Botão Skybox -->
    <button id="skyboxButton" class="skybox-button">SKYBOX</button>
@@ -339,6 +590,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
+        const storage = firebase.storage();
         const ADMIN_UID = "eeT0iJOXYlU7g7l6fh9hL5kCLDL2"; // User's Admin UID
         // --- End Firebase Configuration ---
 
@@ -645,38 +897,6 @@
                     ease: "power2.out"
                 });
             });
-        }
-
-        // ✅ Se voltamos do project.html, revelar cubos automaticamente quando existirem
-        function scheduleAutoRevealCubes() {
-            if (!shouldResumeCubes) return;
-
-            // Esconder a notificação "CLIQUE NA CABEÇA" ao retomar (sem notificações)
-            const notification = document.querySelector('.initial-notification');
-            if (notification) {
-                notification.style.opacity = '0';
-                notification.style.display = 'none';
-            }
-
-            // Fluxo de retorno: esperar modelo + cubos, depois 2.1s (câmera em 0,0,5), depois animação de “puxar” câmera e revelar cubos
-            const startedAt = Date.now();
-            const interval = setInterval(() => {
-                if (typeof model !== 'undefined' && model != null && cubeArray && cubeArray.length > 0) {
-                    clearInterval(interval);
-                    shouldResumeCubes = false;
-                    try { sessionStorage.removeItem('resumeCubes'); } catch (e) {}
-                    // Câmera já está em (0,0,5); só disparar o afastar após breve delay
-                    setTimeout(function() {
-                        resumeHeadClickAnimation();
-                    }, 150);
-                    return;
-                }
-                if (Date.now() - startedAt > 10000) {
-                    clearInterval(interval);
-                    shouldResumeCubes = false;
-                    try { sessionStorage.removeItem('resumeCubes'); } catch (e) {}
-                }
-            }, 200);
         }
 
         // Função para remover um cubo da cena
@@ -999,14 +1219,6 @@
         var model; // Referência ao modelo 3D da cabeça para uso em animações
         var mixer; // <-- ADICIONAR ESTA LINHA (mixer global)
         var headClicked = false; // ✅ Flag para rastrear se já clicou na cabeça
-        // ✅ Primeira vez: loading bar aparece. Ao voltar da página de projeto: não mostrar loading, ir direto.
-        var shouldResumeCubes = false;
-        try {
-            shouldResumeCubes = sessionStorage.getItem('resumeCubes') === '1'; // só '1' quando voltamos de project.html
-            if (shouldResumeCubes) headClicked = true;
-        } catch (e) {
-            // Ignorar (pode falhar em ambientes restritos)
-        }
 	    var scaleFactor = 1; // Escala inicial normal, sem expansão
         var mouseDown = false; // Declaração da variável mouseDown
         var clock = new THREE.Clock(); // <-- ADICIONAR ESTA LINHA
@@ -1181,8 +1393,7 @@
         }
 		
 		   function addModel() {
-            // ✅ Primeira visita: mostrar loading. Ao voltar do project: não criar (ir direto à cena).
-            if (!loadingScreen && !shouldResumeCubes) {
+            if (!loadingScreen) {
                 loadingScreen = document.createElement('div');
                 loadingScreen.className = 'loading-screen';
                 
@@ -1236,17 +1447,9 @@
                         mixer.clipAction(clip).play();
                     });
 
-                    // Ao voltar de project.html: câmera já começa em (0,0,5), sem animação de aproximar
-                    if (shouldResumeCubes) {
-                        camera.position.set(0, 0, 5);
-                        camera.lookAt(scene.position);
-                    } else {
-                        animateCameraToPosition(0, 0, 5);
-                    }
+                    animateCameraToPosition(0, 0, 5);
                 }, 
-                // ✅ Callback de progresso do modelo (não atualizar UI quando voltando de project.html)
                 function (xhr) {
-                    if (shouldResumeCubes) return;
                     if (xhr.lengthComputable && xhr.total > 0) {
                         loadingProgress.model = (xhr.loaded / xhr.total) * 100;
                         updateLoadingProgress();
@@ -1275,21 +1478,6 @@
         var composer;
 
         function init() {
-            // Ao voltar de project.html: nunca mostrar loading — ir direto à cena
-            if (shouldResumeCubes) {
-                if (loadingScreen && loadingScreen.parentNode) {
-                    loadingScreen.parentNode.removeChild(loadingScreen);
-                }
-                loadingScreen = null;
-                loadingBar = null;
-                loadingPercentage = null;
-                loadingText = null;
-                if (blinkInterval) {
-                    clearInterval(blinkInterval);
-                    blinkInterval = null;
-                }
-            }
-
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.set(0, 0, 7);
@@ -1339,9 +1527,6 @@
             // }, 1000); // Atraso para garantir que não interfira com outras inicializações
             
             animate();
-
-            // ✅ Se voltamos de project.html, mostrar cubos automaticamente
-            scheduleAutoRevealCubes();
         }
 	  
 function handleHeadClick() {
@@ -1399,34 +1584,6 @@ function handleHeadClick() {
     setTimeout(function() {
         showNavigationNotification();
     }, 1000); // Espera 1 segundo após o clique para mostrar a nova notificação
-}
-
-// Igual ao handleHeadClick (câmera puxa + cubos aparecem), mas SEM notificações (uso ao voltar de project.html)
-function resumeHeadClickAnimation() {
-    headClicked = true;
-    if (cubeArray && cubeArray.length > 0) {
-        cubeArray.forEach(cube => {
-            if (cube && cube.visible === false) animateCubeEntry(cube);
-        });
-    }
-    gsap.to(camera.position, {
-        x: initialCameraPosition.x,
-        y: initialCameraPosition.y,
-        z: initialCameraPosition.z,
-        duration: 2,
-        ease: "power3.inOut",
-        onUpdate: function() {
-            camera.lookAt(scene.position);
-        }
-    });
-    gsap.to(camera.quaternion, {
-        x: initialCameraQuaternion.x,
-        y: initialCameraQuaternion.y,
-        z: initialCameraQuaternion.z,
-        w: initialCameraQuaternion.w,
-        duration: 2,
-        ease: "power3.inOut"
-    });
 }
 
 // Função para mostrar a notificação de navegação
@@ -2178,12 +2335,6 @@ function onDocumentMouseMove(event) {
 	  
 	
 			
-var projectToPageMap = {
-    "Projeto 1": "project.html?id=1",
-    "Projeto 2": "project.html?id=2"
-    // Adicione mais projetos conforme necessário
-};
-
 var cubeFocused = false; // Uma nova variável para rastrear o estado do foco
 
 function onDocumentMouseUp(event) {
@@ -2212,33 +2363,9 @@ function onDocumentMouseUp(event) {
             controls.target.set(cubeCenter.x, cubeCenter.y, cubeCenter.z);
             cubeFocused = true;
         } else {
-            var pageName = projectToPageMap[selectedCube.userData.project.name];
-            
-            if (pageName) {
-                // ✅ Ao abrir projeto, marcar para retomar cubos ao voltar
-                try { sessionStorage.setItem('resumeCubes', '1'); } catch (e) {}
-                gsap.to(renderer.domElement, {
-                    opacity: 0,
-                    duration: 1,
-                    ease: "power1.inOut",
-                    onComplete: function() {
-                        window.location.href = pageName;
-                    }
-                });
-            } else {
-                const projectId = selectedCube.userData.projectId;
-                if (projectId) {
-                    // ✅ Ao abrir projeto, marcar para retomar cubos ao voltar
-                    try { sessionStorage.setItem('resumeCubes', '1'); } catch (e) {}
-                    gsap.to(renderer.domElement, {
-                        opacity: 0,
-                        duration: 1,
-                        ease: "power1.inOut",
-                        onComplete: function() {
-                            window.location.href = `project.html?id=${projectId}`;
-                        }
-                    });
-                }
+            const projectId = selectedCube.userData.projectId;
+            if (projectId) {
+                openProject(projectId);
             }
         }
     } else if (cubeFocused) {
@@ -2352,23 +2479,456 @@ document.addEventListener('keydown', function(event) {
 });
 
     init();
+    </script>
 
-    // Corrige tela branca ao voltar via bfcache (produção): contexto WebGL perdido → recarrega
-    window.addEventListener('pageshow', function(e) {
-        if (e.persisted) {
-            try {
-                var canvas = typeof renderer !== 'undefined' && renderer && renderer.domElement;
-                if (canvas) {
-                    var gl = canvas.getContext && (canvas.getContext('webgl2') || canvas.getContext('webgl'));
-                    if (!gl || (gl.isContextLost && gl.isContextLost())) {
-                        window.location.reload();
-                        return;
-                    }
-                }
-            } catch (err) {}
+    <!-- ===== SCRIPT DO PAINEL DE PROJETO (SPA) ===== -->
+    <script>
+    // ---------- ESTADO DO PAINEL ----------
+    var _panelCurrentProjectId = null;
+    var _panelCurrentSlide = 0;
+    var _panelSlides = [];
+    var _panelDots = [];
+
+    // ---------- ABRIR / FECHAR PAINEL ----------
+    function openProject(projectId) {
+        if (!projectId) return;
+        _panelCurrentProjectId = projectId;
+
+        var panel = document.getElementById('project-panel');
+        if (!panel) return;
+
+        // Resetar estado do carrossel
+        _panelCurrentSlide = 0;
+        _panelSlides = [];
+        _panelDots = [];
+
+        // Resetar conteúdo
+        var titleEl = document.getElementById('panel-project-title');
+        var descEl  = document.getElementById('panel-project-description');
+        var slidesEl = document.getElementById('panel-carousel-slides');
+        var dotsEl   = document.getElementById('panel-carousel-dots');
+        var navEl    = document.getElementById('panel-carousel-nav');
+        if (titleEl) titleEl.textContent = 'Carregando...';
+        if (descEl)  descEl.innerHTML   = '';
+        if (slidesEl) slidesEl.innerHTML = '';
+        if (dotsEl)   dotsEl.innerHTML   = '';
+        if (navEl)    navEl.style.display = 'none';
+
+        // Mostrar painel com fade
+        panel.classList.add('visible');
+        panel.style.opacity = '0';
+        if (typeof gsap !== 'undefined') {
+            gsap.to(panel, { opacity: 1, duration: 0.4, ease: 'power2.out' });
+        } else {
+            panel.style.opacity = '1';
+        }
+
+        // Atualizar URL sem navegar
+        try { history.pushState({ projectPanel: projectId }, '', '?project=' + projectId); } catch(e) {}
+
+        // Carregar dados do Firestore
+        _panelLoadProjectData(projectId);
+
+        // Inicializar upload se admin
+        _panelInitImageUpload();
+    }
+
+    function closeProject() {
+        var panel = document.getElementById('project-panel');
+        if (!panel) return;
+
+        var doClose = function() {
+            panel.classList.remove('visible');
+            panel.style.opacity = '';
+            _panelCurrentProjectId = null;
+            // Desabilitar modo edição se estiver ativo
+            _panelDisableEditMode();
+        };
+
+        if (typeof gsap !== 'undefined') {
+            gsap.to(panel, { opacity: 0, duration: 0.3, ease: 'power2.in', onComplete: doClose });
+        } else {
+            doClose();
+        }
+
+        // Restaurar URL
+        try { history.pushState({}, '', window.location.pathname); } catch(e) {}
+    }
+
+    // Tratar botão back do navegador
+    window.addEventListener('popstate', function(e) {
+        var panel = document.getElementById('project-panel');
+        if (panel && panel.classList.contains('visible')) {
+            // Estava no painel, fechar sem pushState (já voltou)
+            var doClose = function() {
+                panel.classList.remove('visible');
+                panel.style.opacity = '';
+                _panelCurrentProjectId = null;
+                _panelDisableEditMode();
+            };
+            if (typeof gsap !== 'undefined') {
+                gsap.to(panel, { opacity: 0, duration: 0.3, ease: 'power2.in', onComplete: doClose });
+            } else { doClose(); }
         }
     });
+
+    // Botão Back do painel
+    document.addEventListener('DOMContentLoaded', function() {
+        var backBtn = document.getElementById('panel-back-button');
+        if (backBtn) {
+            backBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                closeProject();
+            });
+        }
+        var prevBtn = document.getElementById('panel-prev-button');
+        if (prevBtn) prevBtn.addEventListener('click', panelPrevSlide);
+        var nextBtn = document.getElementById('panel-next-button');
+        if (nextBtn) nextBtn.addEventListener('click', panelNextSlide);
+    });
+
+    // ---------- CARROSSEL DO PAINEL ----------
+    function panelShowSlide(index) {
+        var slidesEl = document.getElementById('panel-carousel-slides');
+        var dotsEl   = document.getElementById('panel-carousel-dots');
+        if (slidesEl) _panelSlides = Array.from(slidesEl.querySelectorAll('.carousel-slide'));
+        if (dotsEl)   _panelDots  = Array.from(dotsEl.querySelectorAll('.carousel-dot'));
+
+        if (!_panelSlides.length || index < 0 || index >= _panelSlides.length) return;
+
+        _panelSlides.forEach(function(s) { s.classList.remove('active'); });
+        _panelDots.forEach(function(d)  { d.classList.remove('active'); });
+        _panelSlides[index].classList.add('active');
+        if (_panelDots[index]) _panelDots[index].classList.add('active');
+        _panelCurrentSlide = index;
+    }
+
+    function panelPrevSlide() {
+        if (!_panelSlides.length) return;
+        var n = _panelCurrentSlide - 1;
+        if (n < 0) n = _panelSlides.length - 1;
+        panelShowSlide(n);
+    }
+
+    function panelNextSlide() {
+        if (!_panelSlides.length) return;
+        var n = _panelCurrentSlide + 1;
+        if (n >= _panelSlides.length) n = 0;
+        panelShowSlide(n);
+    }
+
+    // ---------- CARREGAR DADOS DO FIRESTORE ----------
+    function _panelLoadProjectData(projectId) {
+        if (typeof db === 'undefined' || !db) return;
+        db.collection('projetos').doc(projectId).get()
+            .then(function(doc) {
+                if (!doc.exists) {
+                    var titleEl = document.getElementById('panel-project-title');
+                    if (titleEl) titleEl.textContent = 'Projeto não encontrado';
+                    return;
+                }
+                var data = doc.data();
+                var titleEl = document.getElementById('panel-project-title');
+                var descEl  = document.getElementById('panel-project-description');
+                if (titleEl) {
+                    titleEl.textContent = data.title || 'Sem título';
+                    titleEl.classList.add('visible');
+                }
+                if (descEl) {
+                    descEl.innerHTML = _panelFormatDescription(data.description);
+                    descEl.classList.add('visible');
+                }
+                _panelLoadProjectImages(projectId);
+                // Ativar edição se admin já estiver logado
+                if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) {
+                    _panelEnableEditMode();
+                }
+            })
+            .catch(function(err) {
+                console.error('Erro ao buscar projeto no painel:', err);
+                var titleEl = document.getElementById('panel-project-title');
+                if (titleEl) titleEl.textContent = 'Erro ao carregar projeto';
+            });
+    }
+
+    function _panelFormatDescription(text) {
+        if (!text) return '';
+        return text.replace(/\n/g, '<br>');
+    }
+
+    // ---------- IMAGENS ----------
+    function _panelLoadProjectImages(projectId) {
+        if (typeof db === 'undefined' || !db) return;
+        db.collection('projetos').doc(projectId).get()
+            .then(function(doc) {
+                var imageUrls = (doc.data() && doc.data().images) || [];
+                var slidesEl = document.getElementById('panel-carousel-slides');
+                var dotsEl   = document.getElementById('panel-carousel-dots');
+                var navEl    = document.getElementById('panel-carousel-nav');
+                if (!slidesEl || !dotsEl) return;
+
+                slidesEl.innerHTML = '';
+                dotsEl.innerHTML   = '';
+
+                if (!imageUrls.length) {
+                    slidesEl.innerHTML = '<p style="color:white;text-align:center;padding:20px;">Nenhuma imagem configurada.</p>';
+                    if (navEl) navEl.style.display = 'none';
+                    if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) _panelUpdateImageList([]);
+                    return;
+                }
+
+                imageUrls.forEach(function(url, idx) {
+                    var slide = document.createElement('div');
+                    slide.className = 'carousel-slide' + (idx === 0 ? ' active' : '');
+                    var img = document.createElement('img');
+                    img.src = url;
+                    img.alt = 'Imagem ' + (idx + 1);
+                    img.onerror = function() { slide.innerHTML = '<p style="color:white;text-align:center;padding:20px;">Erro ao carregar imagem</p>'; };
+                    slide.appendChild(img);
+                    slidesEl.appendChild(slide);
+
+                    var dot = document.createElement('div');
+                    dot.className = 'carousel-dot' + (idx === 0 ? ' active' : '');
+                    dot.setAttribute('data-index', idx);
+                    (function(i) { dot.addEventListener('click', function() { panelShowSlide(i); }); })(idx);
+                    dotsEl.appendChild(dot);
+                });
+
+                void slidesEl.offsetHeight;
+                _panelSlides = Array.from(slidesEl.querySelectorAll('.carousel-slide'));
+                _panelDots   = Array.from(dotsEl.querySelectorAll('.carousel-dot'));
+                if (navEl) navEl.style.display = imageUrls.length > 1 ? 'flex' : 'none';
+                _panelCurrentSlide = 0;
+                setTimeout(function() { panelShowSlide(0); }, 50);
+
+                if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) _panelUpdateImageList(imageUrls);
+            })
+            .catch(function(err) {
+                console.error('Erro ao carregar imagens do painel:', err);
+            });
+    }
+
+    function _panelUpdateImageList(imageUrls) {
+        var imageList = document.getElementById('panel-image-list');
+        if (!imageList) return;
+        imageList.innerHTML = '';
+        if (!imageUrls.length) {
+            imageList.innerHTML = '<p style="color:rgba(255,255,255,0.6);font-size:11px;text-align:center;margin:0;">Nenhuma imagem</p>';
+            return;
+        }
+        imageUrls.forEach(function(url, idx) {
+            var item = document.createElement('div');
+            item.className = 'image-item';
+            item.innerHTML = '<img src="' + url + '" alt="Preview" onerror="this.style.display=\'none\'">' +
+                '<span style="flex:1;margin-left:5px;">Imagem ' + (idx + 1) + '</span>' +
+                '<button class="delete-image-btn" data-index="' + idx + '">Deletar</button>';
+            item.querySelector('.delete-image-btn').addEventListener('click', function() { _panelDeleteImage(idx); });
+            imageList.appendChild(item);
+        });
+    }
+
+    async function _panelDeleteImage(imageIndex) {
+        if (typeof isAdminLoggedIn === 'undefined' || !isAdminLoggedIn) return;
+        var projectId = _panelCurrentProjectId;
+        if (!projectId) return;
+        if (!confirm('Tem certeza que deseja deletar esta imagem?')) return;
+        try {
+            var projectRef = db.collection('projetos').doc(projectId);
+            var projectDoc = await projectRef.get();
+            var imageUrls  = (projectDoc.data() && projectDoc.data().images) || [];
+            var urlToDelete = imageUrls[imageIndex];
+            try {
+                var urlParts = urlToDelete.split('/o/');
+                if (urlParts.length > 1) {
+                    var decodedPath = decodeURIComponent(urlParts[1].split('?')[0]);
+                    await storage.ref(decodedPath).delete();
+                }
+            } catch(e) { console.warn('Falha ao deletar do Storage:', e); }
+            var updated = imageUrls.filter(function(_, i) { return i !== imageIndex; });
+            await projectRef.update({ images: updated });
+            showNotification('Imagem deletada com sucesso!', 'success', true);
+            _panelLoadProjectImages(projectId);
+        } catch(err) {
+            showNotification('Erro ao deletar: ' + err.message, 'error', true);
+        }
+    }
+
+    // ---------- UPLOAD DE IMAGENS ----------
+    function _panelInitImageUpload() {
+        var uploadContainer = document.getElementById('panel-image-upload-container');
+        var uploadInput     = document.getElementById('panel-image-upload-input');
+        if (!uploadContainer || !uploadInput) return;
+
+        if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) {
+            uploadContainer.classList.add('visible');
+        } else {
+            uploadContainer.classList.remove('visible');
+        }
+
+        // Remover listener anterior para evitar duplicação
+        var newInput = uploadInput.cloneNode(true);
+        uploadInput.parentNode.replaceChild(newInput, uploadInput);
+
+        newInput.addEventListener('change', async function(e) {
+            var files = Array.from(e.target.files);
+            if (!files.length) return;
+            var validFiles = files.filter(function(f) { return f.type.startsWith('image/'); });
+            if (!validFiles.length) { showNotification('Selecione apenas imagens.', 'error', true); newInput.value = ''; return; }
+            var oversized = validFiles.filter(function(f) { return f.size > 5 * 1024 * 1024; });
+            if (oversized.length) { showNotification('Máximo 5MB por imagem.', 'error', true); newInput.value = ''; return; }
+            var projectId = _panelCurrentProjectId;
+            if (!projectId) { showNotification('Erro: projeto não identificado.', 'error', true); return; }
+            showNotification('Enviando ' + validFiles.length + ' imagem(ns)...', 'info', true);
+            try {
+                var urls = await Promise.all(validFiles.map(function(f) { return _panelUploadImage(projectId, f); }));
+                await _panelSaveImageUrls(projectId, urls);
+                showNotification('Imagens adicionadas com sucesso!', 'success', true);
+                await new Promise(function(r) { setTimeout(r, 500); });
+                await _panelLoadProjectImages(projectId);
+                newInput.value = '';
+            } catch(err) {
+                showNotification('Erro no upload: ' + err.message, 'error', true);
+                newInput.value = '';
+            }
+        });
+    }
+
+    function _panelUploadImage(projectId, file) {
+        return new Promise(function(resolve, reject) {
+            if (typeof storage === 'undefined' || !storage) { reject(new Error('Storage não inicializado.')); return; }
+            var fileName  = Date.now() + '_' + file.name;
+            var ref       = storage.ref('projects/' + projectId + '/' + fileName);
+            var task      = ref.put(file);
+            task.on('state_changed', null,
+                function(err) { reject(err); },
+                function() { task.snapshot.ref.getDownloadURL().then(resolve).catch(reject); }
+            );
+        });
+    }
+
+    async function _panelSaveImageUrls(projectId, newUrls) {
+        if (typeof db === 'undefined' || !db) throw new Error('Firestore não inicializado.');
+        var ref  = db.collection('projetos').doc(projectId);
+        var doc  = await ref.get();
+        var existing = (doc.data() && doc.data().images) || [];
+        await ref.update({ images: existing.concat(newUrls) });
+    }
+
+    // ---------- MODO DE EDIÇÃO (ADMIN) ----------
+    function _panelEnableEditMode() {
+        if (typeof isAdminLoggedIn === 'undefined' || !isAdminLoggedIn) return;
+        var titleEl = document.getElementById('panel-project-title');
+        var descEl  = document.getElementById('panel-project-description');
+        if (titleEl) { titleEl.contentEditable = 'true'; titleEl.style.border = '1px dashed #33ff33'; titleEl.style.padding = '5px'; }
+        if (descEl)  { descEl.contentEditable  = 'true'; descEl.style.border  = '1px dashed #33ff33'; descEl.style.padding  = '5px'; }
+
+        var panel = document.getElementById('project-panel');
+        if (panel && !document.getElementById('panel-edit-indicator')) {
+            var ind = document.createElement('div');
+            ind.id = 'panel-edit-indicator';
+            ind.textContent = 'MODO DE EDIÇÃO';
+            ind.style.cssText = 'position:absolute;top:10px;right:20px;background-color:rgba(51,255,51,0.2);color:#33ff33;padding:5px 10px;border-radius:4px;font-family:Courier New,monospace;font-size:14px;font-weight:bold;border:1px solid #33ff33;z-index:600;';
+            panel.appendChild(ind);
+        }
+        if (!document.getElementById('panel-save-button')) {
+            var saveBtn = document.createElement('button');
+            saveBtn.id = 'panel-save-button';
+            saveBtn.textContent = 'Salvar Alterações';
+            saveBtn.style.cssText = 'position:absolute;bottom:20px;right:20px;background-color:rgba(0,0,0,0.7);color:#33ff33;border:2px solid #33ff33;padding:8px 15px;border-radius:8px;font-family:Courier New,monospace;font-size:16px;font-weight:bold;cursor:pointer;z-index:600;';
+            saveBtn.addEventListener('mouseover', function() { this.style.backgroundColor = 'rgba(51,255,51,0.2)'; });
+            saveBtn.addEventListener('mouseout',  function() { this.style.backgroundColor = 'rgba(0,0,0,0.7)'; });
+            saveBtn.addEventListener('click', _panelSaveChanges);
+            var panel = document.getElementById('project-panel');
+            if (panel) panel.appendChild(saveBtn);
+        }
+        if (!document.getElementById('panel-logout-button')) {
+            var logoutBtn = document.createElement('button');
+            logoutBtn.id = 'panel-logout-button';
+            logoutBtn.textContent = 'Logout Admin';
+            logoutBtn.style.cssText = 'position:absolute;top:10px;left:120px;color:#ff6b6b;background-color:rgba(0,0,0,0.7);border:2px solid #ff6b6b;padding:5px 10px;border-radius:8px;font-family:Courier New,monospace;font-size:14px;cursor:pointer;z-index:600;';
+            logoutBtn.addEventListener('click', function() {
+                if (typeof auth !== 'undefined' && auth) auth.signOut().then(function() { showNotification('Logout realizado.', 'success', true); });
+            });
+            var panel = document.getElementById('project-panel');
+            if (panel) panel.appendChild(logoutBtn);
+        }
+        _panelInitImageUpload();
+    }
+
+    function _panelDisableEditMode() {
+        var titleEl = document.getElementById('panel-project-title');
+        var descEl  = document.getElementById('panel-project-description');
+        if (titleEl) { titleEl.contentEditable = 'false'; titleEl.style.border = 'none'; titleEl.style.padding = '0'; }
+        if (descEl)  { descEl.contentEditable  = 'false'; descEl.style.border  = 'none'; descEl.style.padding  = '0'; }
+        var ind     = document.getElementById('panel-edit-indicator');     if (ind)     ind.remove();
+        var saveBtn = document.getElementById('panel-save-button');        if (saveBtn) saveBtn.remove();
+        var logBtn  = document.getElementById('panel-logout-button');      if (logBtn)  logBtn.remove();
+        var upCont  = document.getElementById('panel-image-upload-container');
+        if (upCont) upCont.classList.remove('visible');
+    }
+
+    function _panelSaveChanges() {
+        if (typeof isAdminLoggedIn === 'undefined' || !isAdminLoggedIn) return;
+        var projectId = _panelCurrentProjectId;
+        if (!projectId) { showNotification('Erro: projeto não identificado.', 'error', true); return; }
+        var titleEl = document.getElementById('panel-project-title');
+        var descEl  = document.getElementById('panel-project-description');
+        var newTitle = titleEl ? titleEl.textContent.trim() : '';
+        var newDesc  = descEl  ? descEl.innerHTML.replace(/<br\s*[/]?>/gi, '\n').trim() : '';
+        var saveBtn  = document.getElementById('panel-save-button');
+        if (saveBtn) { saveBtn.textContent = 'Salvando...'; saveBtn.disabled = true; }
+        db.collection('projetos').doc(projectId).update({ title: newTitle, description: newDesc })
+            .then(function() {
+                showNotification('Alterações salvas com sucesso!', 'success', true);
+                _panelDisableEditMode();
+            })
+            .catch(function(err) {
+                showNotification('Erro ao salvar: ' + err.message, 'error', true);
+                if (saveBtn) { saveBtn.textContent = 'Salvar Alterações'; saveBtn.disabled = false; }
+            });
+    }
+
+    // Quando admin logar/deslogar enquanto painel estiver aberto
+    if (typeof auth !== 'undefined' && auth) {
+        auth.onAuthStateChanged(function(user) {
+            var panel = document.getElementById('project-panel');
+            if (!panel || !panel.classList.contains('visible')) return;
+            if (user && user.uid === (typeof ADMIN_UID !== 'undefined' ? ADMIN_UID : '')) {
+                _panelEnableEditMode();
+            } else {
+                _panelDisableEditMode();
+            }
+        });
+    }
     </script>
+    <!-- ===== FIM SCRIPT DO PAINEL DE PROJETO ===== -->
+
+    <!-- ===== PAINEL DE PROJETO (SPA) ===== -->
+    <div id="project-panel">
+        <button class="panel-back-button" id="panel-back-button">&#8592; Back</button>
+        <div class="project-container">
+            <div class="project-images-container">
+                <div class="carousel-container fade-in" id="panel-carousel-container">
+                    <div id="panel-carousel-slides"></div>
+                    <div class="carousel-nav" id="panel-carousel-nav" style="display:none;">
+                        <button class="carousel-button" id="panel-prev-button">&#10094;</button>
+                        <button class="carousel-button" id="panel-next-button">&#10095;</button>
+                    </div>
+                    <div class="carousel-indicators" id="panel-carousel-dots"></div>
+                </div>
+                <div class="image-upload-container" id="panel-image-upload-container">
+                    <label for="panel-image-upload-input" class="image-upload-label">📷 Adicionar Imagens</label>
+                    <input type="file" id="panel-image-upload-input" class="image-upload-input" accept="image/*" multiple>
+                    <div class="image-list" id="panel-image-list"></div>
+                </div>
+            </div>
+            <div class="project-text-container">
+                <h1 id="panel-project-title" class="fade-in visible">Carregando...</h1>
+                <p id="panel-project-description" class="fade-in visible"></p>
+            </div>
+        </div>
+    </div>
+    <!-- ===== FIM PAINEL DE PROJETO ===== -->
 
     <!-- Modal de criação de projeto -->
     <div id="create-project-modal">
@@ -2476,10 +3036,6 @@ document.addEventListener('keydown', function(event) {
     window.addEventListener('load', function() {
         var notification = document.querySelector('.initial-notification');
         if (notification) {
-            // Se estamos retomando do project.html, não mostrar essa dica
-            try {
-                if (sessionStorage.getItem('resumeCubes') === '1') return;
-            } catch (e) {}
             // Se já está em modo "cubos visíveis", também não mostrar
             try {
                 if (typeof headClicked !== 'undefined' && headClicked) return;
