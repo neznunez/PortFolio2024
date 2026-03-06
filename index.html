@@ -44,6 +44,7 @@
             display: block;
             width: 100%;
             height: 100%;
+            filter: saturate(1.08) contrast(1.01);
         }
         .tooltip {
             position: absolute;
@@ -130,9 +131,6 @@
         }
         /* Estilo para o botão de skybox */
         .skybox-button {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
             padding: 10px 15px;
             background-color: rgba(0, 0, 0, 0.7);
             color: #33ff33;
@@ -146,7 +144,6 @@
             box-shadow: 0 0 10px rgba(51, 255, 51, 0.5);
             text-shadow: 0 0 5px #33ff33;
             letter-spacing: 2px;
-            display: none; /* Inicialmente oculto */
         }
         
         .skybox-button:hover {
@@ -156,6 +153,19 @@
         
         .skybox-button:active {
             transform: scale(0.95);
+        }
+
+        /* Container dos botões de ambiente */
+        .env-controls {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            display: none;
+            align-items: center;
+            z-index: 999;
+        }
+        .env-controls.visible {
+            display: flex;
         }
 
         /* Estilo para a notificação inicial */
@@ -571,6 +581,10 @@
 </head>
 <body>
    <script src="ReLibs/three.min.js"></script>
+   <script type="module">
+        import { RGBELoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/addons/loaders/RGBELoader.js';
+        window.RGBELoader = RGBELoader;
+   </script>
    <script src="ReLibs/OrbitControls.js"></script>
    <script src="ReLibs/gsap.min.js"></script>
    <script src="ReLibs/GLTFLoader.js"></script>
@@ -582,8 +596,10 @@
    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
-   <!-- Botão Skybox -->
-   <button id="skyboxButton" class="skybox-button">SKYBOX</button>
+   <!-- Controles de ambiente HDR (3x Espaço para mostrar) -->
+   <div id="envControls" class="env-controls">
+       <button id="skyboxButton" class="skybox-button">FUNDO</button>
+   </div>
 	
   <script>
         // --- Firebase Configuration ---
@@ -633,8 +649,6 @@
                 });
         }
         
-        // Chamar a verificação na inicialização
-        // verificarFirestore(); // Comentado temporariamente para isolar o erro 400
 
         // --- Firebase Helper Functions ---
 
@@ -691,12 +705,17 @@
                         textureLoader.load(
                             faceImages[i],
                             (texture) => {
-                                // Sucesso: configurar textura
+                                // Sucesso: configurar textura para melhor qualidade
                                 try {
                                     texture.wrapS = THREE.ClampToEdgeWrapping;
                                     texture.wrapT = THREE.ClampToEdgeWrapping;
-                                    texture.minFilter = THREE.LinearFilter;
+                                    texture.minFilter = THREE.LinearMipmapLinearFilter;
                                     texture.magFilter = THREE.LinearFilter;
+                                    texture.colorSpace = THREE.SRGBColorSpace;
+                                    texture.generateMipmaps = true;
+                                    if (renderer && renderer.capabilities) {
+                                        texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+                                    }
                                     
                                     materials[i].map = texture;
                                     materials[i].needsUpdate = true;
@@ -793,20 +812,37 @@
              const hasImages = faceImages.some(img => img !== null);
              
              // Criar array de 6 materiais (um para cada face)
-             // Se tiver imagens: mais opaco (0.95) e menos transparente (0.3)
-             // Se não tiver imagens: material original (0.8) e mais transparente (0.9)
+             // Com imagens: faces com textura, reflexões do ambiente, leve translucidez
+             // Sem imagens: vidro translúcido, reflexões do HDR/skybox
              const materials = [];
              for (let i = 0; i < 6; i++) {
-                 const material = new THREE.MeshPhysicalMaterial({
+                 const matOptions = hasImages ? {
                      color: 0xFFFFFF,
-                     roughness: 0.5,
-                     metalness: 0.1,
-                     reflectivity: 0.9,
+                     roughness: 0.3,
+                     metalness: 0.02,
                      transparent: true,
-                     opacity: hasImages ? 0.95 : 0.8,
-                     transmission: hasImages ? 0.3 : 0.9,
+                     opacity: 0.98,
+                     transmission: 0.08,
+                     thickness: 0.05,
+                     clearcoat: 0.15,
+                     clearcoatRoughness: 0.2,
                      side: THREE.DoubleSide
-                 });
+                 } : {
+                     color: 0xE8F4FF,
+                     roughness: 0.05,
+                     metalness: 0,
+                     transparent: true,
+                     opacity: 0.75,
+                     transmission: 0.92,
+                     thickness: 0.12,
+                     ior: 1.45,
+                     side: THREE.DoubleSide
+                 };
+                 const material = new THREE.MeshPhysicalMaterial(matOptions);
+                 if (scene.environment) {
+                     material.envMap = scene.environment;
+                     material.envMapIntensity = 1.7;
+                 }
                  materials.push(material);
              }
              
@@ -829,15 +865,17 @@
              // Para array de materiais, usar o primeiro
              cube.currentHex = materials[0].color.getHex();
 
-            // ✅ Inicializar com escala 0 e opacidade 0 para animação
+            // Inicializar com escala 0 e opacidade 0 para animação
             cube.scale.set(0, 0, 0);
             // Para array de materiais, ajustar opacidade de todos
             materials.forEach(mat => mat.opacity = 0);
             
             scene.add(cube);
             cubeArray.push(cube);
+            cube.castShadow = true;
+            cube.receiveShadow = true;
             
-            // ✅ Cubos começam invisíveis - só aparecem quando clicar na cabeça
+            // Cubos começam invisíveis - só aparecem quando clicar na cabeça
             cube.visible = false;
             
             // Carregar texturas em background (não bloqueia criação do cubo)
@@ -847,7 +885,7 @@
             });
         }
         
-        // ✅ Função para animar entrada do cubo (chamada quando necessário)
+        // Função para animar entrada do cubo
         function animateCubeEntry(cube) {
             if (!cube) return;
             
@@ -860,8 +898,8 @@
             // Verificar se o cubo tem imagens (armazenado no userData)
             const hasImages = cube.userData.hasImages || false;
             
-            // Opacidade final: 0.95 se tiver imagens, 0.8 se não tiver (material original)
-            const targetOpacity = hasImages ? 0.95 : 0.8;
+            // Opacidade final: 0.98 se tiver imagens, 0.75 se não tiver (vidro)
+            const targetOpacity = hasImages ? 0.98 : 0.75;
             
             // Animação de escala (0 → 1)
             gsap.to(cube.scale, {
@@ -888,17 +926,12 @@
              const index = cubeArray.findIndex(cube => cube.userData.projectId === projectId);
              if (index !== -1) {
                  const cubeToRemove = cubeArray[index];
-                 // Animate removal?
                  gsap.to(cubeToRemove.scale, { x: 0, y: 0, z: 0, duration: 0.3, ease: "power1.in", onComplete: () => {
                      scene.remove(cubeToRemove);
-                     // Optional: Dispose geometry/material
                      if (cubeToRemove.geometry) cubeToRemove.geometry.dispose();
                      if (cubeToRemove.material) {
-                         if (Array.isArray(cubeToRemove.material)) {
-                             cubeToRemove.material.forEach(m => m.dispose());
-                         } else {
-                             cubeToRemove.material.dispose();
-                         }
+                         var mats = Array.isArray(cubeToRemove.material) ? cubeToRemove.material : [cubeToRemove.material];
+                         mats.forEach(function(m) { if (m.map) m.map.dispose(); m.dispose(); });
                      }
                  }});
                  cubeArray.splice(index, 1);
@@ -956,10 +989,26 @@
             // Atualizar flag de imagens no userData
             cube.userData.hasImages = hasImages;
             
-            // Atualizar opacidade e transmissão baseado em ter imagens ou não
+            // Atualizar parâmetros do material baseado em ter imagens ou não
             cube.material.forEach(mat => {
-                mat.opacity = hasImages ? 0.95 : 0.8;
-                mat.transmission = hasImages ? 0.3 : 0.9;
+                if (hasImages) {
+                    mat.opacity = 0.98;
+                    mat.transmission = 0.08;
+                    mat.roughness = 0.3;
+                    mat.metalness = 0.02;
+                    mat.thickness = 0.05;
+                    mat.clearcoat = 0.15;
+                    mat.clearcoatRoughness = 0.2;
+                } else {
+                    mat.opacity = 0.75;
+                    mat.transmission = 0.92;
+                    mat.roughness = 0.05;
+                    mat.metalness = 0;
+                    mat.thickness = 0.12;
+                    mat.ior = 1.45;
+                    mat.clearcoat = 0;
+                }
+                mat.color.setHex(hasImages ? 0xFFFFFF : 0xE8F4FF);
                 mat.needsUpdate = true;
             });
             
@@ -969,14 +1018,14 @@
 
         // Function to listen for real-time project updates from Firestore
         function listenToProjects() {
-            // ✅ Marcar Firestore como iniciado (10% imediato)
+            // Marcar Firestore como iniciado
             loadingProgress.firestore = 10;
             updateLoadingProgress();
             
             try {
                 // Verificar se existem projetos no Firestore
                 db.collection("projetos").get().then((snapshot) => {
-                    // ✅ Marcar Firestore como completo (100%)
+                    // Marcar Firestore como completo
                     markComponentComplete('firestore');
                     
                     // Se não houver documentos, usar o fallback manual imediatamente
@@ -989,14 +1038,13 @@
                 }).catch((error) => {
                     // Erro ao tentar LER a coleção inicialmente
                     console.error("Erro ao verificar a coleção projetos (db.collection.get):", error);
-                    // ✅ Marcar como completo mesmo com erro
+                    // Marcar como completo mesmo com erro
                     markComponentComplete('firestore');
                     createCubesManually();
                 });
             } catch (error) {
-                // Erro mais geral na configuração
                 console.error("Erro crítico ao configurar o Firestore (try/catch geral):", error);
-                // ✅ Marcar como completo mesmo com erro
+                // Marcar como completo mesmo com erro
                 markComponentComplete('firestore');
                 createCubesManually();
             }
@@ -1008,14 +1056,10 @@
             while (cubeArray.length > 0) {
                 const cube = cubeArray.pop();
                 scene.remove(cube);
-                // Liberar memória (opcional, mas recomendado)
                 if (cube.geometry) cube.geometry.dispose();
                 if (cube.material) {
-                    if (Array.isArray(cube.material)) {
-                        cube.material.forEach(m => m.dispose());
-                    } else {
-                        cube.material.dispose();
-                    }
+                    var mats = Array.isArray(cube.material) ? cube.material : [cube.material];
+                    mats.forEach(function(m) { if (m.map) m.map.dispose(); m.dispose(); });
                 }
             }
             
@@ -1041,7 +1085,7 @@
                         if (!cubeArray.some(cube => cube.userData.projectId === projectId)) {
                             createAndAddCube(projectId, projectData); // Esta função define visible = false
                             
-                            // ✅ Se já clicou na cabeça, mostrar o novo cubo imediatamente com animação
+                            // Se já clicou na cabeça, mostrar o novo cubo imediatamente com animação
                             if (headClicked) {
                                 const newCube = cubeArray.find(cube => cube.userData.projectId === projectId);
                                 if (newCube) {
@@ -1075,11 +1119,8 @@
                 scene.remove(cube);
                 if (cube.geometry) cube.geometry.dispose();
                 if (cube.material) {
-                    if (Array.isArray(cube.material)) {
-                        cube.material.forEach(m => m.dispose());
-                    } else {
-                        cube.material.dispose();
-                    }
+                    var mats = Array.isArray(cube.material) ? cube.material : [cube.material];
+                    mats.forEach(function(m) { if (m.map) m.map.dispose(); m.dispose(); });
                 }
             }
 
@@ -1112,11 +1153,8 @@
                 scene.remove(cube);
                 if (cube.geometry) cube.geometry.dispose();
                 if (cube.material) {
-                    if (Array.isArray(cube.material)) {
-                        cube.material.forEach(m => m.dispose());
-                    } else {
-                        cube.material.dispose();
-                    }
+                    var mats = Array.isArray(cube.material) ? cube.material : [cube.material];
+                    mats.forEach(function(m) { if (m.map) m.map.dispose(); m.dispose(); });
                 }
             }
 
@@ -1139,17 +1177,17 @@
         var tooltip;
         var INTERSECTED;
         var rotationSpeed = 0.005;
-        var angle = 0;
         var selectedCube = null;
         var initialCameraPosition, initialCameraQuaternion;
-        var model; // Referência ao modelo 3D da cabeça para uso em animações
-        var mixer; // <-- ADICIONAR ESTA LINHA (mixer global)
-        var headClicked = false; // ✅ Flag para rastrear se já clicou na cabeça
-	    var scaleFactor = 1; // Escala inicial normal, sem expansão
-        var mouseDown = false; // Declaração da variável mouseDown
-        var clock = new THREE.Clock(); // <-- ADICIONAR ESTA LINHA
+        var model;
+        var headHitbox;
+        var mixer;
+        var headClicked = false;
+        var mouseDown = false;
+        var clock = new THREE.Clock();
+        var _cameraOffset = new THREE.Vector3();
         
-        // ✅ Sistema de Progresso Global
+        // Sistema de Progresso Global
         var loadingProgress = {
             model: 0,        // 0-100% do modelo (peso 70%)
             skybox: 0,       // 0-100% do skybox (peso 20%)
@@ -1163,7 +1201,7 @@
         var loadingText = null;
         var blinkInterval = null;
         
-        // ✅ Função para atualizar progresso total
+        // Função para atualizar progresso total
         function updateLoadingProgress() {
             // Pesos: Modelo 70%, Skybox 20%, Firestore 10%
             loadingProgress.total = 
@@ -1178,12 +1216,12 @@
             }
         }
         
-        // ✅ Função para marcar componente como completo
+        // Função para marcar componente como completo
         function markComponentComplete(component) {
             loadingProgress[component] = 100;
             updateLoadingProgress();
             
-            // ✅ Verificar se TUDO está completo
+            // Verificar se tudo está completo
             if (loadingProgress.model === 100 && 
                 loadingProgress.skybox === 100 && 
                 loadingProgress.firestore === 100) {
@@ -1191,7 +1229,7 @@
             }
         }
         
-        // ✅ Função para completar loading (só quando tudo estiver 100%)
+        // Função para completar loading
         function completeLoading() {
             if (!loadingScreen) return;
             
@@ -1207,12 +1245,12 @@
             loadingText.textContent = 'Complete!';
             loadingText.style.visibility = 'visible';
             
-            // ✅ Garantir que o modelo está visível antes de esconder o loading
+            // Garantir que o modelo está visível antes de esconder o loading
             if (model) {
                 model.visible = true;
             }
             
-            // ✅ Fade-out imediato (sem delay para mostrar "100%")
+            // Fade-out do loading
             setTimeout(function() {
                 loadingScreen.style.opacity = '0';
                 setTimeout(function() {
@@ -1224,7 +1262,7 @@
             }, 0); // Sem delay - transição imediata
         }
         
-        // ✅ Função helper para parar piscar
+        // Função helper para parar piscar
         function stopBlinking() {
             if (blinkInterval) {
                 clearInterval(blinkInterval);
@@ -1264,45 +1302,18 @@
     // Adicione mais conjuntos de skybox aqui conforme necessário, cada um como seu próprio array
 ];
 			
-        // Função para carregar um skybox aleatório
-        function loadRandomSkybox() {
+        // Função para carregar cubemap apenas como fundo (environment vem do HDR)
+        function loadSkyboxBackground() {
             var randomIndex = Math.floor(Math.random() * skyboxes.length);
             var selectedSkybox = skyboxes[randomIndex];
-            
             var loader = new THREE.CubeTextureLoader();
             loader.load(
                 selectedSkybox, 
                 function(texture) {
                     scene.background = texture;
-                    
-                    // Aplicar o mapa de ambiente aos materiais, exceto aos olhos
-                    scene.traverse(function(child) {
-                        if (child.isMesh) {
-                            const isEyePart = child.name && (
-                                child.name.toLowerCase().includes('eye') || 
-                                child.name.toLowerCase().includes('olho')
-                            );
-                            
-                            if (!isEyePart && child.material) {
-                                const materials = Array.isArray(child.material) 
-                                    ? child.material 
-                                    : [child.material];
-                                
-                                materials.forEach(mat => {
-                                    if (mat && (mat.isMeshStandardMaterial || mat.isMeshPhysicalMaterial)) {
-                                        mat.envMap = texture;
-                                        mat.envMapIntensity = 1.0;
-                                        mat.needsUpdate = true;
-                                    }
-                                });
-                            }
-                        }
-                    });
-                    
-                    // ✅ Marcar skybox como completo (20% do total)
-                    markComponentComplete('skybox');
+                    onEnvLoadComplete();
                 },
-                // ✅ Callback de progresso do skybox
+                // Callback de progresso do skybox
                 function(xhr) {
                     if (xhr.lengthComputable && xhr.total > 0) {
                         // Atualizar progresso do skybox (0-100%)
@@ -1311,11 +1322,96 @@
                     }
                 },
                 function(error) {
-                    console.error('Erro ao carregar o skybox:', error);
-                    // ✅ Marcar como completo mesmo com erro (para não travar)
-                    markComponentComplete('skybox');
+                    console.error('Erro ao carregar skybox:', error);
+                    onEnvLoadComplete();
                 }
             );
+        }
+
+        // Contador para saber quando HDR e background terminaram
+        var _envLoadCount = 0;
+        var _envLoadTotal = 2;
+        function onEnvLoadComplete() {
+            _envLoadCount++;
+            if (_envLoadCount >= _envLoadTotal && typeof markComponentComplete === 'function') {
+                markComponentComplete('skybox');
+            }
+        }
+
+        // Função para carregar ambiente HDR (apenas iluminação, fundo vem do cubemap)
+        function loadHDREnvironment() {
+            var hdrTimeout = setTimeout(function() {
+                if (typeof loadingProgress !== 'undefined' && loadingProgress.skybox < 100) {
+                    onEnvLoadComplete();
+                }
+            }, 12000);
+            function doLoad(RGBELoaderClass) {
+                var loader = new RGBELoaderClass();
+                loader.load(
+                    'HDR/grasslands_sunset_1k.hdr',
+                    function(texture) {
+                        clearTimeout(hdrTimeout);
+                        texture.mapping = THREE.EquirectangularReflectionMapping;
+                        var pmremGenerator = new THREE.PMREMGenerator(renderer);
+                        pmremGenerator.compileEquirectangularShader();
+                        var envMap = pmremGenerator.fromEquirectangular(texture).texture;
+                        pmremGenerator.dispose();
+                        texture.dispose();
+                        scene.environment = envMap;
+                        applyEnvMapIntensityToScene(envMap);
+                        onEnvLoadComplete();
+                    },
+                    function(xhr) {
+                        if (xhr.lengthComputable && xhr.total > 0 && typeof loadingProgress !== 'undefined') {
+                            loadingProgress.skybox = (xhr.loaded / xhr.total) * 100;
+                            if (typeof updateLoadingProgress === 'function') updateLoadingProgress();
+                        }
+                    },
+                    function(error) {
+                        clearTimeout(hdrTimeout);
+                        console.error('Erro ao carregar HDR:', error);
+                        onEnvLoadComplete();
+                    }
+                );
+            }
+            if (typeof window.RGBELoader !== 'undefined') {
+                doLoad(window.RGBELoader);
+            } else {
+                import('https://cdn.jsdelivr.net/npm/three@0.160.0/addons/loaders/RGBELoader.js')
+                    .then(function(module) {
+                        window.RGBELoader = module.RGBELoader;
+                        doLoad(module.RGBELoader);
+                    })
+                    .catch(function(err) {
+                        clearTimeout(hdrTimeout);
+                        console.error('Erro ao carregar RGBELoader:', err);
+                        onEnvLoadComplete();
+                    });
+            }
+        }
+
+        // Aplica envMapIntensity aos materiais (usado por skybox e HDR)
+        function applyEnvMapIntensityToScene(texture) {
+            var isCubeMesh = function(mesh) {
+                return cubeArray && cubeArray.some(function(c) { return c === mesh; });
+            };
+            scene.traverse(function(child) {
+                if (child.isMesh && child.material) {
+                    var mats = Array.isArray(child.material) ? child.material : [child.material];
+                    var name = (child.name || '').toLowerCase();
+                    var isEye = name.includes('eye') || name.includes('olho');
+                    var isHeadModel = !isCubeMesh(child);
+                    var intensity = isEye ? 0.7 : (isHeadModel ? 0.8 : 1.7);
+                    mats.forEach(function(mat) {
+                        if (mat && (mat.isMeshStandardMaterial || mat.isMeshPhysicalMaterial)) {
+                            mat.envMap = texture;
+                            mat.envMapIntensity = intensity;
+                            if (isHeadModel && mat.roughness !== undefined) mat.roughness = Math.max(mat.roughness || 0.5, 0.5);
+                            mat.needsUpdate = true;
+                        }
+                    });
+                }
+            });
         }
 		
 		   function addModel() {
@@ -1350,7 +1446,7 @@
             }
             
             var loader = new THREE.GLTFLoader();
-            var modelPath = 'models/Nezpivot.glb';
+            var modelPath = 'models/NezmodelF2.glb';
             
             loader.load(
                 modelPath, 
@@ -1362,6 +1458,8 @@
                     model.traverse(function(child) {
                         if (child.isMesh) {
                             child.frustumCulled = false;
+                            child.castShadow = true;
+                            child.receiveShadow = true;
                             if (child.name && (child.name.toLowerCase().includes('eye') || child.name.toLowerCase().includes('olho') || child.name.toLowerCase().includes('olhos'))) {
                                 child.renderOrder = 1;
                             }
@@ -1369,7 +1467,33 @@
                     });
                     scene.add(model);
                     
-                    // ✅ Marcar modelo como completo (70% do total)
+                    // Hitbox invisível para detectar clique na cabeça (SkinnedMesh não suporta raycast nesta versão do Three.js)
+                    var hitboxGeometry = new THREE.SphereGeometry(1.0, 16, 16);
+                    var hitboxMaterial = new THREE.MeshBasicMaterial({ visible: false });
+                    headHitbox = new THREE.Mesh(hitboxGeometry, hitboxMaterial);
+                    headHitbox.position.set(0, 2.0, 0);
+                    model.add(headHitbox);
+                    
+                    // Aplicar envMapIntensity ao modelo (caso HDR já tenha carregado)
+                    if (scene.environment) {
+                        model.traverse(function(child) {
+                            if (child.isMesh && child.material) {
+                                var mats = Array.isArray(child.material) ? child.material : [child.material];
+                                var name = (child.name || '').toLowerCase();
+                                var isEye = name.includes('eye') || name.includes('olho');
+                                var intensity = isEye ? 0.7 : 0.8;
+                                mats.forEach(function(mat) {
+                                    if (mat && (mat.isMeshStandardMaterial || mat.isMeshPhysicalMaterial)) {
+                                        mat.envMap = scene.environment;
+                                        mat.envMapIntensity = intensity;
+                                        if (!isEye && mat.roughness !== undefined) mat.roughness = Math.max(mat.roughness || 0.5, 0.5);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    
+                    // Marcar modelo como completo
                     markComponentComplete('model');
                     
                     // Parar piscar quando modelo começar a carregar
@@ -1417,9 +1541,13 @@
             camera.position.set(0, 0, 7);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1;
             document.body.appendChild(renderer.domElement);
 
             // TextureLoader global com CORS configurado
@@ -1438,7 +1566,7 @@
             addLighting();
             setupEventListeners();
             
-            // ✅ Inicializar progresso
+            // Inicializar progresso
             loadingProgress = {
                 model: 0,
                 skybox: 0,
@@ -1446,19 +1574,25 @@
                 total: 0
             };
             
-            // ✅ Carregar tudo em paralelo
+            // Carregar tudo em paralelo
             addModel();              // Inicia carregamento do modelo
-            loadRandomSkybox();      // Inicia carregamento do skybox (sem delay)
+            loadHDREnvironment();    // HDR para iluminação (scene.environment)
+            loadSkyboxBackground();  // Cubemap para fundo visual (scene.background)
             
-            // ✅ Firestore depois (não bloqueia visual)
+            // Timeout de segurança: libera o loading após 20s se travar
+            setTimeout(function() {
+                if (loadingScreen && loadingProgress && (loadingProgress.model < 100 || loadingProgress.skybox < 100 || loadingProgress.firestore < 100)) {
+                    loadingProgress.model = 100;
+                    loadingProgress.skybox = 100;
+                    loadingProgress.firestore = 100;
+                    if (typeof completeLoading === 'function') completeLoading();
+                }
+            }, 20000);
+            
+            // Firestore depois (não bloqueia visual)
             setTimeout(function() {
                 listenToProjects();
             }, 100);
-            
-            // Após a criação dos cubos, atribuir IDs
-            // setTimeout(function() { // <-- Comentado/Removido: IDs vêm do Firestore
-            //     assignProjectIdsToExistingCubes();
-            // }, 1000); // Atraso para garantir que não interfira com outras inicializações
             
             animate();
         }
@@ -1480,10 +1614,10 @@ function handleHeadClick() {
         });
     }
 
-    // ✅ Marcar que já clicou na cabeça
+    // Marcar que já clicou na cabeça
     headClicked = true;
 
-    // ✅ Tornar todos os cubos visíveis com animação
+    // Tornar todos os cubos visíveis com animação
     cubeArray.forEach(cube => {
         // Usar a função de animação que já existe
         animateCubeEntry(cube);
@@ -1586,17 +1720,9 @@ function showNavigationNotification() {
 }
 
         function addLighting() {
-    var ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    scene.add(ambientLight);
-    
-    var hemiLight = new THREE.HemisphereLight(0xffeeb1, 0x080820, 1);
-    scene.add(hemiLight);
-
-    var directionalLight = new THREE.DirectionalLight(0xffffff, 0.75);
-    directionalLight.position.set(5, 3, 5);
-    directionalLight.castShadow = true;
-    scene.add(directionalLight);
-}
+            var ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+            scene.add(ambientLight);
+        }
 		
 		// Função para redefinir a câmera para a vista original
         function resetCamera() {
@@ -1644,24 +1770,14 @@ function showNavigationNotification() {
     document.addEventListener('mouseup', onDocumentMouseUp, false);
     window.addEventListener('resize', onWindowResize, false);
 
-    // Adicionar listener para botão Skybox (se existir)
-    const skyboxButton = document.getElementById('skyboxButton');
+    // Botão HDR (recarrega ambiente HDR)
+    var skyboxButton = document.getElementById('skyboxButton');
     if (skyboxButton) {
-        // SUBSTITUIR O LISTENER ANTIGO PELO NOVO COMPLETO
         skyboxButton.addEventListener('click', function() {
-            loadRandomSkybox();
-            
-            // Efeito visual de clique
-            gsap.to(this, { // 'this' aqui será o skyboxButton
-                scale: 0.95,
-                duration: 0.1,
-                onComplete: function() {
-                    gsap.to(skyboxButton, { // Usar a variável skyboxButton já capturada
-                        scale: 1,
-                        duration: 0.2
-                    });
-                }
-            });
+            loadSkyboxBackground();
+            gsap.to(this, { scale: 0.95, duration: 0.1, onComplete: function() {
+                gsap.to(skyboxButton, { scale: 1, duration: 0.2 });
+            }});
         });
     }
     // --- INÍCIO: Novo Listener para "admin" ---
@@ -2072,11 +2188,11 @@ function showNavigationNotification() {
             return;
         }
         
-        // ✅ Mostrar modal ao invés de criar direto
+        // Mostrar modal de criação
         showCreateProjectModal();
     }
 
-    // ✅ Nova função para confirmar criação (chamada pelo botão "Criar" do modal)
+    // Confirmar criação de projeto
     function confirmCreateProject() {
         const input = document.getElementById('project-name-input');
         const projectName = input.value.trim();
@@ -2118,9 +2234,9 @@ function showNavigationNotification() {
                 const newId = maxId + 1;
                 const newIdString = newId.toString();
                 
-                // ✅ Usar o nome do input ao invés de "Novo Projeto X"
+                // Usar o nome do input
                 const newProjectData = {
-                    title: projectName, // ✅ Nome do input
+                    title: projectName,
                     description: "Descreva seu projeto aqui.\nUse \\n para novas linhas.",
                 };
                 
@@ -2223,7 +2339,6 @@ function onDocumentMouseMove(event) {
         // Garantir que o tooltip exiba o título correto do projeto do Firebase
         if (INTERSECTED.userData && INTERSECTED.userData.project) {
             tooltip.innerHTML = INTERSECTED.userData.project.name || "Projeto Sem Título";
-            // Log para depuração
         } else {
             tooltip.innerHTML = "Projeto Desconhecido";
         }
@@ -2255,20 +2370,19 @@ function onDocumentMouseMove(event) {
 
     raycaster.setFromCamera(mouse, camera);
     
-    // Verificar se clicou na cabeça
-    var intersectsHead = raycaster.intersectObject(model, true);
-    if (intersectsHead.length > 0) {
-        handleHeadClick(); // Chama a função se a cabeça foi clicada
-        return;
+    // Verificar se clicou na cabeça (via hitbox invisível)
+    if (headHitbox) {
+        var intersectsHead = raycaster.intersectObject(headHitbox, false);
+        if (intersectsHead.length > 0) {
+            handleHeadClick();
+            return;
+        }
     }
     
     mouseDown = true;
 }
 
-	  
-	
-			
-var cubeFocused = false; // Uma nova variável para rastrear o estado do foco
+var cubeFocused = false;
 
 function onDocumentMouseUp(event) {
     var panel = document.getElementById('project-panel');
@@ -2313,12 +2427,11 @@ function onDocumentMouseUp(event) {
 
 		
         function onWindowResize() {
-            renderer.setSize(window.innerWidth, window.innerHeight);
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
         }
-		
-	  
+
   function animate() {
     requestAnimationFrame(animate);
     
@@ -2330,36 +2443,17 @@ function onDocumentMouseUp(event) {
 
     renderer.render(scene, camera);
     
-    // Lógica de rotação dos cubos
     cubeArray.forEach(cube => {
         var radius = Math.sqrt(cube.position.x * cube.position.x + cube.position.z * cube.position.z);
-        // Calcula o incremento do ângulo para este frame usando rotationSpeed diretamente
         var currentAngle = Math.atan2(cube.position.z, cube.position.x) + rotationSpeed;
         cube.position.x = Math.cos(currentAngle) * radius;
         cube.position.z = Math.sin(currentAngle) * radius;
     });
     
     if (selectedCube && cubeFocused) {
-        var cubeCenter = new THREE.Vector3();
-        selectedCube.geometry.computeBoundingBox();
-        selectedCube.geometry.boundingBox.getCenter(cubeCenter);
-        cubeCenter.applyMatrix4(selectedCube.matrixWorld);
-        
-        var distance = 1;
-        var direction = new THREE.Vector3().subVectors(camera.position, cubeCenter).normalize().multiplyScalar(distance);
-        var newPosition = cubeCenter.clone().add(direction);
-
-        gsap.to(camera.position, {
-            x: newPosition.x,
-            y: newPosition.y,
-            z: newPosition.z,
-            duration: 2,
-            onUpdate: function() {
-                camera.lookAt(cubeCenter);
-            }
-        });
-        
-        controls.target.copy(cubeCenter);
+        _cameraOffset.subVectors(camera.position, controls.target);
+        controls.target.copy(selectedCube.position);
+        camera.position.copy(selectedCube.position).add(_cameraOffset);
     }
 }
 
@@ -2387,24 +2481,20 @@ document.addEventListener('keydown', function(event) {
         
         // Verificar se a barra de espaço foi pressionada 3 vezes
         if (spacePressCount === 3) {
-            // Mostrar ou ocultar o botão de skybox
-            var skyboxButton = document.getElementById('skyboxButton');
-            if (skyboxButton.style.display === 'none' || skyboxButton.style.display === '') {
-                skyboxButton.style.display = 'block';
-                // Animação de entrada
-                gsap.fromTo(skyboxButton, 
-                    { opacity: 0, scale: 0.8 }, 
-                    { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.7)" }
-                );
-            } else {
-                // Animação de saída
-                gsap.to(skyboxButton, { 
+            // Mostrar ou ocultar os controles de ambiente (toggle + botão)
+            var envControls = document.getElementById('envControls');
+            if (envControls && !envControls.classList.contains('visible')) {
+                envControls.classList.add('visible');
+                envControls.style.opacity = '0';
+                gsap.to(envControls, { opacity: 1, duration: 0.5, ease: "back.out(1.7)" });
+            } else if (envControls) {
+                gsap.to(envControls, { 
                     opacity: 0, 
-                    scale: 0.8, 
                     duration: 0.3, 
                     ease: "power2.in",
                     onComplete: function() {
-                        skyboxButton.style.display = 'none';
+                        envControls.classList.remove('visible');
+                        envControls.style.opacity = '1';
                     }
                 });
             }
