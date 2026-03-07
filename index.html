@@ -1185,7 +1185,6 @@
         var headClicked = false;
         var mouseDown = false;
         var clock = new THREE.Clock();
-        var _cameraOffset = new THREE.Vector3();
         
         // Sistema de Progresso Global
         var loadingProgress = {
@@ -2451,9 +2450,26 @@ function onDocumentMouseUp(event) {
     });
     
     if (selectedCube && cubeFocused) {
-        _cameraOffset.subVectors(camera.position, controls.target);
-        controls.target.copy(selectedCube.position);
-        camera.position.copy(selectedCube.position).add(_cameraOffset);
+        var cubeCenter = new THREE.Vector3();
+        selectedCube.geometry.computeBoundingBox();
+        selectedCube.geometry.boundingBox.getCenter(cubeCenter);
+        cubeCenter.applyMatrix4(selectedCube.matrixWorld);
+        
+        var distance = 1;
+        var direction = new THREE.Vector3().subVectors(camera.position, cubeCenter).normalize().multiplyScalar(distance);
+        var newPosition = cubeCenter.clone().add(direction);
+
+        gsap.to(camera.position, {
+            x: newPosition.x,
+            y: newPosition.y,
+            z: newPosition.z,
+            duration: 2,
+            onUpdate: function() {
+                camera.lookAt(cubeCenter);
+            }
+        });
+        
+        controls.target.copy(cubeCenter);
     }
 }
 
