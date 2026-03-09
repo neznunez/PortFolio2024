@@ -814,30 +814,33 @@
              // Criar array de 6 materiais (um para cada face)
              // Com imagens: faces com textura, reflexões do ambiente, leve translucidez
              // Sem imagens: vidro translúcido, reflexões do HDR/skybox
-             const materials = [];
-             for (let i = 0; i < 6; i++) {
-                 const matOptions = hasImages ? {
-                     color: 0xFFFFFF,
-                     roughness: 0.3,
-                     metalness: 0.02,
-                     transparent: true,
-                     opacity: 0.98,
-                     transmission: 0.08,
-                     thickness: 0.05,
-                     clearcoat: 0.15,
-                     clearcoatRoughness: 0.2,
-                     side: THREE.DoubleSide
-                 } : {
-                     color: 0xE8F4FF,
-                     roughness: 0.05,
-                     metalness: 0,
-                     transparent: true,
-                     opacity: 0.75,
-                     transmission: 0.92,
-                     thickness: 0.12,
-                     ior: 1.45,
-                     side: THREE.DoubleSide
-                 };
+            const materials = [];
+            for (let i = 0; i < 6; i++) {
+               const matOptions = hasImages ? {
+                    // Cubo com imagem: caixa sólida com “sticker”
+                    color: 0xFFFFFF,
+                    roughness: 0.3,
+                    metalness: 0.02,
+                    transparent: false,
+                    opacity: 1.0,
+                    transmission: 0.0,
+                    thickness: 0.0,
+                    clearcoat: 0.15,
+                    clearcoatRoughness: 0.2,
+                    side: THREE.FrontSide
+                } : {
+                    // Cubo sem imagem: vidro translúcido
+                    color: 0xE8F4FF,
+                    roughness: 0.05,
+                    metalness: 0,
+                    transparent: true,
+                    opacity: 0.75,
+                    transmission: 0.92,
+                    thickness: 0.12,
+                    ior: 1.45,
+                    depthWrite: false,
+                    side: THREE.FrontSide
+                };
                  const material = new THREE.MeshPhysicalMaterial(matOptions);
                  if (scene.environment) {
                      material.envMap = scene.environment;
@@ -1301,10 +1304,27 @@
     // Adicione mais conjuntos de skybox aqui conforme necessário, cada um como seu próprio array
 ];
 			
+      // Pesos para cada skybox (na mesma ordem de skyboxes)
+      // Valores maiores = aparecem com mais frequência.
+      // Aumentamos o peso do desertdawn (índice 0) para aparecer mais vezes.
+      // Ordem: [desertdawn, Park2, Rainbow, Lycksele3]
+      var skyboxWeights = [5, 1, 3, 1];
+
         // Função para carregar cubemap apenas como fundo (environment vem do HDR)
         function loadSkyboxBackground() {
-            var randomIndex = Math.floor(Math.random() * skyboxes.length);
-            var selectedSkybox = skyboxes[randomIndex];
+            // Escolha ponderada de skybox com base em skyboxWeights
+            var totalWeight = skyboxWeights.reduce(function(sum, w) { return sum + w; }, 0);
+            var r = Math.random() * totalWeight;
+            var accumulated = 0;
+            var selectedIndex = 0;
+            for (var i = 0; i < skyboxWeights.length; i++) {
+                accumulated += skyboxWeights[i];
+                if (r <= accumulated) {
+                    selectedIndex = i;
+                    break;
+                }
+            }
+            var selectedSkybox = skyboxes[selectedIndex];
             var loader = new THREE.CubeTextureLoader();
             loader.load(
                 selectedSkybox, 
@@ -1554,8 +1574,9 @@
             textureLoader.setCrossOrigin('anonymous');
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.minDistance = 4;
-            controls.maxDistance = 9;
+            controls.minDistance = 6.5;
+            controls.maxDistance = 8;
+            controls.enablePan = false;
 			
 			
 			initialCameraPosition = camera.position.clone();
