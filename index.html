@@ -302,6 +302,65 @@
             display: block;
             opacity: 1;
         }
+        #project-panel .carousel-slide img,
+        #project-panel .carousel-slide video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            display: block;
+        }
+        #project-panel #panel-carousel-loading-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            border-radius: 8px;
+            color: #33ff33;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            text-align: center;
+            padding: 20px;
+        }
+        #project-panel #panel-carousel-loading-overlay .loading-spinner {
+            width: 40px; height: 40px;
+            border: 3px solid rgba(51, 255, 51, 0.3);
+            border-top-color: #33ff33;
+            border-radius: 50%;
+            animation: panel-loading-spin 0.8s linear infinite;
+            margin-bottom: 12px;
+        }
+        @keyframes panel-loading-spin {
+            to { transform: rotate(360deg); }
+        }
+        #project-panel .carousel-slide video.fit-contain {
+            object-fit: contain;
+        }
+        #project-panel #panel-carousel-container #panel-video-fit-wrap {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+        }
+        #project-panel #panel-carousel-container #panel-video-fit-wrap select {
+            background: rgba(0,0,0,0.75);
+            color: #33ff33;
+            border: 1px solid rgba(51,255,51,0.6);
+            border-radius: 4px;
+            padding: 4px 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        #project-panel .carousel-slide video {
+            transition: opacity 0.25s ease;
+        }
         #project-panel .carousel-nav {
             position: absolute;
             top: 50%;
@@ -430,21 +489,33 @@
         }
         #project-panel .image-upload-container.visible { display: block; }
         #project-panel .image-upload-label {
-            display: inline-block;
-            padding: 10px 15px;
-            background-color: rgba(0, 0, 0, 0.8);
-            color: #ffffff;
-            border: 2px solid #ffffff;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background-color: rgba(0, 0, 0, 0.85);
+            color: #33ff33;
+            border: 2px solid #33ff33;
             border-radius: 8px;
             font-family: 'Courier New', monospace;
             font-size: 14px;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+            transition: all 0.25s ease;
+            box-shadow: 0 0 12px rgba(51, 255, 51, 0.25);
         }
-        #project-panel .image-upload-label:hover { background-color: rgba(255,255,255,0.1); transform: scale(1.05); }
+        #project-panel .image-upload-label:hover {
+            background-color: rgba(51, 255, 51, 0.15);
+            transform: scale(1.03);
+            box-shadow: 0 0 18px rgba(51, 255, 51, 0.4);
+        }
         #project-panel .image-upload-input { display: none; }
+        #project-panel .upload-limits-hint {
+            display: block;
+            margin-top: 6px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+        }
         #project-panel .image-list {
             margin-top: 10px;
             max-height: 150px;
@@ -470,6 +541,30 @@
             object-fit: cover;
             border-radius: 4px;
             margin-right: 10px;
+        }
+        #project-panel .image-item {
+            cursor: grab;
+        }
+        #project-panel .image-item:active {
+            cursor: grabbing;
+        }
+        #project-panel .image-item.carousel-item-dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+        #project-panel .image-item.carousel-item-drag-over {
+            outline: 2px solid #33ff33;
+            outline-offset: 2px;
+        }
+        #project-panel .carousel-drag-handle {
+            margin-right: 8px;
+            color: rgba(255,255,255,0.5);
+            font-size: 14px;
+            cursor: grab;
+            user-select: none;
+        }
+        #project-panel .carousel-drag-handle:active {
+            cursor: grabbing;
         }
         #project-panel .delete-image-btn {
             background-color: rgba(255, 0, 0, 0.3);
@@ -679,6 +774,53 @@
             }
         }
 
+        // Gera textura a partir do primeiro frame de um vídeo (para cubos sem imagens)
+        function loadCubeTexturesFromVideoFirstFrame(videoUrl, materials) {
+            return new Promise(function(resolve, reject) {
+                if (!materials || !materials.length) { resolve(); return; }
+                var video = document.createElement('video');
+                video.crossOrigin = 'anonymous';
+                video.preload = 'metadata';
+                video.muted = true;
+                video.playsInline = true;
+                video.onloadeddata = function() {
+                    video.currentTime = 0;
+                };
+                video.onseeked = function() {
+                    try {
+                        var w = video.videoWidth || 256;
+                        var h = video.videoHeight || 256;
+                        var canvas = document.createElement('canvas');
+                        canvas.width = w;
+                        canvas.height = h;
+                        var ctx = canvas.getContext('2d');
+                        ctx.drawImage(video, 0, 0, w, h);
+                        var texture = new THREE.CanvasTexture(canvas);
+                        texture.wrapS = THREE.ClampToEdgeWrapping;
+                        texture.wrapT = THREE.ClampToEdgeWrapping;
+                        texture.minFilter = THREE.LinearMipmapLinearFilter;
+                        texture.magFilter = THREE.LinearFilter;
+                        texture.colorSpace = THREE.SRGBColorSpace;
+                        texture.needsUpdate = true;
+                        for (var i = 0; i < materials.length; i++) {
+                            if (materials[i]) {
+                                materials[i].map = texture;
+                                materials[i].needsUpdate = true;
+                            }
+                        }
+                        resolve();
+                    } catch (err) {
+                        console.warn('Erro ao extrair primeiro frame do vídeo:', err);
+                        reject(err);
+                    }
+                    video.src = '';
+                };
+                video.onerror = function() { reject(new Error('Falha ao carregar vídeo')); video.src = ''; };
+                video.src = videoUrl;
+                video.load();
+            });
+        }
+
         // Função para carregar texturas nas faces do cubo
         function loadCubeTextures(faceImages, materials) {
             return new Promise((resolve) => {
@@ -791,25 +933,28 @@
                  }
              } while ((isTooClose || position.length() < minDistanceFromSphere) && attempts <= MAX_ATTEMPTS); // Check min distance from sphere center too
 
-             // Buscar imagens do Firestore
+             // Buscar imagens e carouselItems do Firestore
              let imageUrls = [];
+             let carouselItems = [];
              try {
                  if (db) {
                      const projectDoc = await db.collection("projetos").doc(projectId).get();
                      if (projectDoc.exists) {
-                         imageUrls = projectDoc.data()?.images || [];
+                         const data = projectDoc.data() || {};
+                         imageUrls = data.images || [];
+                         carouselItems = (data.carouselItems && Array.isArray(data.carouselItems)) ? data.carouselItems : [];
                      }
                  }
              } catch (error) {
-                 console.warn(`Erro ao buscar imagens do projeto ${projectId}:`, error);
-                 // Continuar com material padrão
+                 console.warn(`Erro ao buscar dados do projeto ${projectId}:`, error);
              }
              
-             // Preparar array de 6 imagens
              const faceImages = prepareFaceImages(imageUrls);
-             
-             // Verificar se há imagens válidas
-             const hasImages = faceImages.some(img => img !== null);
+             const firstVideoUrl = carouselItems && carouselItems.length ? (function() {
+                 for (var i = 0; i < carouselItems.length; i++) { if (carouselItems[i].type === 'video' && carouselItems[i].url) return carouselItems[i].url; }
+                 return null;
+             }()) : null;
+             const hasImages = faceImages.some(img => img !== null) || !!firstVideoUrl;
              
              // Criar array de 6 materiais (um para cada face)
              // Com imagens: faces com textura, reflexões do ambiente, leve translucidez
@@ -881,11 +1026,16 @@
             // Cubos começam invisíveis - só aparecem quando clicar na cabeça
             cube.visible = false;
             
-            // Carregar texturas em background (não bloqueia criação do cubo)
-            loadCubeTextures(faceImages, materials).catch(error => {
-                console.warn(`Erro ao carregar texturas do cubo ${projectId}:`, error);
-                // Cubo continua funcionando com material padrão
-            });
+            // Carregar texturas: imagens ou primeiro frame do primeiro vídeo
+            if (faceImages.some(function(img) { return img !== null; })) {
+                loadCubeTextures(faceImages, materials).catch(function(error) {
+                    console.warn('Erro ao carregar texturas do cubo ' + projectId + ':', error);
+                });
+            } else if (firstVideoUrl) {
+                loadCubeTexturesFromVideoFirstFrame(firstVideoUrl, materials).catch(function(error) {
+                    console.warn('Erro ao carregar primeiro frame do vídeo do cubo ' + projectId + ':', error);
+                });
+            }
         }
         
         // Função para animar entrada do cubo
@@ -972,28 +1122,29 @@
                     tooltip.innerHTML = projectTitle;
                  }
                  
-                 // NOVO: Atualizar texturas se imagens mudaram
                  const newImageUrls = projectData.images || [];
-                 updateCubeTextures(cube, newImageUrls);
+                 const newCarouselItems = (projectData.carouselItems && Array.isArray(projectData.carouselItems)) ? projectData.carouselItems : [];
+                 updateCubeTextures(cube, newImageUrls, newCarouselItems);
              } else {
                  console.warn("Cubo não encontrado para atualização:", projectId);
              }
         }
 
         // Função para atualizar texturas do cubo
-        async function updateCubeTextures(cube, imageUrls) {
-            if (!cube || !cube.material || !Array.isArray(cube.material)) {
-                return; // Cubo não tem array de materiais (cubo antigo ou erro)
+        async function updateCubeTextures(cube, imageUrls, carouselItems) {
+            if (!cube || !cube.material || !Array.isArray(cube.material)) return;
+            carouselItems = carouselItems || [];
+            
+            var faceImages = prepareFaceImages(imageUrls);
+            var firstVideoUrl = null;
+            for (var c = 0; c < carouselItems.length; c++) {
+                if (carouselItems[c].type === 'video' && carouselItems[c].url) { firstVideoUrl = carouselItems[c].url; break; }
             }
+            var hasImages = faceImages.some(function(img) { return img !== null; }) || !!firstVideoUrl;
             
-            const faceImages = prepareFaceImages(imageUrls);
-            const hasImages = faceImages.some(img => img !== null);
-            
-            // Atualizar flag de imagens no userData
             cube.userData.hasImages = hasImages;
             
-            // Atualizar parâmetros do material baseado em ter imagens ou não
-            cube.material.forEach(mat => {
+            cube.material.forEach(function(mat) {
                 if (hasImages) {
                     mat.opacity = 0.98;
                     mat.transmission = 0.08;
@@ -1015,7 +1166,11 @@
                 mat.needsUpdate = true;
             });
             
-            await loadCubeTextures(faceImages, cube.material);
+            if (faceImages.some(function(img) { return img !== null; })) {
+                await loadCubeTextures(faceImages, cube.material);
+            } else if (firstVideoUrl) {
+                await loadCubeTexturesFromVideoFirstFrame(firstVideoUrl, cube.material).catch(function() {});
+            }
         }
 
 
@@ -1188,6 +1343,7 @@
         var headClicked = false;
         var mouseDown = false;
         var clock = new THREE.Clock();
+        var isAdminLoggedIn = false;
         
         // Sistema de Progresso Global
         var loadingProgress = {
@@ -1833,9 +1989,6 @@ function showNavigationNotification() {
 
     // --- INÍCIO: Novas Funções de Autenticação e Logout para index.html ---
 
-    // Variável global para estado de login (a ser atualizada pelo onAuthStateChanged)
-    let isAdminLoggedIn = false;
-
     // Adiciona e mostra o campo de senha do admin
     function showPasswordField() {
         // Remover campo existente se houver (para evitar duplicação)
@@ -2003,14 +2156,18 @@ function showNavigationNotification() {
             if (user && user.uid === ADMIN_UID) {
                 isAdminLoggedIn = true;
                 if (logoutButton) logoutButton.style.display = 'inline-block';
-                if (createButton) createButton.style.display = 'inline-block'; // Mostrar botão Criar
-                // Remover campo de senha se ainda estiver visível
+                if (createButton) createButton.style.display = 'inline-block';
                 const passContainer = document.getElementById('admin-password-container-index');
                 if (passContainer) passContainer.remove();
+                // Se o painel de projeto já estiver aberto, ativar modo edição imediatamente
+                var panel = document.getElementById('project-panel');
+                if (panel && panel.classList.contains('visible') && typeof _panelEnableEditMode === 'function') {
+                    _panelEnableEditMode();
+                }
             } else {
                 isAdminLoggedIn = false;
                 if (logoutButton) logoutButton.style.display = 'none';
-                if (createButton) createButton.style.display = 'none'; // Esconder botão Criar
+                if (createButton) createButton.style.display = 'none';
             }
         });
     } else {
@@ -2550,6 +2707,8 @@ document.addEventListener('keydown', function(event) {
     var _panelCurrentSlide = 0;
     var _panelSlides = [];
     var _panelDots = [];
+    var _panelVideoFit = 'cover';
+    var _panelCarouselItems = [];
 
     // ---------- ABRIR / FECHAR PAINEL ----------
     function openProject(projectId) {
@@ -2672,9 +2831,22 @@ document.addEventListener('keydown', function(event) {
 
         if (!_panelSlides.length || index < 0 || index >= _panelSlides.length) return;
 
-        _panelSlides.forEach(function(s) { s.classList.remove('active'); });
-        _panelDots.forEach(function(d)  { d.classList.remove('active'); });
+        _panelSlides.forEach(function(s) {
+            s.classList.remove('active');
+            var v = s.querySelector('video');
+            if (v) { v.pause(); v.style.opacity = '1'; }
+        });
+        _panelDots.forEach(function(d) { d.classList.remove('active'); });
         _panelSlides[index].classList.add('active');
+        var activeVideo = _panelSlides[index].querySelector('video');
+        if (activeVideo) {
+            activeVideo.style.opacity = '0.6';
+            activeVideo.currentTime = 0;
+            activeVideo.play();
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() { activeVideo.style.opacity = '1'; });
+            });
+        }
         if (_panelDots[index]) _panelDots[index].classList.add('active');
         _panelCurrentSlide = index;
     }
@@ -2715,8 +2887,12 @@ document.addEventListener('keydown', function(event) {
                     descEl.innerHTML = _panelFormatDescription(data.description);
                     descEl.classList.add('visible');
                 }
-                var imgs = (data.images && Array.isArray(data.images)) ? data.images : [];
-                _panelRenderCarousel(imgs, projectId);
+                _panelVideoFit = (data.videoFit === 'contain' || data.videoFit === 'cover') ? data.videoFit : 'cover';
+                var items = (data.carouselItems && Array.isArray(data.carouselItems) && data.carouselItems.length > 0)
+                    ? data.carouselItems
+                    : (data.images && Array.isArray(data.images)) ? data.images.map(function(u) { return { type: 'image', url: u }; }) : [];
+                _panelCarouselItems = items;
+                _panelRenderCarousel(items, projectId);
                 // Ativar edição se admin já estiver logado
                 if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) {
                     _panelEnableEditMode();
@@ -2734,8 +2910,8 @@ document.addEventListener('keydown', function(event) {
         return text.replace(/\n/g, '<br>');
     }
 
-    // ---------- IMAGENS ----------
-    function _panelRenderCarousel(imageUrls, projectId) {
+    // ---------- CARROSSEL (IMAGENS E VÍDEOS) ----------
+    function _panelRenderCarousel(items, projectId) {
         var slidesEl = document.getElementById('panel-carousel-slides');
         var dotsEl   = document.getElementById('panel-carousel-dots');
         var navEl    = document.getElementById('panel-carousel-nav');
@@ -2743,28 +2919,68 @@ document.addEventListener('keydown', function(event) {
 
         slidesEl.innerHTML = '';
         dotsEl.innerHTML   = '';
+        var videoFit = typeof _panelVideoFit !== 'undefined' ? _panelVideoFit : 'cover';
 
-        if (!imageUrls || !imageUrls.length) {
-            slidesEl.innerHTML = '<p style="color:white;text-align:center;padding:20px;">Nenhuma imagem configurada.</p>';
+        if (!items || !items.length) {
+            slidesEl.innerHTML = '<p style="color:white;text-align:center;padding:20px;">Nenhuma mídia configurada.</p>';
             if (navEl) navEl.style.display = 'none';
-            if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) _panelUpdateImageList([]);
+            if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) _panelUpdateCarouselList([]);
             return;
         }
 
-        imageUrls.forEach(function(url, idx) {
+        items.forEach(function(item, idx) {
+            var url = typeof item === 'string' ? item : (item && item.url) ? item.url : null;
+            var type = (item && item.type) ? item.type : 'image';
+            if (!url) return;
+
             var slide = document.createElement('div');
             slide.className = 'carousel-slide' + (idx === 0 ? ' active' : '');
-            var img = document.createElement('img');
-            img.alt = 'Imagem ' + (idx + 1);
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.objectFit = 'cover';
-            img.style.borderRadius = '8px';
-            img.style.display = 'block';
-            img.onerror = function() { slide.innerHTML = '<p style="color:white;text-align:center;padding:20px;">Erro ao carregar imagem</p>'; };
-            slide.appendChild(img);
+            if (type === 'video') {
+                var video = document.createElement('video');
+                video.preload = 'auto';
+                video.playsInline = true;
+                video.setAttribute('playsinline', '');
+                video.muted = true;
+                video.loop = true;
+                video.className = videoFit === 'contain' ? 'fit-contain' : '';
+                video.style.width = '100%';
+                video.style.height = '100%';
+                video.style.objectFit = videoFit;
+                video.style.borderRadius = '8px';
+                video.style.display = 'block';
+                video.src = url;
+                if (idx !== 0) video.pause();
+                else video.autoplay = true;
+                video.addEventListener('timeupdate', function() {
+                    var d = this.duration;
+                    if (!isFinite(d) || d <= 0) return;
+                    var t = this.currentTime;
+                    if (d - t < 0.25) this.style.opacity = '0.35';
+                    else if (t < 0.2) this.style.opacity = '1';
+                });
+                video.addEventListener('ended', function() {
+                    this.style.opacity = '0.35';
+                    var self = this;
+                    requestAnimationFrame(function() {
+                        self.currentTime = 0;
+                        self.play();
+                        requestAnimationFrame(function() { self.style.opacity = '1'; });
+                    });
+                });
+                slide.appendChild(video);
+            } else {
+                var img = document.createElement('img');
+                img.alt = 'Imagem ' + (idx + 1);
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'cover';
+                img.style.borderRadius = '8px';
+                img.style.display = 'block';
+                img.onerror = function() { slide.innerHTML = '<p style="color:white;text-align:center;padding:20px;">Erro ao carregar imagem</p>'; };
+                img.src = url;
+                slide.appendChild(img);
+            }
             slidesEl.appendChild(slide);
-            img.src = url;
 
             var dot = document.createElement('div');
             dot.className = 'carousel-dot' + (idx === 0 ? ' active' : '');
@@ -2778,77 +2994,172 @@ document.addEventListener('keydown', function(event) {
         void slidesEl.offsetHeight;
         _panelSlides = Array.from(slidesEl.querySelectorAll('.carousel-slide'));
         _panelDots   = Array.from(dotsEl.querySelectorAll('.carousel-dot'));
-        if (navEl) navEl.style.display = imageUrls.length > 1 ? 'flex' : 'none';
+        if (navEl) navEl.style.display = items.length > 1 ? 'flex' : 'none';
         _panelCurrentSlide = 0;
         setTimeout(function() { panelShowSlide(0); }, 50);
 
-        if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) _panelUpdateImageList(imageUrls);
+        if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) _panelUpdateCarouselList(items);
     }
 
-    function _panelLoadProjectImages(projectId) {
-        if (typeof db === 'undefined' || !db) return;
-        db.collection('projetos').doc(String(projectId)).get()
+    function _panelLoadProjectImages(projectId, forceServer) {
+        if (typeof db === 'undefined' || !db) return Promise.resolve();
+        var ref = db.collection('projetos').doc(String(projectId));
+        var getOpts = forceServer ? { source: 'server' } : undefined;
+        return (getOpts ? ref.get(getOpts) : ref.get())
             .then(function(doc) {
-                var data = doc.data();
-                var imageUrls = (data && data.images && Array.isArray(data.images)) ? data.images : [];
-                _panelRenderCarousel(imageUrls, projectId);
+                var data = doc.data() || {};
+                _panelVideoFit = (data.videoFit === 'contain' || data.videoFit === 'cover') ? data.videoFit : 'cover';
+                var items = (data.carouselItems && Array.isArray(data.carouselItems) && data.carouselItems.length > 0)
+                    ? data.carouselItems
+                    : (data.images && Array.isArray(data.images)) ? data.images.map(function(u) { return { type: 'image', url: u }; }) : [];
+                _panelCarouselItems = items;
+                _panelRenderCarousel(items, projectId);
             })
             .catch(function(err) {
-                console.error('Erro ao carregar imagens do painel:', err);
+                console.error('Erro ao carregar mídia do painel:', err);
                 _panelRenderCarousel([], projectId);
             });
     }
 
-    function _panelUpdateImageList(imageUrls) {
+    function _panelUpdateCarouselList(items) {
         var imageList = document.getElementById('panel-image-list');
         if (!imageList) return;
         imageList.innerHTML = '';
-        if (!imageUrls.length) {
-            imageList.innerHTML = '<p style="color:rgba(255,255,255,0.6);font-size:11px;text-align:center;margin:0;">Nenhuma imagem</p>';
+        if (!items || !items.length) {
+            imageList.innerHTML = '<p style="color:rgba(255,255,255,0.6);font-size:11px;text-align:center;margin:0;">Nenhuma mídia</p>';
             return;
         }
-        imageUrls.forEach(function(url, idx) {
-            var item = document.createElement('div');
-            item.className = 'image-item';
-            item.innerHTML = '<img src="' + url + '" alt="Preview" onerror="this.style.display=\'none\'">' +
-                '<span style="flex:1;margin-left:5px;">Imagem ' + (idx + 1) + '</span>' +
-                '<button class="delete-image-btn" data-index="' + idx + '">Deletar</button>';
-            item.querySelector('.delete-image-btn').addEventListener('click', function() { _panelDeleteImage(idx); });
-            imageList.appendChild(item);
+        items.forEach(function(item, idx) {
+            var url = typeof item === 'string' ? item : (item && item.url) ? item.url : '';
+            var type = (item && item.type) ? item.type : 'image';
+            var label = type === 'video' ? ('Vídeo ' + (idx + 1)) : ('Imagem ' + (idx + 1));
+            var thumb = type === 'image' ? ('<img src="' + url + '" alt="Preview" onerror="this.style.display=\'none\'">') : '<span style="font-size:20px;">🎬</span>';
+            var div = document.createElement('div');
+            div.className = 'image-item';
+            div.setAttribute('draggable', 'true');
+            div.setAttribute('data-index', String(idx));
+            div.innerHTML = '<span class="carousel-drag-handle" title="Arrastar para reordenar">⋮⋮</span>' + thumb + '<span style="flex:1;margin-left:5px;">' + label + '</span><button class="delete-image-btn" data-index="' + idx + '">Deletar</button>';
+            div.addEventListener('dragstart', function(e) {
+                e.dataTransfer.setData('text/plain', idx);
+                e.dataTransfer.effectAllowed = 'move';
+                div.classList.add('carousel-item-dragging');
+            });
+            div.addEventListener('dragend', function() {
+                div.classList.remove('carousel-item-dragging');
+                imageList.querySelectorAll('.image-item').forEach(function(el) { el.classList.remove('carousel-item-drag-over'); });
+            });
+            div.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                imageList.querySelectorAll('.image-item').forEach(function(el) { el.classList.remove('carousel-item-drag-over'); });
+                var row = e.target.closest('.image-item');
+                if (row && row.classList.contains('carousel-item-dragging') === false) row.classList.add('carousel-item-drag-over');
+            });
+            div.addEventListener('dragleave', function(e) {
+                var row = e.target.closest('.image-item');
+                if (row) row.classList.remove('carousel-item-drag-over');
+            });
+            div.addEventListener('drop', function(e) {
+                e.preventDefault();
+                div.classList.remove('carousel-item-drag-over');
+                var fromIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+                var toIndex = parseInt(div.getAttribute('data-index'), 10);
+                if (fromIndex === toIndex) return;
+                _panelReorderCarouselItems(fromIndex, toIndex);
+            });
+            div.querySelector('.delete-image-btn').addEventListener('click', function(ev) { ev.stopPropagation(); _panelDeleteCarouselItem(idx); });
+            imageList.appendChild(div);
         });
     }
 
-    async function _panelDeleteImage(imageIndex) {
+    async function _panelDeleteCarouselItem(itemIndex) {
         if (typeof isAdminLoggedIn === 'undefined' || !isAdminLoggedIn) return;
         var projectId = _panelCurrentProjectId;
         if (!projectId) return;
-        if (!confirm('Tem certeza que deseja deletar esta imagem?')) return;
+        if (!confirm('Tem certeza que deseja deletar este item?')) return;
         try {
             var projectRef = db.collection('projetos').doc(projectId);
             var projectDoc = await projectRef.get();
-            var imageUrls  = (projectDoc.data() && projectDoc.data().images) || [];
-            var urlToDelete = imageUrls[imageIndex];
-            try {
-                var urlParts = urlToDelete.split('/o/');
-                if (urlParts.length > 1) {
-                    var decodedPath = decodeURIComponent(urlParts[1].split('?')[0]);
-                    await storage.ref(decodedPath).delete();
-                }
-            } catch(e) { console.warn('Falha ao deletar do Storage:', e); }
-            var updated = imageUrls.filter(function(_, i) { return i !== imageIndex; });
-            await projectRef.update({ images: updated });
-            showNotification('Imagem deletada com sucesso!', 'success', true);
+            var data = projectDoc.data() || {};
+            var items = (data.carouselItems && Array.isArray(data.carouselItems) && data.carouselItems.length > 0)
+                ? data.carouselItems.slice()
+                : (data.images && Array.isArray(data.images)) ? data.images.map(function(u) { return { type: 'image', url: u }; }) : [];
+            var images = (data.images && Array.isArray(data.images)) ? data.images.slice() : [];
+            if (itemIndex < 0 || itemIndex >= items.length) return;
+            var removed = items[itemIndex];
+            var urlToDelete = (removed && removed.url) ? removed.url : (typeof removed === 'string' ? removed : null);
+            if (urlToDelete && typeof storage !== 'undefined' && storage) {
+                try {
+                    var urlParts = urlToDelete.split('/o/');
+                    if (urlParts.length > 1) {
+                        var decodedPath = decodeURIComponent(urlParts[1].split('?')[0]);
+                        await storage.ref(decodedPath).delete();
+                    }
+                } catch(e) { console.warn('Falha ao deletar do Storage:', e); }
+            }
+            items.splice(itemIndex, 1);
+            if (removed && removed.type === 'image' && urlToDelete) {
+                var imgIdx = images.indexOf(urlToDelete);
+                if (imgIdx !== -1) images.splice(imgIdx, 1);
+            }
+            var update = { carouselItems: items };
+            if (removed && removed.type === 'image') update.images = images;
+            await projectRef.update(update);
+            showNotification('Item removido com sucesso!', 'success', true);
             _panelLoadProjectImages(projectId);
         } catch(err) {
             showNotification('Erro ao deletar: ' + err.message, 'error', true);
         }
     }
 
-    // ---------- UPLOAD DE IMAGENS ----------
+    async function _panelReorderCarouselItems(fromIndex, toIndex) {
+        if (typeof isAdminLoggedIn === 'undefined' || !isAdminLoggedIn) return;
+        var projectId = _panelCurrentProjectId;
+        if (!projectId) return;
+        var projectRef = db.collection('projetos').doc(projectId);
+        var projectDoc = await projectRef.get();
+        var data = projectDoc.data() || {};
+        var items = (data.carouselItems && Array.isArray(data.carouselItems) && data.carouselItems.length > 0)
+            ? data.carouselItems.slice()
+            : (data.images && Array.isArray(data.images)) ? data.images.map(function(u) { return { type: 'image', url: u }; }) : [];
+        if (fromIndex < 0 || fromIndex >= items.length || toIndex < 0 || toIndex >= items.length) return;
+        var moved = items.splice(fromIndex, 1)[0];
+        var insertAt = fromIndex < toIndex ? toIndex - 1 : toIndex;
+        items.splice(insertAt, 0, moved);
+        await projectRef.update({ carouselItems: items });
+        showNotification('Ordem atualizada.', 'success', true);
+        _panelLoadProjectImages(projectId);
+    }
+
+    var PANEL_MAX_IMAGE_MB = 1000;
+    var PANEL_MAX_VIDEO_MB = 1000;  // vídeos até 1 GB
+
+    function _panelShowCarouselLoading(message) {
+        _panelHideCarouselLoading();
+        var container = document.getElementById('panel-carousel-container');
+        if (!container) return;
+        var overlay = document.createElement('div');
+        overlay.id = 'panel-carousel-loading-overlay';
+        overlay.innerHTML = '<div class="loading-spinner"></div><span class="loading-message">' + (message || 'Carregando...') + '</span>';
+        container.appendChild(overlay);
+    }
+    function _panelUpdateCarouselLoadingMessage(message) {
+        var overlay = document.getElementById('panel-carousel-loading-overlay');
+        if (overlay) {
+            var msgEl = overlay.querySelector('.loading-message');
+            if (msgEl) msgEl.textContent = message || 'Carregando...';
+        }
+    }
+    function _panelHideCarouselLoading() {
+        var overlay = document.getElementById('panel-carousel-loading-overlay');
+        if (overlay) overlay.remove();
+    }
+
+    // ---------- UPLOAD DE IMAGENS E VÍDEOS (UM BOTÃO) ----------
     function _panelInitImageUpload() {
         var uploadContainer = document.getElementById('panel-image-upload-container');
-        var uploadInput     = document.getElementById('panel-image-upload-input');
-        if (!uploadContainer || !uploadInput) return;
+        var mediaInput     = document.getElementById('panel-media-upload-input');
+        if (!uploadContainer || !mediaInput) return;
 
         if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) {
             uploadContainer.classList.add('visible');
@@ -2856,30 +3167,62 @@ document.addEventListener('keydown', function(event) {
             uploadContainer.classList.remove('visible');
         }
 
-        // Remover listener anterior para evitar duplicação
-        var newInput = uploadInput.cloneNode(true);
-        uploadInput.parentNode.replaceChild(newInput, uploadInput);
-
+        var newInput = mediaInput.cloneNode(true);
+        mediaInput.parentNode.replaceChild(newInput, mediaInput);
         newInput.addEventListener('change', async function(e) {
-            var files = Array.from(e.target.files);
+            var files = Array.from(e.target.files || []);
             if (!files.length) return;
-            var validFiles = files.filter(function(f) { return f.type.startsWith('image/'); });
-            if (!validFiles.length) { showNotification('Selecione apenas imagens.', 'error', true); newInput.value = ''; return; }
-            var oversized = validFiles.filter(function(f) { return f.size > 5 * 1024 * 1024; });
-            if (oversized.length) { showNotification('Máximo 5MB por imagem.', 'error', true); newInput.value = ''; return; }
             var projectId = _panelCurrentProjectId;
-            if (!projectId) { showNotification('Erro: projeto não identificado.', 'error', true); return; }
-            showNotification('Enviando ' + validFiles.length + ' imagem(ns)...', 'info', true);
+            if (!projectId) { showNotification('Erro: projeto não identificado.', 'error', true); newInput.value = ''; return; }
+
+            var imageFiles = files.filter(function(f) { return f.type && f.type.startsWith('image/'); });
+            var videoFiles = files.filter(function(f) {
+                if (f.type && f.type.startsWith('image/')) return false;
+                if (f.type === 'video/mp4' || f.type === 'video/webm' || f.type === 'video/quicktime' || f.type === 'video/x-quicktime') return true;
+                var name = (f.name || '').toLowerCase();
+                return name.endsWith('.mov') || name.endsWith('.mp4') || name.endsWith('.webm');
+            });
+            var invalid = files.length - imageFiles.length - videoFiles.length;
+            if (invalid > 0) { showNotification('Alguns ficheiros não são imagem nem vídeo (MP4, WebM ou MOV).', 'error', true); }
+            if (!imageFiles.length && !videoFiles.length) { newInput.value = ''; return; }
+
+            var imgOversized = imageFiles.filter(function(f) { return f.size > PANEL_MAX_IMAGE_MB * 1024 * 1024; });
+            var vidOversized = videoFiles.filter(function(f) { return f.size > PANEL_MAX_VIDEO_MB * 1024 * 1024; });
+            if (imgOversized.length) { showNotification('Máximo ' + PANEL_MAX_IMAGE_MB + 'MB por imagem.', 'error', true); }
+            if (vidOversized.length) { showNotification('Máximo ' + PANEL_MAX_VIDEO_MB + 'MB por vídeo.', 'error', true); }
+            imageFiles = imageFiles.filter(function(f) { return f.size <= PANEL_MAX_IMAGE_MB * 1024 * 1024; });
+            videoFiles = videoFiles.filter(function(f) { return f.size <= PANEL_MAX_VIDEO_MB * 1024 * 1024; });
+            if (!imageFiles.length && !videoFiles.length) { newInput.value = ''; return; }
+
             try {
-                var urls = await Promise.all(validFiles.map(function(f) { return _panelUploadImage(projectId, f); }));
-                await _panelSaveImageUrls(projectId, urls);
-                showNotification('Imagens adicionadas com sucesso!', 'success', true);
-                await new Promise(function(r) { setTimeout(r, 500); });
-                await _panelLoadProjectImages(projectId);
+                if (imageFiles.length || videoFiles.length) {
+                    _panelShowCarouselLoading(imageFiles.length && videoFiles.length ? 'Enviando imagem(ns) e vídeo(s)...' : (imageFiles.length ? 'Enviando ' + imageFiles.length + ' imagem(ns)...' : 'Enviando ' + videoFiles.length + ' vídeo(s)...'));
+                }
+                if (imageFiles.length) {
+                    var imgUrls = await Promise.all(imageFiles.map(function(f) { return _panelUploadImage(projectId, f); }));
+                    _panelUpdateCarouselLoadingMessage('A gravar imagem(ns) no carrossel...');
+                    await _panelSaveImageUrls(projectId, imgUrls);
+                }
+                if (videoFiles.length) {
+                    _panelUpdateCarouselLoadingMessage('A guardar vídeo(s) no projeto...');
+                    var vidUrls = await Promise.all(videoFiles.map(function(f) { return _panelUploadImage(projectId, f); }));
+                    _panelUpdateCarouselLoadingMessage('A gravar no carrossel...');
+                    await _panelSaveCarouselVideos(projectId, vidUrls);
+                }
+                _panelUpdateCarouselLoadingMessage('A atualizar carrossel...');
+                await new Promise(function(r) { setTimeout(r, 300); });
+                await _panelLoadProjectImages(projectId, true);
+                if (videoFiles.length) {
+                    showNotification((imageFiles.length && videoFiles.length) ? 'Imagens e vídeos adicionados!' : 'Vídeos adicionados!', 'success', true);
+                } else if (imageFiles.length) {
+                    showNotification('Imagens adicionadas!', 'success', true);
+                }
                 newInput.value = '';
             } catch(err) {
                 showNotification('Erro no upload: ' + err.message, 'error', true);
                 newInput.value = '';
+            } finally {
+                _panelHideCarouselLoading();
             }
         });
     }
@@ -2899,10 +3242,29 @@ document.addEventListener('keydown', function(event) {
 
     async function _panelSaveImageUrls(projectId, newUrls) {
         if (typeof db === 'undefined' || !db) throw new Error('Firestore não inicializado.');
-        var ref  = db.collection('projetos').doc(projectId);
-        var doc  = await ref.get();
-        var existing = (doc.data() && doc.data().images) || [];
-        await ref.update({ images: existing.concat(newUrls) });
+        var ref = db.collection('projetos').doc(projectId);
+        var doc = await ref.get();
+        var data = doc.exists ? (doc.data() || {}) : {};
+        var existingImages = (data.images && Array.isArray(data.images)) ? data.images : [];
+        var existingCarousel = (data.carouselItems && Array.isArray(data.carouselItems) && data.carouselItems.length > 0)
+            ? data.carouselItems
+            : existingImages.map(function(u) { return { type: 'image', url: u }; });
+        var newImageEntries = newUrls.map(function(u) { return { type: 'image', url: u }; });
+        await ref.set({
+            images: existingImages.concat(newUrls),
+            carouselItems: existingCarousel.concat(newImageEntries)
+        }, { merge: true });
+    }
+
+    async function _panelSaveCarouselVideos(projectId, newUrls) {
+        if (typeof db === 'undefined' || !db) throw new Error('Firestore não inicializado.');
+        var ref = db.collection('projetos').doc(projectId);
+        var doc = await ref.get();
+        var data = doc.data() || {};
+        var existingCarousel = (data.carouselItems && Array.isArray(data.carouselItems)) ? data.carouselItems : [];
+        var newVideoEntries = newUrls.map(function(u) { return { type: 'video', url: u }; });
+        var carouselItems = existingCarousel.concat(newVideoEntries);
+        await ref.set({ carouselItems: carouselItems }, { merge: true });
     }
 
     // ---------- MODO DE EDIÇÃO (ADMIN) ----------
@@ -2918,30 +3280,42 @@ document.addEventListener('keydown', function(event) {
             var ind = document.createElement('div');
             ind.id = 'panel-edit-indicator';
             ind.textContent = 'MODO DE EDIÇÃO';
-            ind.style.cssText = 'position:absolute;top:10px;right:20px;background-color:rgba(51,255,51,0.2);color:#33ff33;padding:5px 10px;border-radius:4px;font-family:Courier New,monospace;font-size:14px;font-weight:bold;border:1px solid #33ff33;z-index:600;';
+            ind.style.cssText = 'position:absolute;top:10px;right:200px;background-color:rgba(51,255,51,0.2);color:#33ff33;padding:6px 12px;border-radius:6px;font-family:Courier New,monospace;font-size:13px;font-weight:bold;border:1px solid #33ff33;z-index:600;';
             panel.appendChild(ind);
         }
         if (!document.getElementById('panel-save-button')) {
             var saveBtn = document.createElement('button');
             saveBtn.id = 'panel-save-button';
             saveBtn.textContent = 'Salvar Alterações';
-            saveBtn.style.cssText = 'position:absolute;bottom:20px;right:20px;background-color:rgba(0,0,0,0.7);color:#33ff33;border:2px solid #33ff33;padding:8px 15px;border-radius:8px;font-family:Courier New,monospace;font-size:16px;font-weight:bold;cursor:pointer;z-index:600;';
-            saveBtn.addEventListener('mouseover', function() { this.style.backgroundColor = 'rgba(51,255,51,0.2)'; });
-            saveBtn.addEventListener('mouseout',  function() { this.style.backgroundColor = 'rgba(0,0,0,0.7)'; });
+            saveBtn.style.cssText = 'position:absolute;top:10px;right:20px;background-color:rgba(0,0,0,0.8);color:#33ff33;border:2px solid #33ff33;padding:8px 16px;border-radius:8px;font-family:Courier New,monospace;font-size:14px;font-weight:bold;cursor:pointer;z-index:600;transition:background-color 0.2s;';
+            saveBtn.addEventListener('mouseover', function() { this.style.backgroundColor = 'rgba(51,255,51,0.25)'; });
+            saveBtn.addEventListener('mouseout',  function() { this.style.backgroundColor = 'rgba(0,0,0,0.8)'; });
             saveBtn.addEventListener('click', _panelSaveChanges);
-            var panel = document.getElementById('project-panel');
             if (panel) panel.appendChild(saveBtn);
         }
-        if (!document.getElementById('panel-logout-button')) {
-            var logoutBtn = document.createElement('button');
-            logoutBtn.id = 'panel-logout-button';
-            logoutBtn.textContent = 'Logout Admin';
-            logoutBtn.style.cssText = 'position:absolute;top:10px;left:120px;color:#ff6b6b;background-color:rgba(0,0,0,0.7);border:2px solid #ff6b6b;padding:5px 10px;border-radius:8px;font-family:Courier New,monospace;font-size:14px;cursor:pointer;z-index:600;';
-            logoutBtn.addEventListener('click', function() {
-                if (typeof auth !== 'undefined' && auth) auth.signOut().then(function() { showNotification('Logout realizado.', 'success', true); });
+        if (!document.getElementById('panel-video-fit-wrap')) {
+            var wrap = document.createElement('div');
+            wrap.id = 'panel-video-fit-wrap';
+            var sel = document.createElement('select');
+            sel.id = 'panel-video-fit-select';
+            sel.innerHTML = '<option value="cover">Preencher</option><option value="contain">Caber</option>';
+            sel.value = _panelVideoFit;
+            sel.addEventListener('change', function() {
+                _panelVideoFit = this.value;
+                if (typeof db !== 'undefined' && db && _panelCurrentProjectId) {
+                    db.collection('projetos').doc(_panelCurrentProjectId).update({ videoFit: _panelVideoFit }).then(function() {
+                        _panelRenderCarousel(_panelCarouselItems, _panelCurrentProjectId);
+                    }).catch(function() {});
+                } else {
+                    _panelRenderCarousel(_panelCarouselItems, _panelCurrentProjectId);
+                }
             });
-            var panel = document.getElementById('project-panel');
-            if (panel) panel.appendChild(logoutBtn);
+            wrap.appendChild(sel);
+            var carouselContainer = document.getElementById('panel-carousel-container');
+            if (carouselContainer) carouselContainer.appendChild(wrap);
+        } else {
+            var sel = document.getElementById('panel-video-fit-select');
+            if (sel) sel.value = _panelVideoFit;
         }
         _panelInitImageUpload();
     }
@@ -2954,6 +3328,7 @@ document.addEventListener('keydown', function(event) {
         var ind     = document.getElementById('panel-edit-indicator');     if (ind)     ind.remove();
         var saveBtn = document.getElementById('panel-save-button');        if (saveBtn) saveBtn.remove();
         var logBtn  = document.getElementById('panel-logout-button');      if (logBtn)  logBtn.remove();
+        var fitWrap = document.getElementById('panel-video-fit-wrap');     if (fitWrap) fitWrap.remove();
         var upCont  = document.getElementById('panel-image-upload-container');
         if (upCont) upCont.classList.remove('visible');
     }
@@ -2970,8 +3345,8 @@ document.addEventListener('keydown', function(event) {
         if (saveBtn) { saveBtn.textContent = 'Salvando...'; saveBtn.disabled = true; }
         db.collection('projetos').doc(projectId).update({ title: newTitle, description: newDesc })
             .then(function() {
+                if (saveBtn) { saveBtn.textContent = 'Salvar Alterações'; saveBtn.disabled = false; }
                 showNotification('Alterações salvas com sucesso!', 'success', true);
-                _panelDisableEditMode();
             })
             .catch(function(err) {
                 showNotification('Erro ao salvar: ' + err.message, 'error', true);
@@ -3008,8 +3383,9 @@ document.addEventListener('keydown', function(event) {
                     <div class="carousel-indicators" id="panel-carousel-dots"></div>
                 </div>
                 <div class="image-upload-container" id="panel-image-upload-container">
-                    <label for="panel-image-upload-input" class="image-upload-label">📷 Adicionar Imagens</label>
-                    <input type="file" id="panel-image-upload-input" class="image-upload-input" accept="image/*" multiple>
+                    <label for="panel-media-upload-input" class="image-upload-label">📷 Adicionar Imagens ou Vídeos</label>
+                    <span class="upload-limits-hint">(imagens e vídeos até 1 GB — MP4, WebM, MOV)</span>
+                    <input type="file" id="panel-media-upload-input" class="image-upload-input" accept="image/*,video/mp4,video/webm,video/quicktime" multiple>
                     <div class="image-list" id="panel-image-list"></div>
                 </div>
             </div>
