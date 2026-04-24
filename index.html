@@ -168,6 +168,29 @@
             display: flex;
         }
 
+        .mode-switch-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            padding: 9px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.75);
+            background: rgba(0, 0, 0, 0.55);
+            color: #ffffff;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .mode-switch-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
         /* Estilo para a notificação inicial */
         .initial-notification,
         .navigation-notification,
@@ -675,6 +698,13 @@
     </style>
 </head>
 <body>
+   <script>
+      // Modo lite como padrão, mas permite entrar no full quando solicitado.
+      var currentMode = localStorage.getItem('portfolio_mode');
+      if (currentMode !== 'full') {
+        window.location.replace('lite.html');
+      }
+   </script>
    <script src="ReLibs/three.min.js"></script>
    <script type="module">
         import { RGBELoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/addons/loaders/RGBELoader.js';
@@ -695,8 +725,19 @@
    <div id="envControls" class="env-controls">
        <button id="skyboxButton" class="skybox-button">FUNDO</button>
    </div>
+   <button id="goToLiteMode" class="mode-switch-button" type="button">Modo Lite</button>
 	
   <script>
+        (function setupModeSwitch() {
+            var modeButton = document.getElementById('goToLiteMode');
+            if (!modeButton) return;
+
+            modeButton.addEventListener('click', function () {
+                localStorage.setItem('portfolio_mode', 'lite');
+                window.location.href = 'lite.html';
+            });
+        })();
+
         // --- Firebase Configuration ---
         const firebaseConfig = {
           apiKey: "AIzaSyDSgff-2XhWgAhfzB8U6MjHvpMr61v28so",

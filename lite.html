@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEZNUNEZ</title>
+  <link rel="icon" href="3d_6297747.ico" type="image/x-icon">
+  <link rel="stylesheet" href="lite.css">
+</head>
+<body class="lite-page">
+  <header class="lite-header">
+    <h1 class="lite-title">
+      <span class="lite-title-left">
+        <span class="lite-title-top">João</span>
+      </span>
+      <span class="lite-title-right">Nunez</span>
+      <span class="lite-title-role">| designer multimedia</span>
+    </h1>
+    <div class="header-actions">
+      <nav class="header-content-nav" aria-label="Modo de conteúdo">
+        <button id="showCV" class="header-content-button is-active" type="button">Curriculum</button>
+        <button id="showProjects" class="header-content-button" type="button">Projetos</button>
+      </nav>
+      <button id="modeToggle" class="mode-toggle" type="button">Imersivo</button>
+    </div>
+  </header>
+
+  <main class="lite-main">
+    <section class="lite-left">
+      <div id="lite-loading-indicator" class="lite-loading-indicator" aria-live="polite">
+        <span class="loading-circle" aria-hidden="true"></span>
+      </div>
+      <div id="head-canvas-wrap" aria-label="Render 3D da cabeça"></div>
+      <div id="project-preview" class="project-preview is-hidden" aria-live="polite">
+        <img id="project-preview-image" class="project-preview-image" alt="Preview do projeto">
+        <video id="project-preview-video" class="project-preview-video" muted playsinline></video>
+        <button id="project-video-play" class="project-video-play is-hidden" type="button" aria-label="Reproduzir vídeo">&#9658;</button>
+        <div id="project-preview-controls" class="project-preview-controls is-hidden">
+          <button id="project-prev" class="project-preview-nav" type="button" aria-label="Imagem anterior">&#8249;</button>
+          <span id="project-preview-index" class="project-preview-index">1 / 1</span>
+          <button id="project-next" class="project-preview-nav" type="button" aria-label="Próxima imagem">&#8250;</button>
+        </div>
+        <div id="project-preview-empty" class="project-preview-empty">Selecione um projeto</div>
+      </div>
+    </section>
+
+    <section class="lite-right">
+      <article id="cv-panel" class="lite-copy">
+        <nav class="lite-copy-nav" aria-label="Navegação textual">
+          <a href="#sobre-mim">Sobre Mim</a>
+          <a href="#formacao">Formação</a>
+          <a href="#experiencia">Experiência</a>
+          <a href="#skills">Skills</a>
+        </nav>
+
+        <section id="sobre-mim" class="lite-section">
+          <h2>Sobre Mim</h2>
+          <p>
+            De tudo um pouco. <span class="key-term">Artista urbano</span> e <span class="key-term">designer multimídia</span>, procuro sempre utilizar
+            <span class="key-term">novas tecnologias</span> para impulsionar meu processo
+            criativo. Do <span class="key-term">graffiti ao design</span>,
+            em minha trajetória acadêmica, busquei projetos que conectassem esses meus dois
+            mundos: arte de rua e tecnologia, trazendo temas que abordam a preservação da
+            história e da memória das cidades, além de estudos sobre as futuras relações entre
+            os seres humanos, a tecnologia e o cenário urbano.
+          </p>
+          <p>
+            Em 2022, fui selecionado para a <span class="key-term">Apple Developer Academy</span>, programa internacional
+            de inovação tecnológica da Apple, focado na formação de profissionais criativos e
+            desenvolvedores voltados para a criação de soluções digitais. O aprendizado era
+            guiado pelo <span class="key-term">Challenge Based Learning (CBL)</span>, metodologia criada pela Apple que
+            propõe o desenvolvimento de projetos a partir de desafios reais, conectando
+            tecnologia, colaboração multidisciplinar e impacto social. Durante o programa,
+            tive treinamento intensivo em <span class="key-term">desenvolvimento de software</span>,
+            <span class="key-term">metodologias ágeis</span> e
+            <span class="key-term">design centrado no usuário</span>.
+          </p>
+          <p>
+            Nesse período, me aprofundei no desenvolvimento de ferramentas com realidade
+            aumentada, <span class="key-term">realidade virtual</span> e
+            <span class="key-term">spatial computing</span>, além de estudos e experimentações
+            sobre a <span class="key-term">Web 3.0</span> e as transformações da nova era da internet,
+            investigando soluções descentralizadas com tecnologias como
+            <span class="key-term">inteligência artificial</span>,
+            <span class="key-term">blockchain</span>, <span class="key-term">IoT</span> e
+            <span class="key-term">cidades inteligentes</span>.
+          </p>
+          <p>
+            Em 2023, participei da <span class="key-term">curadoria</span> e
+            <span class="key-term">desenvolvimento de exposições</span> em realidade
+            aumentada, dando vida a obras de arte por meio da interação digital. Atuei em
+            projetos realizados em <span class="key-term">Lisboa</span> e em diversas regiões do
+            <span class="key-term">Brasil</span>, incluindo uma exposição na
+            <span class="key-term">Embaixada do México</span>, em Brasília, em homenagem a Frida Kahlo, com
+            quadros interativos que mostravam como as novas mídias podem ampliar o alcance da
+            arte e criar novas formas de interação com o público.
+          </p>
+          <p>
+            Em 2024, atuei como Designer de Novas Mídias, voltado para entretenimento, no estúdio
+            criativo de inovação tecnológica <span class="key-term">DELED</span>. Desenvolvi e acompanhei
+            <span class="key-term">projetos interativos</span> com foco em
+            <span class="key-term">experiências imersivas</span>, envolvendo
+            <span class="key-term">painéis de LED</span>, <span class="key-term">rastreamento corporal</span>,
+            <span class="key-term">projeção mapeada</span>, <span class="key-term">instalações artísticas</span>
+            e cenários que uniam arte e tecnologia. Ao longo desse período, participei de
+            projetos realizados para o <span class="key-term">Museu do Amanhã</span>,
+            <span class="key-term">Rock in Rio</span> e outras grandes marcas e instituições, atuando em diferentes etapas:
+            da concepção à implementação técnica, incluindo produção e montagem.
+          </p>
+        </section>
+
+        <section id="formacao" class="lite-section">
+          <h2>Formação</h2>
+          <ul class="lite-list">
+            <li><span class="edu-item-title">PUC-Rio:</span> Bacharelado em Design, Comunicação Visual <span class="item-year">(2019-2025)</span></li>
+            <li><span class="edu-item-title">Shell Iniciativa Jovem:</span> Empreendedorismo e Inovação <span class="item-year">(2024)</span></li>
+            <li><span class="edu-item-title">Extensão PUC-Rio:</span> Chatbots e NLP para IA <span class="item-year">(2025)</span></li>
+            <li><span class="edu-item-title">ECOA-PUC-Rio:</span> IA Generativa e Prompt Engineering <span class="item-year">(2023)</span></li>
+            <li><span class="edu-item-title">EBAC:</span> Desenvolvimento de Games <span class="item-year">(2022)</span></li>
+            <li><span class="edu-item-title">cc.espaço:</span> Programação Visual <span class="item-year">(2021)</span></li>
+            <li><span class="edu-item-title">IED Rio:</span> Workshop de Design Gráfico <span class="item-year">(2019)</span></li>
+            <li><span class="edu-item-title">FIRJAN SESI-RJ:</span> Cidades Inteligentes e Sustentáveis <span class="item-year">(2023)</span></li>
+          </ul>
+        </section>
+
+        <section id="experiencia" class="lite-section">
+          <h2>Experiência</h2>
+          <ul class="lite-list">
+            <li><span class="exp-item-title">Apple Developer Academy:</span> Programa de Inovação Tecnológica <span class="item-year">(2022-2023)</span></li>
+            <li><span class="exp-item-title">DELED:</span> Estúdio criativo, Designer de Novas Mídias <span class="item-year">(2024)</span></li>
+            <li><span class="exp-item-title">Studio Kwo:</span> Desenvolvedor Júnior para experiência em Realidade Virtual <span class="item-year">(2024)</span></li>
+            <li><span class="exp-item-title">Museu do Amanhã:</span> Monitoria e coordenação de tecnologias do Laboratório de Atividades do Amanhã <span class="item-year">(2024)</span></li>
+            <li><span class="exp-item-title">Exposições em Realidade Aumentada:</span> Lisboa, Galeria 284 <span class="item-year">(2022)</span></li>
+            <li><span class="exp-item-title">Exposição em Realidade Aumentada:</span> Homenagem a Frida Kahlo, Embaixada do México, Brasília <span class="item-year">(2022)</span></li>
+            <li><span class="exp-item-title">Rock The Mountain:</span> Instalação imersiva MOV.DOME <span class="item-year">(2024)</span></li>
+            <li><span class="exp-item-title">Rock in Rio 2024:</span> Ativação de marca para TIM <span class="item-year">(2024)</span></li>
+            <li><span class="exp-item-title">Semana de Design PUC-Rio:</span> Espaço digital no metaverso <span class="item-year">(2022)</span></li>
+            <li><span class="exp-item-title">Semana de Design PUC-Rio:</span> Workshop de TouchDesigner e rastreamento corporal <span class="item-year">(2025)</span></li>
+            <li><span class="exp-item-title">ECOA-PUC-Rio:</span> Workshops sobre Web 3.0 e tecnologias emergentes <span class="item-year">(2023)</span></li>
+            <li><span class="exp-item-title">Brazilian Immersive Fashion Week (BRIFW):</span> Vencedor Horizon Latin.x <span class="item-year">(2022 e 2023)</span></li>
+          </ul>
+        </section>
+
+        <section id="skills" class="lite-section">
+          <h2>Skills</h2>
+          <div class="skills-group">
+            <div class="skill-topic">Design</div>
+            <div class="skill-row">
+              <div class="skill-meta"><span class="skill-name">Adobe Creative Cloud</span></div>
+              <div class="skill-progress">
+                <div class="skill-track"><div class="skill-fill" style="--skill-width: 88%;"></div></div>
+                <span class="skill-level">Avançado</span>
+              </div>
+            </div>
+            <div class="skill-row">
+              <div class="skill-meta"><span class="skill-name">Figma</span></div>
+              <div class="skill-progress">
+                <div class="skill-track"><div class="skill-fill" style="--skill-width: 70%;"></div></div>
+                <span class="skill-level">Intermediário</span>
+              </div>
+            </div>
+
+            <div class="skill-topic">Desenvolvimento de Software</div>
+            <div class="skill-row">
+              <div class="skill-meta"><span class="skill-name">HTML/CSS</span></div>
+              <div class="skill-progress">
+                <div class="skill-track"><div class="skill-fill" style="--skill-width: 72%;"></div></div>
+                <span class="skill-level">Intermediário</span>
+              </div>
+            </div>
+            <div class="skill-row">
+              <div class="skill-meta"><span class="skill-name">JavaScript</span></div>
+              <div class="skill-progress">
+                <div class="skill-track"><div class="skill-fill" style="--skill-width: 72%;"></div></div>
+                <span class="skill-level">Intermediário</span>
+              </div>
+            </div>
+            <div class="skill-row">
+              <div class="skill-meta"><span class="skill-name">APIs / Web</span></div>
+              <div class="skill-progress">
+                <div class="skill-track"><div class="skill-fill" style="--skill-width: 72%;"></div></div>
+                <span class="skill-level">Intermediário</span>
+              </div>
+            </div>
+            <div class="skill-row">
+              <div class="skill-meta"><span class="skill-name">Swift</span></div>
+              <div class="skill-progress">
+                <div class="skill-track"><div class="skill-fill" style="--skill-width: 68%;"></div></div>
+                <span class="skill-level">Intermediário</span>
+              </div>
+            </div>
+
+            <div class="skill-topic">3D &amp; Real-Time / Games</div>
+            <div class="skill-row">
+              <div class="skill-meta"><span class="skill-name">Unity</span></div>
+              <div class="skill-progress">
+                <div class="skill-track"><div class="skill-fill" style="--skill-width: 70%;"></div></div>
+                <span class="skill-level">Intermediário</span>
+              </div>
+            </div>
+            <div class="skill-row">
+              <div class="skill-meta"><span class="skill-name">Blender</span></div>
+              <div class="skill-progress">
+                <div class="skill-track"><div class="skill-fill" style="--skill-width: 69%;"></div></div>
+                <span class="skill-level">Intermediário</span>
+              </div>
+            </div>
+            <div class="skill-row">
+              <div class="skill-meta"><span class="skill-name">Unreal Engine</span></div>
+              <div class="skill-progress">
+                <div class="skill-track"><div class="skill-fill" style="--skill-width: 66%;"></div></div>
+                <span class="skill-level">Intermediário</span>
+              </div>
+            </div>
+
+            <div class="skill-topic">Interatividade &amp; Novas Mídias</div>
+            <div class="skill-row">
+              <div class="skill-meta"><span class="skill-name">TouchDesigner</span></div>
+              <div class="skill-progress">
+                <div class="skill-track"><div class="skill-fill" style="--skill-width: 72%;"></div></div>
+                <span class="skill-level">Intermediário</span>
+              </div>
+            </div>
+            <div class="skill-row">
+              <div class="skill-meta"><span class="skill-name">Realidade Aumentada</span></div>
+              <div class="skill-progress">
+                <div class="skill-track"><div class="skill-fill" style="--skill-width: 72%;"></div></div>
+                <span class="skill-level">Intermediário</span>
+              </div>
+            </div>
+            <div class="skill-row">
+              <div class="skill-meta"><span class="skill-name">Realidade Virtual</span></div>
+              <div class="skill-progress">
+                <div class="skill-track"><div class="skill-fill" style="--skill-width: 72%;"></div></div>
+                <span class="skill-level">Intermediário</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </article>
+
+      <article id="projects-panel" class="projects-panel is-hidden">
+        <div id="projects-list" class="projects-list"></div>
+      </article>
+    </section>
+  </main>
+
+  <script src="ReLibs/three.min.js"></script>
+  <script src="ReLibs/GLTFLoader.js"></script>
+  <script src="ReLibs/OrbitControls.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="lite.js"></script>
+</body>
+</html>
