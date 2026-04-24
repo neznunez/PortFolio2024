@@ -35,6 +35,16 @@
   var liveDragLast = { id: null, after: null };
   var projectsListDnDBound = false;
   var adminModalElements = null;
+  var projectDeleteModalElements = null;
+  var pendingDeleteProjectKey = null;
+  var storageRef = null;
+  var adminPreviewUploadBusy = false;
+  var LITE_MAX_IMAGE_MB = 500;
+  var LITE_MAX_VIDEO_MB = 500;
+  var previewDisplayedProjectKey = '';
+  var adminSaveNoticeByKey = Object.create(null);
+  var adminSaveNoticeClearTimer = null;
+  var projectListOrderDirty = false;
 
   var skyboxes = [
     [
@@ -143,6 +153,253 @@
     }
   }
 
+  function setProjectPreviewLoading(isActive) {
+    var el = document.getElementById('project-preview-loading');
+    if (!el) return;
+    el.classList.toggle('is-active', !!isActive);
+    el.setAttribute('aria-busy', isActive ? 'true' : 'false');
+  }
+
+  function updateProjectPreviewAddButton() {
+    var wrap = document.getElementById('project-preview-add-wrap');
+    if (!wrap) return;
+    var show =
+      contentMode === 'projects' &&
+      isLiteAdmin &&
+      selectedProjectId &&
+      dbRef &&
+      storageRef;
+    var proj = show ? getProjectByKey(selectedProjectId) : null;
+    var previewMatchesSelection =
+      !!selectedProjectId && previewDisplayedProjectKey === selectedProjectId;
+    var canUpload = !!(proj && proj.docId && !adminPreviewUploadBusy && previewMatchesSelection);
+    wrap.classList.toggle(
+      'is-visible',
+      show && !!proj && !!proj.docId && !!storageRef && previewMatchesSelection
+    );
+    wrap.classList.toggle('is-busy', adminPreviewUploadBusy);
+    var btn = document.getElementById('project-preview-add-btn');
+    if (btn) btn.disabled = !canUpload || adminPreviewUploadBusy;
+    wrap.setAttribute(
+      'aria-hidden',
+      show && proj && proj.docId && storageRef && previewMatchesSelection ? 'false' : 'true'
+    );
+  }
+
+  function liteUploadProjectMediaFile(docId, file) {
+    return new Promise(function (resolve, reject) {
+      if (!storageRef) {
+        reject(new Error('Storage indisponível.'));
+        return;
+      }
+      var fileName = Date.now() + '_' + String(file.name || 'media').replace(/[^\w.\-]+/g, '_');
+      var ref = storageRef.ref('projects/' + docId + '/' + fileName);
+      var task = ref.put(file);
+      task.on(
+        'state_changed',
+        function () {},
+        function (err) {
+          reject(err);
+        },
+        function () {
+          task.snapshot.ref.getDownloadURL().then(resolve).catch(reject);
+        }
+      );
+    });
+  }
+
+  function liteSaveNewImageUrlsToProject(docId, newUrls) {
+    if (!dbRef || !newUrls.length) return Promise.resolve();
+    return dbRef
+      .collection('projetos')
+      .doc(docId)
+      .get()
+      .then(function (snap) {
+        var data = snap.exists ? snap.data() || {} : {};
+        var existingImages = Array.isArray(data.images) ? data.images : [];
+        var existingCarousel =
+          Array.isArray(data.carouselItems) && data.carouselItems.length > 0
+            ? data.carouselItems
+            : existingImages.map(function (u) {
+                return { type: 'image', url: u };
+              });
+        var newImageEntries = newUrls.map(function (u) {
+          return { type: 'image', url: u };
+        });
+        return dbRef.collection('projetos').doc(docId).set(
+          {
+            images: existingImages.concat(newUrls),
+            carouselItems: existingCarousel.concat(newImageEntries)
+          },
+          { merge: true }
+        );
+      });
+  }
+
+  function liteSaveNewVideoUrlsToProject(docId, newUrls) {
+    if (!dbRef || !newUrls.length) return Promise.resolve();
+    return dbRef
+      .collection('projetos')
+      .doc(docId)
+      .get()
+      .then(function (snap) {
+        var data = snap.exists ? snap.data() || {} : {};
+        var existingImages = Array.isArray(data.images) ? data.images : [];
+        var existingCarousel =
+          Array.isArray(data.carouselItems) && data.carouselItems.length > 0
+            ? data.carouselItems
+            : existingImages.map(function (u) {
+                return { type: 'image', url: u };
+              });
+        var newVideoEntries = newUrls.map(function (u) {
+          return { type: 'video', url: u };
+        });
+        return dbRef.collection('projetos').doc(docId).set(
+          {
+            carouselItems: existingCarousel.concat(newVideoEntries)
+          },
+          { merge: true }
+        );
+      });
+  }
+
+  function refreshProjectMediaFromFirestore(docId) {
+    if (!dbRef || !docId) return Promise.resolve();
+    return dbRef
+      .collection('projetos')
+      .doc(docId)
+      .get()
+      .then(function (snap) {
+        if (!snap.exists) return;
+        var data = snap.data() || {};
+        var project = projectsData.find(function (p) {
+          return p.docId === docId;
+        });
+        if (!project) return;
+        applyFirestoreMediaToProject(project, data);
+        projectsByKey[project.key] = project;
+        if (selectedProjectId === project.key) {
+          updateProjectPreview(
+            project.mediaItems && project.mediaItems.length
+              ? project.mediaItems
+              : [{ type: 'image', src: project.preview }],
+            { showControls: true, autoplayVideo: false, previewOwnerKey: project.key }
+          );
+        }
+        renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
+      });
+  }
+
+  function handleProjectPreviewMediaInputChange(event) {
+    var input = event && event.target;
+    if (!input || !input.files || !input.files.length) return;
+    if (!isLiteAdmin || !selectedProjectId || !dbRef) {
+      input.value = '';
+      return;
+    }
+    var project = getProjectByKey(selectedProjectId);
+    if (!project || !project.docId) {
+      input.value = '';
+      return;
+    }
+    if (!storageRef) {
+      alert('Firebase Storage não está disponível nesta página.');
+      input.value = '';
+      return;
+    }
+
+    var files = Array.prototype.slice.call(input.files);
+    var imageFiles = files.filter(function (f) {
+      return f.type && f.type.indexOf('image/') === 0;
+    });
+    var videoFiles = files.filter(function (f) {
+      if (f.type && f.type.indexOf('image/') === 0) return false;
+      if (
+        f.type === 'video/mp4' ||
+        f.type === 'video/webm' ||
+        f.type === 'video/quicktime' ||
+        f.type === 'video/x-quicktime'
+      ) {
+        return true;
+      }
+      var name = String(f.name || '').toLowerCase();
+      return name.endsWith('.mov') || name.endsWith('.mp4') || name.endsWith('.webm');
+    });
+    if (!imageFiles.length && !videoFiles.length) {
+      alert('Escolha imagens ou vídeos (MP4, WebM ou MOV).');
+      input.value = '';
+      return;
+    }
+
+    var imgMax = LITE_MAX_IMAGE_MB * 1024 * 1024;
+    var vidMax = LITE_MAX_VIDEO_MB * 1024 * 1024;
+    imageFiles = imageFiles.filter(function (f) {
+      return f.size <= imgMax;
+    });
+    videoFiles = videoFiles.filter(function (f) {
+      return f.size <= vidMax;
+    });
+    if (!imageFiles.length && !videoFiles.length) {
+      alert('Ficheiro(s) excedem o tamanho máximo permitido.');
+      input.value = '';
+      return;
+    }
+
+    adminPreviewUploadBusy = true;
+    updateProjectPreviewAddButton();
+    setProjectPreviewLoading(true);
+
+    var docId = project.docId;
+    var chain = Promise.resolve();
+
+    if (imageFiles.length) {
+      chain = chain.then(function () {
+        return Promise.all(imageFiles.map(function (f) {
+          return liteUploadProjectMediaFile(docId, f);
+        })).then(function (urls) {
+          return liteSaveNewImageUrlsToProject(docId, urls);
+        });
+      });
+    }
+    if (videoFiles.length) {
+      chain = chain.then(function () {
+        return Promise.all(videoFiles.map(function (f) {
+          return liteUploadProjectMediaFile(docId, f);
+        })).then(function (urls) {
+          return liteSaveNewVideoUrlsToProject(docId, urls);
+        });
+      });
+    }
+
+    chain
+      .then(function () {
+        return refreshProjectMediaFromFirestore(docId);
+      })
+      .catch(function (err) {
+        console.warn('Upload mídia Lite:', err);
+        setProjectPreviewLoading(false);
+        alert(err && err.message ? err.message : 'Erro ao enviar ficheiros.');
+      })
+      .finally(function () {
+        adminPreviewUploadBusy = false;
+        input.value = '';
+        updateProjectPreviewAddButton();
+      });
+  }
+
+  function setupProjectPreviewUpload() {
+    var btn = document.getElementById('project-preview-add-btn');
+    var input = document.getElementById('project-preview-media-input');
+    if (!btn || !input) return;
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (btn.disabled || adminPreviewUploadBusy) return;
+      input.click();
+    });
+    input.addEventListener('change', handleProjectPreviewMediaInputChange);
+  }
+
   function setupAdminLiteTrigger() {
     window.addEventListener('keydown', function (event) {
       if (event.key === 'Escape' && isLiteAdmin) {
@@ -150,7 +407,10 @@
         adminDrafts = Object.create(null);
         editingProjectKey = null;
         alert('Admin Lite desativado.');
+        projectListOrderDirty = false;
         renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
+        updateProjectPreviewAddButton();
+        updateProjectListOrderBar();
         return;
       }
 
@@ -209,6 +469,78 @@
     });
   }
 
+  function setupProjectDeleteModal() {
+    var modal = document.getElementById('project-delete-modal');
+    var nameEl = document.getElementById('project-delete-name');
+    var errorEl = document.getElementById('project-delete-error');
+    var cancelBtn = document.getElementById('project-delete-cancel');
+    var confirmBtn = document.getElementById('project-delete-confirm');
+    if (!modal || !nameEl || !errorEl || !cancelBtn || !confirmBtn) return;
+
+    projectDeleteModalElements = {
+      modal: modal,
+      nameEl: nameEl,
+      errorEl: errorEl,
+      cancelBtn: cancelBtn,
+      confirmBtn: confirmBtn
+    };
+
+    modal.addEventListener('click', function (event) {
+      var target = event.target;
+      if (target && target.getAttribute && target.getAttribute('data-project-delete-close') === 'true') {
+        closeProjectDeleteModal();
+      }
+    });
+
+    cancelBtn.addEventListener('click', function () {
+      closeProjectDeleteModal();
+    });
+
+    confirmBtn.addEventListener('click', function () {
+      if (pendingDeleteProjectKey) performDeleteProjectByKey(pendingDeleteProjectKey);
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (!projectDeleteModalElements || projectDeleteModalElements.modal.classList.contains('is-hidden')) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeProjectDeleteModal();
+      }
+    });
+  }
+
+  function setProjectDeleteModalLoading(isLoading) {
+    if (!projectDeleteModalElements) return;
+    projectDeleteModalElements.cancelBtn.disabled = !!isLoading;
+    projectDeleteModalElements.confirmBtn.disabled = !!isLoading;
+    projectDeleteModalElements.confirmBtn.textContent = isLoading ? 'Excluindo...' : 'Excluir';
+  }
+
+  function openProjectDeleteModal(projectKey) {
+    if (!projectDeleteModalElements) return;
+    var key = String(projectKey || '');
+    var project = getProjectByKey(key);
+    if (!project) return;
+    pendingDeleteProjectKey = key;
+    projectDeleteModalElements.errorEl.textContent = '';
+    projectDeleteModalElements.nameEl.textContent = project.title
+      ? 'Projeto: ' + project.title
+      : 'Projeto sem título';
+    projectDeleteModalElements.modal.classList.remove('is-hidden');
+    projectDeleteModalElements.modal.setAttribute('aria-hidden', 'false');
+    setProjectDeleteModalLoading(false);
+    projectDeleteModalElements.cancelBtn.focus();
+  }
+
+  function closeProjectDeleteModal() {
+    if (!projectDeleteModalElements) return;
+    projectDeleteModalElements.modal.classList.add('is-hidden');
+    projectDeleteModalElements.modal.setAttribute('aria-hidden', 'true');
+    pendingDeleteProjectKey = null;
+    projectDeleteModalElements.errorEl.textContent = '';
+    setProjectDeleteModalLoading(false);
+  }
+
   function openAdminLiteModal() {
     if (!adminModalElements) return;
     adminModalElements.modal.classList.remove('is-hidden');
@@ -259,6 +591,8 @@
         isLiteAdmin = true;
         closeAdminLiteModal();
         renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
+        updateProjectPreviewAddButton();
+        updateProjectListOrderBar();
       })
       .catch(function (error) {
         console.warn('Falha no login Admin Lite:', error);
@@ -303,6 +637,8 @@
     if (headWrap) headWrap.classList.toggle('is-hidden', isProjects);
     if (leftPane) leftPane.classList.toggle('projects-mode', isProjects);
     if (loadingIndicator) loadingIndicator.classList.toggle('is-hidden', isProjects || !!model);
+    updateProjectPreviewAddButton();
+    updateProjectListOrderBar();
 
     // remove destaque fixo do indice CV quando estiver em Projetos
     navLinks.forEach(function (link) {
@@ -317,6 +653,14 @@
         window.firebase.initializeApp(firebaseConfig);
       }
       if (window.firebase.auth) window.firebase.auth();
+      storageRef = null;
+      if (window.firebase.storage) {
+        try {
+          storageRef = window.firebase.storage();
+        } catch (storageErr) {
+          console.warn('Firebase Storage indisponivel no lite:', storageErr);
+        }
+      }
       return window.firebase.firestore();
     } catch (error) {
       console.warn('Firebase indisponivel no lite:', error);
@@ -324,93 +668,104 @@
     }
   }
 
+  function isVideoUrl(url) {
+    var value = String(url || '').toLowerCase();
+    return (
+      /\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(value) ||
+      value.indexOf('mime=video') !== -1 ||
+      value.indexOf('contenttype=video') !== -1 ||
+      value.indexOf('/videos/') !== -1 ||
+      value.indexOf('%2fvideos%2f') !== -1
+    );
+  }
+
+  function isImageUrl(url) {
+    var value = String(url || '').toLowerCase();
+    return (
+      /\.(png|jpe?g|webp|gif|avif|svg)(\?.*)?$/i.test(value) ||
+      value.indexOf('mime=image') !== -1 ||
+      value.indexOf('contenttype=image') !== -1
+    );
+  }
+
+  function isVideoTypeHint(hint) {
+    var value = String(hint || '').toLowerCase();
+    return value.indexOf('video') !== -1;
+  }
+
+  function collectMediaItems(source) {
+    var found = [];
+    if (!source || typeof source !== 'object') return found;
+
+    function walk(value) {
+      if (!value) return;
+      if (typeof value === 'string') {
+        var isImage = isImageUrl(value);
+        var isVideo = isVideoUrl(value);
+        if (isImage || isVideo) {
+          found.push({ type: isVideo ? 'video' : 'image', src: value });
+        }
+        return;
+      }
+      if (Array.isArray(value)) {
+        value.forEach(walk);
+        return;
+      }
+      if (typeof value === 'object') {
+        var explicitType = (value.type || value.kind || value.mediaType || value.mimeType || value.contentType || '').toString().toLowerCase();
+        var direct = value.url || value.src || value.imageUrl || value.downloadURL || value.path || value.image || value.thumbnail || value.fileUrl;
+        if (direct) {
+          if (typeof direct === 'string' && (isVideoTypeHint(explicitType) || isVideoUrl(direct))) {
+            found.push({ type: 'video', src: direct });
+          } else {
+            walk(direct);
+          }
+        }
+        Object.keys(value).forEach(function (key) {
+          walk(value[key]);
+        });
+      }
+    }
+
+    walk(source.images);
+    walk(source.media);
+    walk(source.gallery);
+    walk(source.imagens);
+    walk(source.files);
+    walk(source.carousel);
+    walk(source.carouselItems);
+    walk(source.items);
+    walk(source.coverImage);
+    walk(source.image);
+    walk(source.thumbnail);
+    walk(source.thumb);
+    walk(source.video);
+    walk(source.videos);
+    walk(source.videoUrl);
+    walk(source.previewVideo);
+
+    var seen = Object.create(null);
+    return found.filter(function (item) {
+      var key = item.type + '::' + item.src;
+      if (seen[key]) return false;
+      seen[key] = true;
+      return true;
+    });
+  }
+
+  function applyFirestoreMediaToProject(project, data) {
+    if (!project || !data) return;
+    var mediaItems = collectMediaItems(data);
+    var coverCandidate = mediaItems.length ? mediaItems[0].src : (data.coverImage || data.image || data.thumbnail || data.thumb || '');
+    if (!mediaItems.length && coverCandidate) {
+      mediaItems = [{ type: isVideoUrl(coverCandidate) ? 'video' : 'image', src: coverCandidate }];
+    }
+    project.mediaItems = mediaItems;
+    project.preview = coverCandidate || project.preview || '';
+  }
+
   function loadProjectsData() {
     var db = setupFirebase();
-
-    function isVideoUrl(url) {
-      var value = String(url || '').toLowerCase();
-      return (
-        /\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(value) ||
-        value.indexOf('mime=video') !== -1 ||
-        value.indexOf('contenttype=video') !== -1 ||
-        value.indexOf('/videos/') !== -1 ||
-        value.indexOf('%2fvideos%2f') !== -1
-      );
-    }
-
-    function isImageUrl(url) {
-      var value = String(url || '').toLowerCase();
-      return (
-        /\.(png|jpe?g|webp|gif|avif|svg)(\?.*)?$/i.test(value) ||
-        value.indexOf('mime=image') !== -1 ||
-        value.indexOf('contenttype=image') !== -1
-      );
-    }
-
-    function isVideoTypeHint(hint) {
-      var value = String(hint || '').toLowerCase();
-      return value.indexOf('video') !== -1;
-    }
-
-    function collectMediaItems(source) {
-      var found = [];
-
-      function walk(value) {
-        if (!value) return;
-        if (typeof value === 'string') {
-          var isImage = isImageUrl(value);
-          var isVideo = isVideoUrl(value);
-          if (isImage || isVideo) {
-            found.push({ type: isVideo ? 'video' : 'image', src: value });
-          }
-          return;
-        }
-        if (Array.isArray(value)) {
-          value.forEach(walk);
-          return;
-        }
-        if (typeof value === 'object') {
-          var explicitType = (value.type || value.kind || value.mediaType || value.mimeType || value.contentType || '').toString().toLowerCase();
-          var direct = value.url || value.src || value.imageUrl || value.downloadURL || value.path || value.image || value.thumbnail || value.fileUrl;
-          if (direct) {
-            if (typeof direct === 'string' && (isVideoTypeHint(explicitType) || isVideoUrl(direct))) {
-              found.push({ type: 'video', src: direct });
-            } else {
-              walk(direct);
-            }
-          }
-          Object.keys(value).forEach(function (key) {
-            walk(value[key]);
-          });
-        }
-      }
-
-      walk(source.images);
-      walk(source.media);
-      walk(source.gallery);
-      walk(source.imagens);
-      walk(source.files);
-      walk(source.carousel);
-      walk(source.carouselItems);
-      walk(source.items);
-      walk(source.coverImage);
-      walk(source.image);
-      walk(source.thumbnail);
-      walk(source.thumb);
-      walk(source.video);
-      walk(source.videos);
-      walk(source.videoUrl);
-      walk(source.previewVideo);
-
-      // Remove duplicatas mantendo ordem
-      var seen = Object.create(null);
-      return found.filter(function (item) {
-        var key = item.type + '::' + item.src;
-        if (seen[key]) return false;
-        seen[key] = true;
-        return true;
-      });
-    }
 
     function normalizeProject(item, idx) {
       var mediaItems = collectMediaItems(item);
@@ -458,7 +813,12 @@
         });
         return rows
           .map(normalizeProject)
-          .sort(function (a, b) { return Number(a.order || 0) - Number(b.order || 0); });
+          .sort(function (a, b) {
+            var ao = Number(a.order != null ? a.order : a.ordem != null ? a.ordem : a.position != null ? a.position : a.posicao != null ? a.posicao : 0);
+            var bo = Number(b.order != null ? b.order : b.ordem != null ? b.ordem : b.position != null ? b.position : b.posicao != null ? b.posicao : 0);
+            if (ao !== bo) return ao - bo;
+            return String(a.title || '').localeCompare(String(b.title || ''), undefined, { sensitivity: 'base' });
+          });
       })
       .catch(function () {
         return fromJsonFallback();
@@ -471,7 +831,15 @@
     if (!listEl) return;
 
     if (!projectsData.length) {
-      listEl.innerHTML = '<div class="project-item"><p class="project-item-title">Sem projetos disponíveis</p></div>';
+      projectListOrderDirty = false;
+      if (isLiteAdmin) {
+        listEl.innerHTML = '<p class="projects-empty-note">Nenhum projeto ainda.</p><button type="button" class="project-add-button" id="project-add-new" aria-label="Adicionar projeto">+</button>';
+        bindProjectAddButton(listEl);
+      } else {
+        listEl.innerHTML = '<div class="project-item"><p class="project-item-title">Sem projetos disponíveis</p></div>';
+      }
+      updateProjectPreviewAddButton();
+      updateProjectListOrderBar();
       return;
     }
 
@@ -497,6 +865,15 @@
       var subtitleValue = isEditable ? (draft.subtitle || '') : meta;
       var descValue = isEditable ? (draft.description || '') : safeDescription;
       var isSaving = !!adminSavingByKey[project.key];
+      var saveNotice = adminSaveNoticeByKey[project.key];
+      var saveNoticeHtml =
+        saveNotice && saveNotice.text
+          ? '<p class="project-save-notice' +
+            (saveNotice.error ? ' is-error' : '') +
+            '" role="status">' +
+            escapeHtml(saveNotice.text) +
+            '</p>'
+          : '';
       return [
         '<article class="project-item' + (isActive ? ' is-active' : '') + (isLiteAdmin ? ' project-item--admin' : '') + '" data-project-key="' + project.key + '" data-doc-id="' + escapeHtml(String(project.docId || '')) + '" data-mid="' + escapeHtml(String(project.docId || project.id || project.key)) + '">',
         isLiteAdmin
@@ -525,10 +902,15 @@
             '</div>' +
             '<div class="project-edit-status">' + (isSaving ? 'Salvando conteúdo...' : (adminOrderSaving ? 'Salvando ordem...' : 'Admin Lite ativo')) + '</div>'
           : '',
+        saveNoticeHtml,
         '</div>',
         '</article>'
       ].join('');
     }).join('');
+
+    if (isLiteAdmin) {
+      listEl.innerHTML = listEl.innerHTML + '<button type="button" class="project-add-button" id="project-add-new" aria-label="Adicionar projeto">+</button>';
+    }
 
     Array.prototype.slice.call(listEl.querySelectorAll('.project-item')).forEach(function (itemEl) {
       itemEl.addEventListener('pointerenter', function () {
@@ -575,7 +957,8 @@
         if (dragHandle) {
           dragHandle.addEventListener('dragstart', function (event) {
             event.stopPropagation();
-            orderAtDragStart = projectsData.map(function (p) { return String(p.docId || p.id || p.key); }).join('\t');
+            var listRoot = document.getElementById('projects-list');
+            orderAtDragStart = listRoot ? readOrderSignatureFromListDom(listRoot) : '';
             liveDragRowEl = itemEl;
             liveDragLast = { id: null, after: null };
             var key = itemEl.getAttribute('data-project-key');
@@ -644,9 +1027,80 @@
     }
 
     if (isLiteAdmin) {
+      bindProjectAddButton(listEl);
       bindAdminDeleteButtons(listEl);
       bindAdminEditorEvents(listEl);
     }
+    updateProjectPreviewAddButton();
+    updateProjectListOrderBar();
+  }
+
+  function bindProjectAddButton(listEl) {
+    var btn = document.getElementById('project-add-new');
+    if (!btn) return;
+    btn.addEventListener('click', function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      createNewProject();
+    });
+  }
+
+  function createNewProject() {
+    if (!isLiteAdmin) return;
+    if (!dbRef) {
+      alert('Banco indisponível. É preciso estar no Firebase para criar projetos.');
+      return;
+    }
+    if (adminOrderSaving) return;
+
+    var nextOrder = projectsData.length;
+    var payload = {
+      title: 'Novo projeto',
+      nome: 'Novo projeto',
+      subtitle: '',
+      subtitulo: '',
+      description: '',
+      descricao: '',
+      order: nextOrder,
+      ordem: nextOrder,
+      images: []
+    };
+
+    dbRef.collection('projetos').add(payload)
+      .then(function (docRef) {
+        var newProject = {
+          id: String(docRef.id),
+          docId: docRef.id,
+          key: 'p-' + nextOrder,
+          title: 'Novo projeto',
+          subtitle: '',
+          description: '',
+          mediaItems: [],
+          preview: '',
+          year: '',
+          order: nextOrder
+        };
+        projectsData.push(newProject);
+        projectsData.forEach(function (pr, i) {
+          pr.key = 'p-' + i;
+          pr.order = i;
+        });
+        projectsByKey = Object.create(null);
+        projectsData.forEach(function (pr) {
+          projectsByKey[pr.key] = pr;
+        });
+        adminDrafts = Object.create(null);
+        var lastKey = 'p-' + (projectsData.length - 1);
+        selectedProjectId = lastKey;
+        editingProjectKey = lastKey;
+        getProjectDraft(lastKey);
+        renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
+        selectProject(lastKey);
+      })
+      .catch(function (err) {
+        console.warn('Erro ao criar projeto:', err);
+        alert('Não foi possível criar o projeto.');
+      });
   }
 
   function selectProject(projectKey) {
@@ -665,7 +1119,7 @@
     preloadProjectMedia(selected);
     updateProjectPreview(
       selected.mediaItems && selected.mediaItems.length ? selected.mediaItems : [{ type: 'image', src: selected.preview }],
-      { showControls: true, autoplayVideo: true }
+      { showControls: true, autoplayVideo: true, previewOwnerKey: selectedProjectId }
     );
   }
 
@@ -679,17 +1133,29 @@
     var mediaItems = project.mediaItems && project.mediaItems.length ? project.mediaItems : [{ type: 'image', src: project.preview }];
     // Se estiver pairando o item já selecionado, mantém controles.
     var keepControls = !!showControls || key === selectedProjectId;
-    updateProjectPreview(mediaItems, { showControls: keepControls, autoplayVideo: false });
+    updateProjectPreview(mediaItems, {
+      showControls: keepControls,
+      autoplayVideo: false,
+      previewOwnerKey: key
+    });
   }
 
   function updateProjectPreview(mediaItems, options) {
     var opts = options || {};
+    previewDisplayedProjectKey = String(
+      opts.previewOwnerKey != null && opts.previewOwnerKey !== ''
+        ? opts.previewOwnerKey
+        : selectedProjectId || ''
+    );
     var imageEl = document.getElementById('project-preview-image');
     var videoEl = document.getElementById('project-preview-video');
     var playButton = document.getElementById('project-video-play');
     var emptyEl = document.getElementById('project-preview-empty');
     var controlsEl = document.getElementById('project-preview-controls');
-    if (!imageEl || !videoEl || !emptyEl) return;
+    if (!imageEl || !videoEl || !emptyEl) {
+      updateProjectPreviewAddButton();
+      return;
+    }
 
     activeProjectMedia = Array.isArray(mediaItems) ? mediaItems.filter(function (item) {
       return item && item.src;
@@ -697,6 +1163,7 @@
     activeMediaIndex = 0;
 
     if (!activeProjectMedia.length) {
+      setProjectPreviewLoading(false);
       imageEl.classList.remove('is-visible');
       videoEl.classList.remove('is-visible');
       imageEl.removeAttribute('src');
@@ -705,6 +1172,7 @@
       emptyEl.style.display = 'block';
       if (controlsEl) controlsEl.classList.add('is-hidden');
       if (playButton) playButton.classList.add('is-hidden');
+      updateProjectPreviewAddButton();
       return;
     }
 
@@ -714,6 +1182,7 @@
       var shouldShowControls = !!opts.showControls && activeProjectMedia.length >= 2;
       controlsEl.classList.toggle('is-hidden', !shouldShowControls);
     }
+    updateProjectPreviewAddButton();
   }
 
   function renderProjectMedia(options) {
@@ -722,11 +1191,18 @@
     var videoEl = document.getElementById('project-preview-video');
     var indexEl = document.getElementById('project-preview-index');
     var playButton = document.getElementById('project-video-play');
-    if (!imageEl || !videoEl || !activeProjectMedia.length) return;
+    if (!imageEl || !videoEl || !activeProjectMedia.length) {
+      setProjectPreviewLoading(false);
+      return;
+    }
 
     var targetItem = activeProjectMedia[activeMediaIndex];
-    if (!targetItem || !targetItem.src) return;
+    if (!targetItem || !targetItem.src) {
+      setProjectPreviewLoading(false);
+      return;
+    }
 
+    setProjectPreviewLoading(true);
     imageEl.classList.remove('is-visible');
     videoEl.classList.remove('is-visible');
     if (playButton) playButton.classList.add('is-hidden');
@@ -752,6 +1228,7 @@
         videoEl.load();
         videoEl.onloadeddata = function () {
           if (token !== previewRenderToken) return;
+          setProjectPreviewLoading(false);
           videoEl.classList.add('is-visible');
           // No clique: mostra primeiro frame; play manual no botão.
           try { videoEl.currentTime = 0.01; } catch (e) {}
@@ -760,6 +1237,7 @@
         };
         videoEl.onerror = function () {
           if (token !== previewRenderToken) return;
+          setProjectPreviewLoading(false);
           videoEl.classList.remove('is-visible');
           if (playButton) playButton.classList.add('is-hidden');
         };
@@ -771,11 +1249,13 @@
       var probe = new Image();
       probe.onload = function () {
         if (token !== previewRenderToken) return;
+        setProjectPreviewLoading(false);
         imageEl.src = targetSrc;
         imageEl.classList.add('is-visible');
       };
       probe.onerror = function () {
         if (token !== previewRenderToken) return;
+        setProjectPreviewLoading(false);
         imageEl.src = targetSrc;
         imageEl.classList.add('is-visible');
       };
@@ -824,6 +1304,7 @@
 
     if (videoFrameCache[videoUrl]) {
       if (token !== previewRenderToken) return;
+      setProjectPreviewLoading(false);
       imageEl.src = videoFrameCache[videoUrl];
       imageEl.classList.add('is-visible');
       return;
@@ -832,6 +1313,7 @@
     if (videoFramePending[videoUrl]) {
       videoFramePending[videoUrl].push(function (dataUrl) {
         if (token !== previewRenderToken || !dataUrl) return;
+        setProjectPreviewLoading(false);
         imageEl.src = dataUrl;
         imageEl.classList.add('is-visible');
       });
@@ -849,9 +1331,12 @@
       videoFrameCache[videoUrl] = dataUrl || '';
       var waiters = videoFramePending[videoUrl] || [];
       delete videoFramePending[videoUrl];
-      if (token === previewRenderToken && dataUrl) {
-        imageEl.src = dataUrl;
-        imageEl.classList.add('is-visible');
+      if (token === previewRenderToken) {
+        if (dataUrl) {
+          imageEl.src = dataUrl;
+          imageEl.classList.add('is-visible');
+        }
+        setProjectPreviewLoading(false);
       }
       waiters.forEach(function (fn) { fn(dataUrl || ''); });
     };
@@ -905,7 +1390,7 @@
 
     updateProjectPreview(
       selected.mediaItems && selected.mediaItems.length ? selected.mediaItems : [{ type: 'image', src: selected.preview }],
-      { showControls: true, autoplayVideo: false }
+      { showControls: true, autoplayVideo: false, previewOwnerKey: selectedProjectId }
     );
   }
 
@@ -942,14 +1427,27 @@
       alert('Banco indisponível para excluir.');
       return;
     }
-    if (!window.confirm('Excluir este projeto? Esta ação não pode ser desfeita.')) return;
+    openProjectDeleteModal(key);
+  }
+
+  function performDeleteProjectByKey(projectKey) {
+    var key = String(projectKey || '');
+    var project = getProjectByKey(key);
+    if (!project || !project.docId || !dbRef) {
+      closeProjectDeleteModal();
+      return;
+    }
 
     var prevSelected = selectedProjectId ? getProjectByKey(selectedProjectId) : null;
     var prevSelectedDocId = prevSelected && prevSelected.docId ? prevSelected.docId : null;
     var targetDocId = project.docId;
 
+    setProjectDeleteModalLoading(true);
+    if (projectDeleteModalElements) projectDeleteModalElements.errorEl.textContent = '';
+
     dbRef.collection('projetos').doc(project.docId).delete()
       .then(function () {
+        closeProjectDeleteModal();
         projectsData = projectsData.filter(function (p) { return p.key !== key; });
         projectsData.forEach(function (p, i) {
           p.key = 'p-' + i;
@@ -981,7 +1479,10 @@
       })
       .catch(function (err) {
         console.warn('Erro ao excluir projeto:', err);
-        alert('Falha ao excluir no banco.');
+        setProjectDeleteModalLoading(false);
+        if (projectDeleteModalElements) {
+          projectDeleteModalElements.errorEl.textContent = 'Não foi possível excluir. Tente de novo.';
+        }
       });
   }
 
@@ -1024,7 +1525,13 @@
       var cancelButton = itemEl.querySelector('[data-project-action="cancel"]');
       if (cancelButton) {
         cancelButton.addEventListener('click', function () {
-          delete adminDrafts[String(projectKey || '')];
+          var k = String(projectKey || '');
+          delete adminDrafts[k];
+          delete adminSaveNoticeByKey[k];
+          if (adminSaveNoticeClearTimer) {
+            clearTimeout(adminSaveNoticeClearTimer);
+            adminSaveNoticeClearTimer = null;
+          }
           editingProjectKey = null;
           renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
         });
@@ -1051,29 +1558,54 @@
     }
   }
 
+  function projectRowDomId(el) {
+    if (!el || !el.getAttribute) return '';
+    var docAttr = (el.getAttribute('data-doc-id') || '').trim();
+    if (docAttr) return docAttr;
+    var midAttr = (el.getAttribute('data-mid') || '').trim();
+    if (midAttr) return midAttr;
+    return String(el.getAttribute('data-project-key') || '');
+  }
+
   function readOrderSignatureFromListDom(listEl) {
     if (!listEl) return '';
-    return Array.from(listEl.querySelectorAll('.project-item')).map(function (el) {
-      return el.getAttribute('data-mid') || el.getAttribute('data-project-key') || '';
-    }).join('\t');
+    return Array.from(listEl.querySelectorAll('.project-item'))
+      .map(projectRowDomId)
+      .join('\t');
   }
 
   function syncProjectsOrderFromListDom(listEl) {
-    if (!listEl) return;
+    if (!listEl) return false;
     var byKey = Object.create(null);
     var byMid = Object.create(null);
     projectsData.forEach(function (p) {
       byKey[p.key] = p;
-      byMid[String(p.docId || p.id || p.key)] = p;
+      if (p.docId) {
+        byMid[String(p.docId).trim()] = p;
+      }
+      var fallback = String(p.id != null && p.id !== '' ? p.id : p.key || '').trim();
+      if (fallback && !p.docId) {
+        byMid[fallback] = p;
+      }
     });
     var newData = Array.from(listEl.querySelectorAll('.project-item'))
       .map(function (el) {
-        var mid = el.getAttribute('data-mid');
-        if (mid && byMid[mid]) return byMid[mid];
-        return byKey[el.getAttribute('data-project-key')];
+        var rid = projectRowDomId(el);
+        if (rid && byMid[rid]) return byMid[rid];
+        var pk = el.getAttribute('data-project-key');
+        return pk ? byKey[pk] : null;
       })
       .filter(Boolean);
-    if (newData.length !== projectsData.length) return;
+    if (newData.length !== projectsData.length) {
+      console.warn(
+        'Lite: ordem da lista não sincronizada (esperado ' +
+          projectsData.length +
+          ' itens, DOM resolveu ' +
+          newData.length +
+          ').'
+      );
+      return false;
+    }
     var selectedRef = selectedProjectId ? byKey[selectedProjectId] : null;
     newData.forEach(function (p, i) {
       p.key = 'p-' + i;
@@ -1081,38 +1613,41 @@
     });
     projectsData = newData;
     projectsByKey = Object.create(null);
-    newData.forEach(function (p) { projectsByKey[p.key] = p; });
+    newData.forEach(function (p) {
+      projectsByKey[p.key] = p;
+    });
     if (selectedRef) {
-      var match = newData.find(function (p) { return p === selectedRef; });
+      var match = newData.find(function (p) {
+        return p === selectedRef;
+      });
       selectedProjectId = match ? match.key : null;
     } else {
       selectedProjectId = null;
     }
+    return true;
   }
 
   function finalizeOrderAfterProjectDrag() {
     var listEl = document.getElementById('projects-list');
     var newSig = listEl ? readOrderSignatureFromListDom(listEl) : '';
-    var orderChanged = orderAtDragStart && newSig && newSig !== orderAtDragStart;
-    if (listEl) {
-      syncProjectsOrderFromListDom(listEl);
-    }
+    var orderChanged = !!(orderAtDragStart && newSig && newSig !== orderAtDragStart);
+    var synced = listEl ? syncProjectsOrderFromListDom(listEl) : false;
     liveDragRowEl = null;
     orderAtDragStart = '';
     liveDragLast = { id: null, after: null };
     draggingProjectKey = null;
     var targetList = listEl || document.getElementById('projects-list');
     endProjectListDrag(targetList);
-    if (orderChanged) {
-      persistProjectOrder();
-    } else {
-      renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
-      if (selectedProjectId) {
-        var r2 = getProjectByKey(selectedProjectId);
-        if (r2) preloadProjectMedia(r2);
-        restoreSelectedProjectPreview();
-      }
+    if (orderChanged && synced) {
+      projectListOrderDirty = true;
     }
+    renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
+    if (selectedProjectId) {
+      var r2 = getProjectByKey(selectedProjectId);
+      if (r2) preloadProjectMedia(r2);
+      restoreSelectedProjectPreview();
+    }
+    updateProjectListOrderBar();
   }
 
   function applyProjectOrderFromKeys(orderKeys) {
@@ -1143,29 +1678,84 @@
 
   function persistProjectOrder() {
     if (!dbRef) return;
-    var validRows = projectsData.filter(function (item) { return item.docId; });
+    var validRows = projectsData.filter(function (item) {
+      return item.docId;
+    });
     if (!validRows.length) return;
+    var hadPendingListOrder = projectListOrderDirty;
     adminOrderSaving = true;
     renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
+    updateProjectListOrderBar();
 
     var batch = dbRef.batch();
     validRows.forEach(function (item, idx) {
       var ref = dbRef.collection('projetos').doc(item.docId);
-      batch.set(ref, { order: idx, ordem: idx }, { merge: true });
+      batch.set(
+        ref,
+        {
+          order: idx,
+          ordem: idx,
+          position: idx,
+          posicao: idx
+        },
+        { merge: true }
+      );
     });
 
     batch.commit()
       .then(function () {
-        // Ordem persistida com sucesso.
+        projectListOrderDirty = false;
       })
       .catch(function (error) {
         console.warn('Erro ao salvar ordem dos projetos:', error);
+        if (hadPendingListOrder) projectListOrderDirty = true;
         alert('Falha ao salvar ordem dos projetos.');
       })
       .finally(function () {
         adminOrderSaving = false;
         renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
+        updateProjectListOrderBar();
       });
+  }
+
+  function updateProjectListOrderBar() {
+    var bar = document.getElementById('projects-order-bar');
+    var btn = document.getElementById('projects-order-save');
+    if (!bar || !btn) return;
+    var show =
+      contentMode === 'projects' &&
+      isLiteAdmin &&
+      projectListOrderDirty &&
+      projectsData.length > 0;
+    bar.classList.toggle('is-visible', show);
+    bar.setAttribute('aria-hidden', show ? 'false' : 'true');
+    btn.disabled = !show || adminOrderSaving || !dbRef;
+  }
+
+  function setupProjectsOrderSaveBar() {
+    var btn = document.getElementById('projects-order-save');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      if (!projectListOrderDirty || adminOrderSaving || !dbRef) return;
+      persistProjectOrder();
+    });
+  }
+
+  function scheduleAdminSaveNoticeClear(projectKey) {
+    var k = String(projectKey || '');
+    if (!k) return;
+    if (adminSaveNoticeClearTimer) {
+      clearTimeout(adminSaveNoticeClearTimer);
+      adminSaveNoticeClearTimer = null;
+    }
+    Object.keys(adminSaveNoticeByKey).forEach(function (x) {
+      if (x !== k) delete adminSaveNoticeByKey[x];
+    });
+    adminSaveNoticeClearTimer = setTimeout(function () {
+      adminSaveNoticeClearTimer = null;
+      delete adminSaveNoticeByKey[k];
+      renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
+    }, 4200);
   }
 
   function saveProjectDraft(projectKey) {
@@ -1174,11 +1764,15 @@
     var draft = adminDrafts[key];
     if (!project || !draft) return;
     if (!dbRef) {
-      alert('Banco indisponível para salvar.');
+      adminSaveNoticeByKey[key] = { text: 'Banco indisponível para salvar.', error: true };
+      scheduleAdminSaveNoticeClear(key);
+      renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
       return;
     }
     if (!project.docId) {
-      alert('Não foi possível identificar o documento deste projeto.');
+      adminSaveNoticeByKey[key] = { text: 'Documento do projeto não identificado.', error: true };
+      scheduleAdminSaveNoticeClear(key);
+      renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
       return;
     }
 
@@ -1201,11 +1795,13 @@
         project.description = payload.description;
         delete adminDrafts[key];
         editingProjectKey = null;
-        alert('Projeto atualizado com sucesso.');
+        adminSaveNoticeByKey[key] = { text: 'Alterações guardadas.', error: false };
+        scheduleAdminSaveNoticeClear(key);
       })
       .catch(function (error) {
         console.warn('Erro ao salvar projeto no Admin Lite:', error);
-        alert('Falha ao salvar no banco.');
+        adminSaveNoticeByKey[key] = { text: 'Falha ao salvar no banco. Tente novamente.', error: true };
+        scheduleAdminSaveNoticeClear(key);
       })
       .finally(function () {
         delete adminSavingByKey[key];
@@ -1443,7 +2039,8 @@
       'models/NezmodelF2.glb',
       function (gltf) {
         model = gltf.scene;
-        model.position.set(0, -3, 0);
+        /* Leve deslocamento em Y- para centrar melhor no ecra; pivô da orbita mantém-se em (0,-0.1,0). */
+        model.position.set(0, -3.28, 0);
         model.scale.set(1.2, 1.2, 1.2);
 
         model.traverse(function (child) {
@@ -1500,7 +2097,10 @@
 
   setupModeToggle();
   setupContentToggle();
+  setupProjectsOrderSaveBar();
+  setupProjectPreviewUpload();
   setupAdminLiteModal();
+  setupProjectDeleteModal();
   setupAdminLiteTrigger();
   setupSectionIndexTracking();
   dbRef = setupFirebase();

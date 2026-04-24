@@ -32,6 +32,13 @@
       </div>
       <div id="head-canvas-wrap" aria-label="Render 3D da cabeça"></div>
       <div id="project-preview" class="project-preview is-hidden" aria-live="polite">
+        <div id="project-preview-loading" class="project-preview-loading" aria-hidden="true" aria-busy="false">
+          <span class="loading-circle" aria-hidden="true"></span>
+        </div>
+        <div id="project-preview-add-wrap" class="project-preview-add-wrap" aria-hidden="true">
+          <button id="project-preview-add-btn" class="project-preview-add-btn" type="button" aria-label="Adicionar imagens ou vídeos ao projeto">+</button>
+          <input id="project-preview-media-input" class="project-preview-media-input" type="file" multiple accept="image/*,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov">
+        </div>
         <img id="project-preview-image" class="project-preview-image" alt="Preview do projeto">
         <video id="project-preview-video" class="project-preview-video" muted playsinline></video>
         <button id="project-video-play" class="project-video-play is-hidden" type="button" aria-label="Reproduzir vídeo">&#9658;</button>
@@ -240,6 +247,10 @@
       </article>
 
       <article id="projects-panel" class="projects-panel is-hidden">
+        <div id="projects-order-bar" class="projects-order-bar is-hidden" aria-live="polite">
+          <span class="projects-order-bar-hint">Ordem alterada — guarde no banco.</span>
+          <button type="button" id="projects-order-save" class="projects-order-save" disabled>Guardar ordem</button>
+        </div>
         <div id="projects-list" class="projects-list"></div>
       </article>
     </section>
@@ -267,12 +278,27 @@
     </div>
   </div>
 
+  <div id="project-delete-modal" class="admin-lite-modal project-delete-modal is-hidden" aria-hidden="true">
+    <div class="admin-lite-modal-backdrop" data-project-delete-close="true"></div>
+    <div class="admin-lite-modal-panel" role="alertdialog" aria-modal="true" aria-labelledby="project-delete-title" aria-describedby="project-delete-desc">
+      <h2 id="project-delete-title" class="admin-lite-modal-title">Excluir projeto?</h2>
+      <p id="project-delete-desc" class="admin-lite-modal-subtitle">Esta ação não pode ser desfeita.</p>
+      <p id="project-delete-name" class="project-delete-name" aria-live="polite"></p>
+      <p id="project-delete-error" class="admin-lite-feedback project-delete-error" aria-live="polite"></p>
+      <div class="admin-lite-actions">
+        <button id="project-delete-cancel" class="admin-lite-button" type="button">Cancelar</button>
+        <button id="project-delete-confirm" class="admin-lite-button is-danger" type="button">Excluir</button>
+      </div>
+    </div>
+  </div>
+
   <script src="ReLibs/three.min.js"></script>
   <script src="ReLibs/GLTFLoader.js"></script>
   <script src="ReLibs/OrbitControls.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
   <script src="lite.js"></script>
 </body>
 </html>
