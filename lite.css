@@ -127,6 +127,98 @@ body {
   background: rgba(0, 0, 0, 0.05);
 }
 
+.admin-lite-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+}
+
+.admin-lite-modal.is-hidden {
+  display: none;
+}
+
+.admin-lite-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.62);
+}
+
+.admin-lite-modal-panel {
+  position: relative;
+  z-index: 1;
+  width: min(460px, calc(100vw - 28px));
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text);
+  padding: 14px;
+}
+
+.admin-lite-modal-title {
+  margin: 0;
+  font-size: clamp(24px, 1.7vw, 32px);
+  line-height: 1.14;
+  text-transform: uppercase;
+}
+
+.admin-lite-modal-subtitle {
+  margin: 6px 0 10px;
+  font-size: 14px;
+}
+
+.admin-lite-form {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-lite-label {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin-lite-input {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+.admin-lite-feedback {
+  min-height: 18px;
+  margin: 2px 0 0;
+  font-size: 13px;
+}
+
+.admin-lite-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.admin-lite-button {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  min-height: 36px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.admin-lite-button.is-primary {
+  background: #111;
+  color: #fff;
+}
+
 .lite-main {
   height: calc(100vh - var(--header-h));
   display: grid;
@@ -368,22 +460,123 @@ body {
   padding: 14px 16px;
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease, padding 0.2s ease;
+  position: relative;
 }
 
 .project-item:hover {
-  background: #000;
+  background: #2b2b2b;
   color: #fff;
 }
 
 .project-item.is-active {
-  background: #2b2b2b;
+  background: #000;
   color: #fff;
+}
+
+.project-item--admin {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  padding: 0;
+  cursor: default;
+}
+
+.project-item--admin.is-active {
+  padding: 0;
+}
+
+.project-item--admin .project-item-content {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  padding: 14px 16px;
+  cursor: pointer;
+}
+
+.project-item--admin.is-active .project-item-content {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.project-drag-handle {
+  flex: 0 0 32px;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.04);
+  color: #333;
+  cursor: grab;
+  user-select: none;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: -0.1em;
+  opacity: 0.55;
+  touch-action: none;
+}
+
+.project-item--admin:hover .project-drag-handle,
+.project-item--admin.is-active .project-drag-handle {
+  opacity: 0.95;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border-right-color: rgba(255, 255, 255, 0.25);
+}
+
+.project-drag-handle:active {
+  cursor: grabbing;
+}
+
+.project-item.is-dragging {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.project-item.is-dragging .project-drag-handle {
+  cursor: grabbing;
+}
+
+.project-item.is-drop-before {
+  box-shadow: inset 0 2px 0 0 rgba(255, 255, 255, 0.95);
+}
+
+.project-item.is-drop-after {
+  box-shadow: inset 0 -2px 0 0 rgba(255, 255, 255, 0.95);
+}
+
+.project-item-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  z-index: 2;
+}
+
+.project-edit-icon {
+  position: static;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  width: 30px;
+  height: 30px;
+  line-height: 1;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .project-item-title {
   margin: 0 0 2px;
   font-size: clamp(24px, 1.7vw, 32px);
   font-weight: 600;
+  text-transform: uppercase;
 }
 
 .project-item-meta {
@@ -403,7 +596,49 @@ body {
   display: block;
 }
 
-.project-item.is-active {
+.project-edit-input,
+.project-edit-textarea {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  background: rgba(0, 0, 0, 0.22);
+  color: #fff;
+  font: inherit;
+  padding: 6px 8px;
+}
+
+.project-edit-input {
+  margin-top: 8px;
+}
+
+.project-edit-textarea {
+  margin-top: 8px;
+  min-height: 96px;
+  resize: vertical;
+}
+
+.project-edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.project-edit-button {
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: transparent;
+  color: #fff;
+  padding: 5px 10px;
+  font-size: 13px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.project-edit-status {
+  margin-top: 6px;
+  font-size: 13px;
+  opacity: 0.92;
+}
+
+.project-item.is-active:not(.project-item--admin) {
   padding-top: 20px;
   padding-bottom: 20px;
 }

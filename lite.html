@@ -245,11 +245,34 @@
     </section>
   </main>
 
+  <div id="admin-lite-modal" class="admin-lite-modal is-hidden" aria-hidden="true">
+    <div class="admin-lite-modal-backdrop" data-admin-modal-close="true"></div>
+    <div class="admin-lite-modal-panel" role="dialog" aria-modal="true" aria-labelledby="admin-lite-modal-title">
+      <h2 id="admin-lite-modal-title" class="admin-lite-modal-title">Admin Lite</h2>
+      <p class="admin-lite-modal-subtitle">Use as mesmas credenciais do modo imersivo.</p>
+      <form id="admin-lite-form" class="admin-lite-form">
+        <label class="admin-lite-label" for="admin-lite-email">Login (email)</label>
+        <input id="admin-lite-email" class="admin-lite-input" type="email" autocomplete="username" required>
+
+        <label class="admin-lite-label" for="admin-lite-password">Senha</label>
+        <input id="admin-lite-password" class="admin-lite-input" type="password" autocomplete="current-password" required>
+
+        <p id="admin-lite-feedback" class="admin-lite-feedback" aria-live="polite"></p>
+
+        <div class="admin-lite-actions">
+          <button id="admin-lite-cancel" class="admin-lite-button" type="button">Cancelar</button>
+          <button id="admin-lite-submit" class="admin-lite-button is-primary" type="submit">Entrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script src="ReLibs/three.min.js"></script>
   <script src="ReLibs/GLTFLoader.js"></script>
   <script src="ReLibs/OrbitControls.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="lite.js"></script>
 </body>
 </html>

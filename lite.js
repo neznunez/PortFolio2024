@@ -17,6 +17,24 @@
   var imagePreloadCache = Object.create(null);
   var previewRenderToken = 0;
   var currentPreviewIsVideo = false;
+  var hoverPreviewTimer = null;
+  var videoFrameCache = Object.create(null);
+  var videoFramePending = Object.create(null);
+  var dbRef = null;
+  var isLiteAdmin = false;
+  var adminEditBuffer = '';
+  var adminEditTimer = null;
+  var adminDrafts = Object.create(null);
+  var adminSavingByKey = Object.create(null);
+  var adminOrderSaving = false;
+  var editingProjectKey = null;
+  var draggingProjectKey = null;
+  var projectReorderActive = false;
+  var liveDragRowEl = null;
+  var orderAtDragStart = '';
+  var liveDragLast = { id: null, after: null };
+  var projectsListDnDBound = false;
+  var adminModalElements = null;
 
   var skyboxes = [
     [
@@ -125,6 +143,146 @@
     }
   }
 
+  function setupAdminLiteTrigger() {
+    window.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && isLiteAdmin) {
+        isLiteAdmin = false;
+        adminDrafts = Object.create(null);
+        editingProjectKey = null;
+        alert('Admin Lite desativado.');
+        renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
+        return;
+      }
+
+      if (!event.key || event.key.length !== 1) return;
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      var tag = (event.target && event.target.tagName || '').toUpperCase();
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (event.target && event.target.isContentEditable)) return;
+
+      adminEditBuffer = (adminEditBuffer + event.key.toLowerCase()).slice(-16);
+      if (adminEditTimer) clearTimeout(adminEditTimer);
+      adminEditTimer = setTimeout(function () {
+        adminEditBuffer = '';
+      }, 1200);
+
+      if (adminEditBuffer.indexOf('admin lite') !== -1 || adminEditBuffer.indexOf('adminlite') !== -1) {
+        adminEditBuffer = '';
+        requestAdminLiteLogin();
+      }
+    });
+  }
+
+  function setupAdminLiteModal() {
+    var modal = document.getElementById('admin-lite-modal');
+    var form = document.getElementById('admin-lite-form');
+    var emailInput = document.getElementById('admin-lite-email');
+    var passwordInput = document.getElementById('admin-lite-password');
+    var feedbackEl = document.getElementById('admin-lite-feedback');
+    var cancelButton = document.getElementById('admin-lite-cancel');
+    var submitButton = document.getElementById('admin-lite-submit');
+    if (!modal || !form || !emailInput || !passwordInput || !feedbackEl || !cancelButton || !submitButton) return;
+
+    adminModalElements = {
+      modal: modal,
+      form: form,
+      emailInput: emailInput,
+      passwordInput: passwordInput,
+      feedbackEl: feedbackEl,
+      cancelButton: cancelButton,
+      submitButton: submitButton
+    };
+
+    modal.addEventListener('click', function (event) {
+      var target = event.target;
+      if (target && target.getAttribute && target.getAttribute('data-admin-modal-close') === 'true') {
+        closeAdminLiteModal();
+      }
+    });
+
+    cancelButton.addEventListener('click', function () {
+      closeAdminLiteModal();
+    });
+
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      submitAdminLiteLogin();
+    });
+  }
+
+  function openAdminLiteModal() {
+    if (!adminModalElements) return;
+    adminModalElements.modal.classList.remove('is-hidden');
+    adminModalElements.modal.setAttribute('aria-hidden', 'false');
+    setAdminModalFeedback('');
+    setAdminModalLoading(false);
+    adminModalElements.emailInput.value = '';
+    adminModalElements.passwordInput.value = '';
+    adminModalElements.emailInput.focus();
+  }
+
+  function closeAdminLiteModal() {
+    if (!adminModalElements) return;
+    adminModalElements.modal.classList.add('is-hidden');
+    adminModalElements.modal.setAttribute('aria-hidden', 'true');
+    setAdminModalFeedback('');
+    setAdminModalLoading(false);
+  }
+
+  function setAdminModalFeedback(message) {
+    if (!adminModalElements || !adminModalElements.feedbackEl) return;
+    adminModalElements.feedbackEl.textContent = message || '';
+  }
+
+  function setAdminModalLoading(isLoading) {
+    if (!adminModalElements) return;
+    adminModalElements.emailInput.disabled = !!isLoading;
+    adminModalElements.passwordInput.disabled = !!isLoading;
+    adminModalElements.cancelButton.disabled = !!isLoading;
+    adminModalElements.submitButton.disabled = !!isLoading;
+    adminModalElements.submitButton.textContent = isLoading ? 'Entrando...' : 'Entrar';
+  }
+
+  function submitAdminLiteLogin() {
+    if (!adminModalElements) return;
+    var email = String(adminModalElements.emailInput.value || '').trim();
+    var password = String(adminModalElements.passwordInput.value || '');
+    if (!email || !password) {
+      setAdminModalFeedback('Preencha login e senha.');
+      return;
+    }
+
+    setAdminModalLoading(true);
+    setAdminModalFeedback('');
+
+    window.firebase.auth().signInWithEmailAndPassword(email, password)
+      .then(function () {
+        isLiteAdmin = true;
+        closeAdminLiteModal();
+        renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
+      })
+      .catch(function (error) {
+        console.warn('Falha no login Admin Lite:', error);
+        setAdminModalFeedback('Login inválido. Verifique email e senha.');
+      })
+      .finally(function () {
+        setAdminModalLoading(false);
+      });
+  }
+
+  function requestAdminLiteLogin() {
+    if (isLiteAdmin) {
+      alert('Admin Lite já está ativo.');
+      return;
+    }
+
+    if (!window.firebase || !window.firebase.auth) {
+      alert('Firebase Auth não está disponível nesta página.');
+      return;
+    }
+
+    openAdminLiteModal();
+  }
+
   function setContentMode(mode) {
     contentMode = mode;
     var cvButton = document.getElementById('showCV');
@@ -158,6 +316,7 @@
       if (!window.firebase.apps.length) {
         window.firebase.initializeApp(firebaseConfig);
       }
+      if (window.firebase.auth) window.firebase.auth();
       return window.firebase.firestore();
     } catch (error) {
       console.warn('Firebase indisponivel no lite:', error);
@@ -179,6 +338,15 @@
       );
     }
 
+    function isImageUrl(url) {
+      var value = String(url || '').toLowerCase();
+      return (
+        /\.(png|jpe?g|webp|gif|avif|svg)(\?.*)?$/i.test(value) ||
+        value.indexOf('mime=image') !== -1 ||
+        value.indexOf('contenttype=image') !== -1
+      );
+    }
+
     function isVideoTypeHint(hint) {
       var value = String(hint || '').toLowerCase();
       return value.indexOf('video') !== -1;
@@ -190,10 +358,9 @@
       function walk(value) {
         if (!value) return;
         if (typeof value === 'string') {
-          var isHttp = /^https?:\/\//i.test(value);
-          var isImage = /\.(png|jpe?g|webp|gif|avif|svg)(\?.*)?$/i.test(value);
+          var isImage = isImageUrl(value);
           var isVideo = isVideoUrl(value);
-          if (isImage || isVideo || isHttp) {
+          if (isImage || isVideo) {
             found.push({ type: isVideo ? 'video' : 'image', src: value });
           }
           return;
@@ -254,9 +421,12 @@
 
       return {
         id: String(item.id || item.projectId || idx + 1),
+        docId: item.__docId || null,
         key: 'p-' + idx,
         title: item.title || item.nome || 'Projeto',
+        subtitle: item.subtitle || item.subtitulo || item.meta || '',
         description: item.description || item.descricao || '',
+        order: Number(item.order || item.ordem || item.position || item.posicao || idx),
         mediaItems: mediaItems,
         preview: coverCandidate || '',
         year: item.year || item.ano || ''
@@ -282,17 +452,21 @@
         var rows = [];
         snapshot.forEach(function (doc) {
           var data = doc.data() || {};
+          data.__docId = doc.id;
           data.id = data.id || doc.id;
           rows.push(data);
         });
-        return rows.map(normalizeProject);
+        return rows
+          .map(normalizeProject)
+          .sort(function (a, b) { return Number(a.order || 0) - Number(b.order || 0); });
       })
       .catch(function () {
         return fromJsonFallback();
       });
   }
 
-  function renderProjectsList() {
+  function renderProjectsList(options) {
+    var opts = options || {};
     var listEl = document.getElementById('projects-list');
     if (!listEl) return;
 
@@ -313,39 +487,166 @@
     listEl.innerHTML = projectsData.map(function (project) {
       var cleanDescription = toPlainText(project.description || '');
       var safeDescription = cleanDescription.replace(/\n+/g, ' ').trim();
-      var meta = project.year ? String(project.year) : 'Projeto';
+      var meta = project.subtitle ? String(project.subtitle) : (project.year ? String(project.year) : 'Projeto');
+      var isActive = project.key === selectedProjectId;
+      var isEditing = isLiteAdmin && isActive && editingProjectKey === project.key;
+      var showEditButton = isLiteAdmin && isActive && !isEditing;
+      var isEditable = isEditing;
+      var draft = isEditable ? getProjectDraft(project.key) : null;
+      var titleValue = isEditable ? (draft.title || '') : project.title;
+      var subtitleValue = isEditable ? (draft.subtitle || '') : meta;
+      var descValue = isEditable ? (draft.description || '') : safeDescription;
+      var isSaving = !!adminSavingByKey[project.key];
       return [
-        '<article class="project-item" data-project-key="' + project.key + '">',
-        '<h3 class="project-item-title">' + escapeHtml(project.title) + '</h3>',
-        '<p class="project-item-meta">' + escapeHtml(meta) + '</p>',
-        '<p class="project-item-description">' + escapeHtml(safeDescription) + '</p>',
+        '<article class="project-item' + (isActive ? ' is-active' : '') + (isLiteAdmin ? ' project-item--admin' : '') + '" data-project-key="' + project.key + '" data-doc-id="' + escapeHtml(String(project.docId || '')) + '" data-mid="' + escapeHtml(String(project.docId || project.id || project.key)) + '">',
+        isLiteAdmin
+          ? '<span class="project-drag-handle" draggable="true" data-drag-handle="true" title="Arrastar para reordenar" aria-label="Arrastar para reordenar">⋮⋮</span>'
+          : '',
+        '<div class="project-item-content">',
+        showEditButton
+          ? '<div class="project-item-actions">' +
+              '<button class="project-edit-icon" data-project-action="delete" type="button" aria-label="Excluir projeto">×</button>' +
+              '<button class="project-edit-icon" data-project-action="start-edit" type="button" aria-label="Editar projeto">✎</button>' +
+            '</div>'
+          : '',
+        isEditable
+          ? '<input class="project-item-title project-edit-input" data-project-field="title" value="' + escapeHtml(titleValue) + '" />'
+          : '<h3 class="project-item-title">' + escapeHtml(project.title) + '</h3>',
+        isEditable
+          ? '<input class="project-item-meta project-edit-input" data-project-field="subtitle" value="' + escapeHtml(subtitleValue) + '" />'
+          : '<p class="project-item-meta">' + escapeHtml(meta) + '</p>',
+        isEditable
+          ? '<textarea class="project-item-description project-edit-textarea" data-project-field="description">' + escapeHtml(descValue) + '</textarea>'
+          : '<p class="project-item-description">' + escapeHtml(safeDescription) + '</p>',
+        isEditable
+          ? '<div class="project-edit-actions">' +
+              '<button class="project-edit-button" data-project-action="save" type="button"' + (isSaving || adminOrderSaving ? ' disabled' : '') + '>Salvar</button>' +
+              '<button class="project-edit-button" data-project-action="cancel" type="button"' + (isSaving || adminOrderSaving ? ' disabled' : '') + '>Cancelar</button>' +
+            '</div>' +
+            '<div class="project-edit-status">' + (isSaving ? 'Salvando conteúdo...' : (adminOrderSaving ? 'Salvando ordem...' : 'Admin Lite ativo')) + '</div>'
+          : '',
+        '</div>',
         '</article>'
       ].join('');
     }).join('');
 
     Array.prototype.slice.call(listEl.querySelectorAll('.project-item')).forEach(function (itemEl) {
-      itemEl.addEventListener('mouseenter', function () {
-        var key = itemEl.getAttribute('data-project-key');
-        previewProjectByKey(key, false);
-      });
       itemEl.addEventListener('pointerenter', function () {
+        if (projectReorderActive) return;
+        if (hoverPreviewTimer) clearTimeout(hoverPreviewTimer);
         var key = itemEl.getAttribute('data-project-key');
-        previewProjectByKey(key, false);
+        hoverPreviewTimer = setTimeout(function () {
+          previewProjectByKey(key, false);
+        }, 50);
       });
-      itemEl.addEventListener('click', function () {
+      itemEl.addEventListener('click', function (event) {
+        if (eventOnEditableTarget(event)) return;
+        if (draggingProjectKey) return;
+        if (hoverPreviewTimer) {
+          clearTimeout(hoverPreviewTimer);
+          hoverPreviewTimer = null;
+        }
         var key = itemEl.getAttribute('data-project-key');
+        if (selectedProjectId !== key) {
+          editingProjectKey = null;
+        }
         selectProject(key);
       });
-      itemEl.addEventListener('mouseleave', function () {
-        restoreSelectedProjectPreview();
-      });
       itemEl.addEventListener('pointerleave', function () {
+        if (hoverPreviewTimer) {
+          clearTimeout(hoverPreviewTimer);
+          hoverPreviewTimer = null;
+        }
         restoreSelectedProjectPreview();
       });
+
+      if (isLiteAdmin) {
+        if (!projectsListDnDBound) {
+          projectsListDnDBound = true;
+          listEl.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+          });
+          listEl.addEventListener('drop', function (e) {
+            e.preventDefault();
+          });
+        }
+        var dragHandle = itemEl.querySelector('[data-drag-handle]');
+        if (dragHandle) {
+          dragHandle.addEventListener('dragstart', function (event) {
+            event.stopPropagation();
+            orderAtDragStart = projectsData.map(function (p) { return String(p.docId || p.id || p.key); }).join('\t');
+            liveDragRowEl = itemEl;
+            liveDragLast = { id: null, after: null };
+            var key = itemEl.getAttribute('data-project-key');
+            projectReorderActive = true;
+            draggingProjectKey = key;
+            itemEl.classList.add('is-dragging');
+            if (event.dataTransfer) {
+              event.dataTransfer.effectAllowed = 'move';
+              event.dataTransfer.setData('text/plain', key);
+              try {
+                var ghost = new Image();
+                ghost.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAEAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+                event.dataTransfer.setDragImage(ghost, 0, 0);
+              } catch (e) {}
+            }
+          });
+          dragHandle.addEventListener('dragend', function () {
+            finalizeOrderAfterProjectDrag();
+          });
+        }
+        itemEl.addEventListener('dragover', function (event) {
+          if (!liveDragRowEl || !projectReorderActive) return;
+          if (itemEl === liveDragRowEl) return;
+          var rect = itemEl.getBoundingClientRect();
+          var h = Math.max(1, rect.height);
+          var after = (event.clientY - rect.top) > h * 0.5;
+          var rowId = itemEl.getAttribute('data-mid') || itemEl.getAttribute('data-project-key');
+          if (rowId === liveDragLast.id && after === liveDragLast.after) {
+            event.preventDefault();
+            if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+            return;
+          }
+          liveDragLast = { id: rowId, after: after };
+          if (after) {
+            if (itemEl.nextSibling === liveDragRowEl) {
+              event.preventDefault();
+              if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+              return;
+            }
+            listEl.insertBefore(liveDragRowEl, itemEl.nextSibling);
+          } else {
+            if (itemEl.previousSibling === liveDragRowEl) {
+              event.preventDefault();
+              if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+              return;
+            }
+            listEl.insertBefore(liveDragRowEl, itemEl);
+          }
+          event.preventDefault();
+          if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+        });
+        itemEl.addEventListener('drop', function (event) {
+          if (projectReorderActive) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+        });
+      }
     });
 
-    selectedProjectId = null;
-    updateProjectPreview([]);
+    if (!opts.preserveSelection) {
+      selectedProjectId = null;
+      updateProjectPreview([]);
+    } else if (selectedProjectId && !opts.skipPreviewReset) {
+      restoreSelectedProjectPreview();
+    }
+
+    if (isLiteAdmin) {
+      bindAdminDeleteButtons(listEl);
+      bindAdminEditorEvents(listEl);
+    }
   }
 
   function selectProject(projectKey) {
@@ -353,9 +654,13 @@
     var selected = projectsByKey[selectedProjectId] || projectsData.find(function (p) { return p.key === selectedProjectId; });
     if (!selected) return;
 
-    Array.prototype.slice.call(document.querySelectorAll('.project-item')).forEach(function (el) {
-      el.classList.toggle('is-active', el.getAttribute('data-project-key') === selectedProjectId);
-    });
+    if (isLiteAdmin) {
+      renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
+    } else {
+      Array.prototype.slice.call(document.querySelectorAll('.project-item')).forEach(function (el) {
+        el.classList.toggle('is-active', el.getAttribute('data-project-key') === selectedProjectId);
+      });
+    }
 
     preloadProjectMedia(selected);
     updateProjectPreview(
@@ -406,7 +711,7 @@
     renderProjectMedia(opts);
     emptyEl.style.display = 'none';
     if (controlsEl) {
-      var shouldShowControls = !!opts.showControls && activeProjectMedia.length >= 1;
+      var shouldShowControls = !!opts.showControls && activeProjectMedia.length >= 2;
       controlsEl.classList.toggle('is-hidden', !shouldShowControls);
     }
   }
@@ -430,28 +735,35 @@
     var token = ++previewRenderToken;
     if (targetItem.type === 'video') {
       currentPreviewIsVideo = true;
-      videoEl.pause();
-      videoEl.currentTime = 0;
-      videoEl.loop = true;
-      videoEl.autoplay = false;
-      videoEl.controls = false;
-      videoEl.muted = true;
-      videoEl.playsInline = true;
-      videoEl.src = targetSrc;
-      videoEl.load();
-      videoEl.onloadeddata = function () {
-        if (token !== previewRenderToken) return;
-        videoEl.classList.add('is-visible');
-        // No hover e no clique: mostra primeiro frame; play manual no botão.
-        try { videoEl.currentTime = 0.01; } catch (e) {}
+      // Hover: usar frame cacheado para minimizar lag e bugs.
+      if (!opts.showControls) {
         videoEl.pause();
-        if (playButton && opts.showControls) playButton.classList.remove('is-hidden');
-      };
-      videoEl.onerror = function () {
-        if (token !== previewRenderToken) return;
-        videoEl.classList.remove('is-visible');
-        if (playButton) playButton.classList.add('is-hidden');
-      };
+        videoEl.removeAttribute('src');
+        renderVideoFramePreview(targetSrc, token);
+      } else {
+        videoEl.pause();
+        videoEl.currentTime = 0;
+        videoEl.loop = true;
+        videoEl.autoplay = false;
+        videoEl.controls = false;
+        videoEl.muted = true;
+        videoEl.playsInline = true;
+        videoEl.src = targetSrc;
+        videoEl.load();
+        videoEl.onloadeddata = function () {
+          if (token !== previewRenderToken) return;
+          videoEl.classList.add('is-visible');
+          // No clique: mostra primeiro frame; play manual no botão.
+          try { videoEl.currentTime = 0.01; } catch (e) {}
+          videoEl.pause();
+          if (playButton) playButton.classList.remove('is-hidden');
+        };
+        videoEl.onerror = function () {
+          if (token !== previewRenderToken) return;
+          videoEl.classList.remove('is-visible');
+          if (playButton) playButton.classList.add('is-hidden');
+        };
+      }
     } else {
       currentPreviewIsVideo = false;
       videoEl.pause();
@@ -506,6 +818,69 @@
     }
   }
 
+  function renderVideoFramePreview(videoUrl, token) {
+    var imageEl = document.getElementById('project-preview-image');
+    if (!imageEl) return;
+
+    if (videoFrameCache[videoUrl]) {
+      if (token !== previewRenderToken) return;
+      imageEl.src = videoFrameCache[videoUrl];
+      imageEl.classList.add('is-visible');
+      return;
+    }
+
+    if (videoFramePending[videoUrl]) {
+      videoFramePending[videoUrl].push(function (dataUrl) {
+        if (token !== previewRenderToken || !dataUrl) return;
+        imageEl.src = dataUrl;
+        imageEl.classList.add('is-visible');
+      });
+      return;
+    }
+
+    videoFramePending[videoUrl] = [];
+    var probe = document.createElement('video');
+    probe.preload = 'metadata';
+    probe.muted = true;
+    probe.playsInline = true;
+    probe.crossOrigin = 'anonymous';
+
+    var finish = function (dataUrl) {
+      videoFrameCache[videoUrl] = dataUrl || '';
+      var waiters = videoFramePending[videoUrl] || [];
+      delete videoFramePending[videoUrl];
+      if (token === previewRenderToken && dataUrl) {
+        imageEl.src = dataUrl;
+        imageEl.classList.add('is-visible');
+      }
+      waiters.forEach(function (fn) { fn(dataUrl || ''); });
+    };
+
+    probe.onloadeddata = function () {
+      try {
+        var w = probe.videoWidth || 320;
+        var h = probe.videoHeight || 180;
+        var canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        if (!ctx) {
+          finish('');
+          return;
+        }
+        ctx.drawImage(probe, 0, 0, w, h);
+        finish(canvas.toDataURL('image/jpeg', 0.86));
+      } catch (e) {
+        finish('');
+      }
+    };
+    probe.onerror = function () {
+      finish('');
+    };
+    probe.src = videoUrl;
+    probe.load();
+  }
+
   function togglePreviewVideoPlayback() {
     var videoEl = document.getElementById('project-preview-video');
     var playButton = document.getElementById('project-video-play');
@@ -532,6 +907,310 @@
       selected.mediaItems && selected.mediaItems.length ? selected.mediaItems : [{ type: 'image', src: selected.preview }],
       { showControls: true, autoplayVideo: false }
     );
+  }
+
+  function eventOnEditableTarget(event) {
+    if (!event || !event.target || !event.target.closest) return false;
+    return !!event.target.closest('.project-edit-input, .project-edit-textarea, .project-edit-button, .project-item-actions, .project-drag-handle');
+  }
+
+  function getProjectByKey(key) {
+    return projectsByKey[String(key || '')] || null;
+  }
+
+  function bindAdminDeleteButtons(listEl) {
+    Array.prototype.slice.call(listEl.querySelectorAll('[data-project-action="delete"]')).forEach(function (btn) {
+      btn.addEventListener('click', function (event) {
+        event.stopPropagation();
+        event.preventDefault();
+        var item = event.target && event.target.closest ? event.target.closest('.project-item') : null;
+        var key = item && item.getAttribute('data-project-key');
+        if (key) deleteProjectByKey(key);
+      });
+    });
+  }
+
+  function deleteProjectByKey(projectKey) {
+    var key = String(projectKey || '');
+    var project = getProjectByKey(key);
+    if (!project) return;
+    if (!project.docId) {
+      alert('Não foi possível identificar o documento deste projeto.');
+      return;
+    }
+    if (!dbRef) {
+      alert('Banco indisponível para excluir.');
+      return;
+    }
+    if (!window.confirm('Excluir este projeto? Esta ação não pode ser desfeita.')) return;
+
+    var prevSelected = selectedProjectId ? getProjectByKey(selectedProjectId) : null;
+    var prevSelectedDocId = prevSelected && prevSelected.docId ? prevSelected.docId : null;
+    var targetDocId = project.docId;
+
+    dbRef.collection('projetos').doc(project.docId).delete()
+      .then(function () {
+        projectsData = projectsData.filter(function (p) { return p.key !== key; });
+        projectsData.forEach(function (p, i) {
+          p.key = 'p-' + i;
+          p.order = i;
+        });
+        projectsByKey = Object.create(null);
+        projectsData.forEach(function (p) {
+          projectsByKey[p.key] = p;
+        });
+        adminDrafts = Object.create(null);
+        editingProjectKey = null;
+        if (prevSelectedDocId && prevSelectedDocId === targetDocId) {
+          selectedProjectId = projectsData[0] ? projectsData[0].key : null;
+        } else if (prevSelectedDocId) {
+          var found = projectsData.find(function (p) { return p.docId === prevSelectedDocId; });
+          selectedProjectId = found ? found.key : null;
+        } else {
+          selectedProjectId = null;
+        }
+        renderProjectsList({ preserveSelection: true, skipPreviewReset: !selectedProjectId });
+        if (selectedProjectId) {
+          var reselected = getProjectByKey(selectedProjectId);
+          if (reselected) preloadProjectMedia(reselected);
+          restoreSelectedProjectPreview();
+        } else {
+          updateProjectPreview([]);
+        }
+        persistProjectOrder();
+      })
+      .catch(function (err) {
+        console.warn('Erro ao excluir projeto:', err);
+        alert('Falha ao excluir no banco.');
+      });
+  }
+
+  function getProjectDraft(projectKey) {
+    var key = String(projectKey || '');
+    var existing = adminDrafts[key];
+    if (existing) return existing;
+    var project = getProjectByKey(key);
+    if (!project) return null;
+    var draft = {
+      title: project.title || '',
+      subtitle: project.subtitle || (project.year ? String(project.year) : ''),
+      description: toPlainText(project.description || '')
+    };
+    adminDrafts[key] = draft;
+    return draft;
+  }
+
+  function bindAdminEditorEvents(listEl) {
+    Array.prototype.slice.call(listEl.querySelectorAll('.project-item.is-active')).forEach(function (itemEl) {
+      var projectKey = itemEl.getAttribute('data-project-key');
+      var draft = getProjectDraft(projectKey);
+      if (!draft) return;
+
+      Array.prototype.slice.call(itemEl.querySelectorAll('[data-project-field]')).forEach(function (fieldEl) {
+        fieldEl.addEventListener('input', function () {
+          var field = fieldEl.getAttribute('data-project-field');
+          if (!field) return;
+          draft[field] = fieldEl.value;
+        });
+      });
+
+      var saveButton = itemEl.querySelector('[data-project-action="save"]');
+      if (saveButton) {
+        saveButton.addEventListener('click', function () {
+          saveProjectDraft(projectKey);
+        });
+      }
+
+      var cancelButton = itemEl.querySelector('[data-project-action="cancel"]');
+      if (cancelButton) {
+        cancelButton.addEventListener('click', function () {
+          delete adminDrafts[String(projectKey || '')];
+          editingProjectKey = null;
+          renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
+        });
+      }
+
+      var startEditButton = itemEl.querySelector('[data-project-action="start-edit"]');
+      if (startEditButton) {
+        startEditButton.addEventListener('click', function (event) {
+          event.stopPropagation();
+          editingProjectKey = String(projectKey || '');
+          getProjectDraft(projectKey);
+          renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
+        });
+      }
+    });
+  }
+
+  function endProjectListDrag(listEl) {
+    projectReorderActive = false;
+    if (listEl) {
+      Array.prototype.slice.call(listEl.querySelectorAll('.project-item')).forEach(function (el) {
+        el.classList.remove('is-dragging', 'is-drop-before', 'is-drop-after');
+      });
+    }
+  }
+
+  function readOrderSignatureFromListDom(listEl) {
+    if (!listEl) return '';
+    return Array.from(listEl.querySelectorAll('.project-item')).map(function (el) {
+      return el.getAttribute('data-mid') || el.getAttribute('data-project-key') || '';
+    }).join('\t');
+  }
+
+  function syncProjectsOrderFromListDom(listEl) {
+    if (!listEl) return;
+    var byKey = Object.create(null);
+    var byMid = Object.create(null);
+    projectsData.forEach(function (p) {
+      byKey[p.key] = p;
+      byMid[String(p.docId || p.id || p.key)] = p;
+    });
+    var newData = Array.from(listEl.querySelectorAll('.project-item'))
+      .map(function (el) {
+        var mid = el.getAttribute('data-mid');
+        if (mid && byMid[mid]) return byMid[mid];
+        return byKey[el.getAttribute('data-project-key')];
+      })
+      .filter(Boolean);
+    if (newData.length !== projectsData.length) return;
+    var selectedRef = selectedProjectId ? byKey[selectedProjectId] : null;
+    newData.forEach(function (p, i) {
+      p.key = 'p-' + i;
+      p.order = i;
+    });
+    projectsData = newData;
+    projectsByKey = Object.create(null);
+    newData.forEach(function (p) { projectsByKey[p.key] = p; });
+    if (selectedRef) {
+      var match = newData.find(function (p) { return p === selectedRef; });
+      selectedProjectId = match ? match.key : null;
+    } else {
+      selectedProjectId = null;
+    }
+  }
+
+  function finalizeOrderAfterProjectDrag() {
+    var listEl = document.getElementById('projects-list');
+    var newSig = listEl ? readOrderSignatureFromListDom(listEl) : '';
+    var orderChanged = orderAtDragStart && newSig && newSig !== orderAtDragStart;
+    if (listEl) {
+      syncProjectsOrderFromListDom(listEl);
+    }
+    liveDragRowEl = null;
+    orderAtDragStart = '';
+    liveDragLast = { id: null, after: null };
+    draggingProjectKey = null;
+    var targetList = listEl || document.getElementById('projects-list');
+    endProjectListDrag(targetList);
+    if (orderChanged) {
+      persistProjectOrder();
+    } else {
+      renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
+      if (selectedProjectId) {
+        var r2 = getProjectByKey(selectedProjectId);
+        if (r2) preloadProjectMedia(r2);
+        restoreSelectedProjectPreview();
+      }
+    }
+  }
+
+  function applyProjectOrderFromKeys(orderKeys) {
+    if (!orderKeys || !orderKeys.length) return false;
+    var beforeStr = projectsData.map(function (p) { return p.key; }).join('\t');
+    var afterStr = orderKeys.join('\t');
+    if (beforeStr === afterStr) return false;
+    var byKey = Object.create(null);
+    projectsData.forEach(function (p) { byKey[p.key] = p; });
+    var selectedRef = selectedProjectId ? byKey[selectedProjectId] : null;
+    var newData = orderKeys.map(function (k) { return byKey[k]; }).filter(Boolean);
+    if (newData.length !== orderKeys.length) return false;
+    newData.forEach(function (p, i) {
+      p.key = 'p-' + i;
+      p.order = i;
+    });
+    projectsData = newData;
+    projectsByKey = Object.create(null);
+    newData.forEach(function (p) { projectsByKey[p.key] = p; });
+    if (selectedRef) {
+      var match = newData.find(function (p) { return p === selectedRef; });
+      selectedProjectId = match ? match.key : null;
+    } else {
+      selectedProjectId = null;
+    }
+    return true;
+  }
+
+  function persistProjectOrder() {
+    if (!dbRef) return;
+    var validRows = projectsData.filter(function (item) { return item.docId; });
+    if (!validRows.length) return;
+    adminOrderSaving = true;
+    renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
+
+    var batch = dbRef.batch();
+    validRows.forEach(function (item, idx) {
+      var ref = dbRef.collection('projetos').doc(item.docId);
+      batch.set(ref, { order: idx, ordem: idx }, { merge: true });
+    });
+
+    batch.commit()
+      .then(function () {
+        // Ordem persistida com sucesso.
+      })
+      .catch(function (error) {
+        console.warn('Erro ao salvar ordem dos projetos:', error);
+        alert('Falha ao salvar ordem dos projetos.');
+      })
+      .finally(function () {
+        adminOrderSaving = false;
+        renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
+      });
+  }
+
+  function saveProjectDraft(projectKey) {
+    var key = String(projectKey || '');
+    var project = getProjectByKey(key);
+    var draft = adminDrafts[key];
+    if (!project || !draft) return;
+    if (!dbRef) {
+      alert('Banco indisponível para salvar.');
+      return;
+    }
+    if (!project.docId) {
+      alert('Não foi possível identificar o documento deste projeto.');
+      return;
+    }
+
+    adminSavingByKey[key] = true;
+    renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
+
+    var payload = {
+      title: String(draft.title || '').trim(),
+      nome: String(draft.title || '').trim(),
+      subtitle: String(draft.subtitle || '').trim(),
+      subtitulo: String(draft.subtitle || '').trim(),
+      description: String(draft.description || '').trim(),
+      descricao: String(draft.description || '').trim()
+    };
+
+    dbRef.collection('projetos').doc(project.docId).set(payload, { merge: true })
+      .then(function () {
+        project.title = payload.title;
+        project.subtitle = payload.subtitle;
+        project.description = payload.description;
+        delete adminDrafts[key];
+        editingProjectKey = null;
+        alert('Projeto atualizado com sucesso.');
+      })
+      .catch(function (error) {
+        console.warn('Erro ao salvar projeto no Admin Lite:', error);
+        alert('Falha ao salvar no banco.');
+      })
+      .finally(function () {
+        delete adminSavingByKey[key];
+        renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
+      });
   }
 
   function escapeHtml(text) {
@@ -821,7 +1500,10 @@
 
   setupModeToggle();
   setupContentToggle();
+  setupAdminLiteModal();
+  setupAdminLiteTrigger();
   setupSectionIndexTracking();
+  dbRef = setupFirebase();
   loadProjectsData().then(function (rows) {
     projectsData = rows;
     renderProjectsList();
