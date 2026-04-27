@@ -46,6 +46,8 @@
   var adminSaveNoticeByKey = Object.create(null);
   var adminSaveNoticeClearTimer = null;
   var projectListOrderDirty = false;
+  var LITE_MODEL_URL = 'models/NezmodelF2.glb';
+  var LITE_MODEL_CACHE_NAME = 'portfolio-lite-model-cache-v1';
 
   var skyboxes = [
     [
@@ -2318,39 +2320,115 @@
 
   function loadModel() {
     var loader = new THREE.GLTFLoader();
-    loader.load(
-      'models/NezmodelF2.glb',
-      function (gltf) {
-        model = gltf.scene;
-        /* Leve deslocamento em Y- para centrar melhor no ecra; pivô da orbita mantém-se em (0,-0.1,0). */
-        model.position.set(0, -3.28, 0);
-        model.scale.set(1.2, 1.2, 1.2);
+    var modelResolved = false;
+    function attachLoadedModel(gltf) {
+      if (modelResolved) return;
+      modelResolved = true;
+      model = gltf.scene;
+      /* Leve deslocamento em Y- para centrar melhor no ecra; pivô da orbita mantém-se em (0,-0.1,0). */
+      model.position.set(0, -3.28, 0);
+      model.scale.set(1.2, 1.2, 1.2);
 
-        model.traverse(function (child) {
-          if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-          }
-        });
-
-        scene.add(model);
-        applyEnvMapIntensity();
-
-        if (gltf.animations && gltf.animations.length > 0) {
-          mixer = new THREE.AnimationMixer(model);
-          gltf.animations.forEach(function (clip) {
-            mixer.clipAction(clip).play();
-          });
+      model.traverse(function (child) {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
         }
+      });
 
-        hideLoadingIndicator();
-      },
-      undefined,
-      function (error) {
-        console.error('Erro ao carregar modelo no modo lite:', error);
-        hideLoadingIndicator();
+      scene.add(model);
+      applyEnvMapIntensity();
+
+      if (gltf.animations && gltf.animations.length > 0) {
+        mixer = new THREE.AnimationMixer(model);
+        gltf.animations.forEach(function (clip) {
+          mixer.clipAction(clip).play();
+        });
       }
-    );
+
+      hideLoadingIndicator();
+    }
+
+    function warmModelCacheInBackground() {
+      if (!window.fetch || !window.caches) return;
+      window.caches
+        .open(LITE_MODEL_CACHE_NAME)
+        .then(function (cache) {
+          return cache.match(LITE_MODEL_URL).then(function (cachedResponse) {
+            if (cachedResponse) return;
+            return fetch(LITE_MODEL_URL, { cache: 'force-cache' }).then(function (networkResponse) {
+              if (!networkResponse || !networkResponse.ok) return;
+              return cache.put(LITE_MODEL_URL, networkResponse.clone()).catch(function () {});
+            });
+          });
+        })
+        .catch(function () {});
+    }
+
+    function loadModelViaUrl() {
+      loader.load(
+        LITE_MODEL_URL,
+        function (gltf) {
+          attachLoadedModel(gltf);
+          // Mantém próximas visitas rápidas sem bloquear o primeiro render.
+          warmModelCacheInBackground();
+        },
+        undefined,
+        function (error) {
+          if (modelResolved) return;
+          console.error('Erro ao carregar modelo no modo lite:', error);
+          hideLoadingIndicator();
+        }
+      );
+    }
+
+    function loadModelViaArrayBuffer(buffer) {
+      try {
+        loader.parse(
+          buffer,
+          '',
+          function (gltf) {
+            attachLoadedModel(gltf);
+          },
+          function (error) {
+            if (modelResolved) return;
+            console.warn('Falha ao parsear GLB em cache, usando loader padrão:', error);
+            loadModelViaUrl();
+          }
+        );
+      } catch (parseErr) {
+        if (modelResolved) return;
+        console.warn('Falha ao inicializar parse GLB, usando loader padrão:', parseErr);
+        loadModelViaUrl();
+      }
+    }
+
+    function tryLoadModelFromPersistentCache() {
+      if (!window.caches) return Promise.resolve(false);
+      return window.caches
+        .open(LITE_MODEL_CACHE_NAME)
+        .then(function (cache) {
+          return cache.match(LITE_MODEL_URL);
+        })
+        .then(function (cachedResponse) {
+          if (!cachedResponse) return false;
+          return cachedResponse.arrayBuffer().then(function (buffer) {
+            if (!buffer) return false;
+            loadModelViaArrayBuffer(buffer);
+            return true;
+          });
+        })
+        .catch(function () {
+          return false;
+        });
+    }
+
+    tryLoadModelFromPersistentCache().then(function (loadedFromCache) {
+      if (loadedFromCache) return;
+      // Garante primeiro carregamento sem depender da estratégia de cache.
+      loadModelViaUrl();
+      warmModelCacheInBackground();
+    });
   }
 
   function hideLoadingIndicator() {
