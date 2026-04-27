@@ -449,6 +449,51 @@ body {
   display: none;
 }
 
+.project-media-order-wrap {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 6;
+  display: none;
+  align-items: center;
+  gap: 6px;
+}
+
+.project-media-order-wrap.is-visible {
+  display: flex;
+}
+
+.project-media-order-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.project-media-order-btn:hover:not(:disabled) {
+  background: rgba(40, 40, 40, 0.95);
+  border-color: rgba(255, 255, 255, 0.85);
+}
+
+.project-media-order-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.project-media-order-btn.is-danger {
+  border-color: rgba(255, 120, 120, 0.75);
+}
+
+.project-media-order-btn.is-danger:hover:not(:disabled) {
+  background: rgba(120, 20, 20, 0.85);
+  border-color: rgba(255, 150, 150, 0.95);
+}
+
 .project-preview-empty {
   position: relative;
   z-index: 1;

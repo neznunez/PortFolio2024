@@ -18,6 +18,7 @@
   var previewRenderToken = 0;
   var currentPreviewIsVideo = false;
   var hoverPreviewTimer = null;
+  var hoverPreviewKey = '';
   var videoFrameCache = Object.create(null);
   var videoFramePending = Object.create(null);
   var dbRef = null;
@@ -638,6 +639,7 @@
     if (leftPane) leftPane.classList.toggle('projects-mode', isProjects);
     if (loadingIndicator) loadingIndicator.classList.toggle('is-hidden', isProjects || !!model);
     updateProjectPreviewAddButton();
+    updateProjectMediaOrderTools();
     updateProjectListOrderBar();
 
     // remove destaque fixo do indice CV quando estiver em Projetos
@@ -693,9 +695,67 @@
     return value.indexOf('video') !== -1;
   }
 
+  function normalizeMediaEntry(raw) {
+    if (!raw) return null;
+    if (typeof raw === 'string') {
+      if (isVideoUrl(raw)) return { type: 'video', src: raw };
+      if (isImageUrl(raw)) return { type: 'image', src: raw };
+      return null;
+    }
+    if (typeof raw !== 'object') return null;
+    var src =
+      raw.url ||
+      raw.src ||
+      raw.imageUrl ||
+      raw.downloadURL ||
+      raw.path ||
+      raw.image ||
+      raw.thumbnail ||
+      raw.fileUrl ||
+      '';
+    if (!src || typeof src !== 'string') return null;
+    var explicitType = (
+      raw.type ||
+      raw.kind ||
+      raw.mediaType ||
+      raw.mimeType ||
+      raw.contentType ||
+      ''
+    )
+      .toString()
+      .toLowerCase();
+    if (isVideoTypeHint(explicitType) || isVideoUrl(src)) return { type: 'video', src: src };
+    if (isImageUrl(src)) return { type: 'image', src: src };
+    return null;
+  }
+
+  function normalizeMediaItemsFromArray(arr) {
+    if (!Array.isArray(arr)) return [];
+    var seen = Object.create(null);
+    return arr
+      .map(normalizeMediaEntry)
+      .filter(function (item) {
+        if (!item || !item.src) return false;
+        var key = item.type + '::' + item.src;
+        if (seen[key]) return false;
+        seen[key] = true;
+        return true;
+      });
+  }
+
   function collectMediaItems(source) {
     var found = [];
     if (!source || typeof source !== 'object') return found;
+
+    // Preserva ordem explícita do Firestore quando existir.
+    var fromCarouselItems = normalizeMediaItemsFromArray(source.carouselItems);
+    if (fromCarouselItems.length) return fromCarouselItems;
+
+    var fromMedia = normalizeMediaItemsFromArray(source.media);
+    if (fromMedia.length) return fromMedia;
+
+    var fromImages = normalizeMediaItemsFromArray(source.images);
+    if (fromImages.length) return fromImages;
 
     function walk(value) {
       if (!value) return;
@@ -917,7 +977,9 @@
         if (projectReorderActive) return;
         if (hoverPreviewTimer) clearTimeout(hoverPreviewTimer);
         var key = itemEl.getAttribute('data-project-key');
+        hoverPreviewKey = key || '';
         hoverPreviewTimer = setTimeout(function () {
+          if (!hoverPreviewKey || hoverPreviewKey !== key) return;
           previewProjectByKey(key, false);
         }, 50);
       });
@@ -934,7 +996,13 @@
         }
         selectProject(key);
       });
-      itemEl.addEventListener('pointerleave', function () {
+      itemEl.addEventListener('pointerleave', function (event) {
+        var toEl = event && event.relatedTarget && event.relatedTarget.closest
+          ? event.relatedTarget.closest('.project-item')
+          : null;
+        // Ao mover entre cards, não deve cancelar o hover do próximo card.
+        if (toEl && toEl !== itemEl) return;
+        hoverPreviewKey = '';
         if (hoverPreviewTimer) {
           clearTimeout(hoverPreviewTimer);
           hoverPreviewTimer = null;
@@ -1182,6 +1250,7 @@
       var shouldShowControls = !!opts.showControls && activeProjectMedia.length >= 2;
       controlsEl.classList.toggle('is-hidden', !shouldShowControls);
     }
+    updateProjectMediaOrderTools();
     updateProjectPreviewAddButton();
   }
 
@@ -1193,12 +1262,14 @@
     var playButton = document.getElementById('project-video-play');
     if (!imageEl || !videoEl || !activeProjectMedia.length) {
       setProjectPreviewLoading(false);
+      updateProjectMediaOrderTools();
       return;
     }
 
     var targetItem = activeProjectMedia[activeMediaIndex];
     if (!targetItem || !targetItem.src) {
       setProjectPreviewLoading(false);
+      updateProjectMediaOrderTools();
       return;
     }
 
@@ -1211,11 +1282,9 @@
     var token = ++previewRenderToken;
     if (targetItem.type === 'video') {
       currentPreviewIsVideo = true;
-      // Hover: usar frame cacheado para minimizar lag e bugs.
+      // Hover: render direto em <video> para reduzir latência perceptível.
       if (!opts.showControls) {
-        videoEl.pause();
-        videoEl.removeAttribute('src');
-        renderVideoFramePreview(targetSrc, token);
+        renderVideoHoverPreview(targetSrc, token);
       } else {
         videoEl.pause();
         videoEl.currentTime = 0;
@@ -1265,6 +1334,46 @@
     if (indexEl) {
       indexEl.textContent = (activeMediaIndex + 1) + ' / ' + activeProjectMedia.length;
     }
+    updateProjectMediaOrderTools();
+  }
+
+  function renderVideoHoverPreview(videoUrl, token) {
+    var imageEl = document.getElementById('project-preview-image');
+    var videoEl = document.getElementById('project-preview-video');
+    if (!imageEl || !videoEl) {
+      setProjectPreviewLoading(false);
+      return;
+    }
+
+    videoEl.pause();
+    videoEl.loop = false;
+    videoEl.autoplay = false;
+    videoEl.controls = false;
+    videoEl.muted = true;
+    videoEl.playsInline = true;
+    videoEl.preload = 'metadata';
+    videoEl.src = videoUrl;
+    videoEl.load();
+
+    videoEl.onloadeddata = function () {
+      if (token !== previewRenderToken) return;
+      setProjectPreviewLoading(false);
+      imageEl.classList.remove('is-visible');
+      videoEl.classList.add('is-visible');
+      try {
+        videoEl.currentTime = 0.08;
+      } catch (e) {}
+      videoEl.pause();
+    };
+
+    videoEl.onerror = function () {
+      if (token !== previewRenderToken) return;
+      // Fallback para frame em imagem quando o elemento de vídeo falha no hover.
+      videoEl.classList.remove('is-visible');
+      renderVideoFramePreview(videoUrl, token);
+    };
+
+    warmVideoFrameCache(videoUrl);
   }
 
   function preloadImage(url) {
@@ -1278,16 +1387,21 @@
     if (!url || imagePreloadCache['video::' + url]) return;
     var video = document.createElement('video');
     imagePreloadCache['video::' + url] = true;
-    // Evita estressar o pipeline de vídeo durante hover/prefetch.
-    video.preload = 'none';
+    // Mantém metadata pronta para reduzir latência do primeiro hover.
+    video.preload = 'metadata';
     video.muted = true;
     video.src = url;
+    warmVideoFrameCache(url);
   }
 
   function preloadMedia(item) {
     if (!item || !item.src) return;
-    if (item.type === 'video') preloadVideo(item.src);
-    else preloadImage(item.src);
+    if (item.type === 'video') {
+      preloadVideo(item.src);
+      warmVideoFrameCache(item.src);
+    } else {
+      preloadImage(item.src);
+    }
   }
 
   function preloadProjectMedia(project, limit) {
@@ -1296,6 +1410,74 @@
     for (var i = 0; i < max; i += 1) {
       preloadMedia(project.mediaItems[i]);
     }
+  }
+
+  function createVideoFrameProbe(videoUrl, onFinish) {
+    var done = false;
+    var probe = document.createElement('video');
+    probe.preload = 'metadata';
+    probe.muted = true;
+    probe.playsInline = true;
+    probe.crossOrigin = 'anonymous';
+
+    function finish(dataUrl) {
+      if (done) return;
+      done = true;
+      onFinish(dataUrl || '');
+    }
+
+    function captureFrame() {
+      try {
+        var w = probe.videoWidth || 320;
+        var h = probe.videoHeight || 180;
+        var canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        if (!ctx) {
+          finish('');
+          return;
+        }
+        ctx.drawImage(probe, 0, 0, w, h);
+        finish(canvas.toDataURL('image/jpeg', 0.88));
+      } catch (e) {
+        finish('');
+      }
+    }
+
+    probe.onloadedmetadata = function () {
+      try {
+        var d = Number(probe.duration || 0);
+        var targetTime = 0.12;
+        if (isFinite(d) && d > 0) {
+          targetTime = Math.min(Math.max(d * 0.1, 0.12), Math.max(0.12, d - 0.05, 1.1));
+        }
+        probe.currentTime = targetTime;
+      } catch (e) {
+        captureFrame();
+      }
+    };
+    probe.onseeked = captureFrame;
+    probe.onloadeddata = captureFrame;
+    probe.onerror = function () {
+      finish('');
+    };
+    probe.src = videoUrl;
+    probe.load();
+  }
+
+  function warmVideoFrameCache(videoUrl) {
+    if (!videoUrl || videoFrameCache[videoUrl]) return;
+    if (videoFramePending[videoUrl]) return;
+    videoFramePending[videoUrl] = [];
+    createVideoFrameProbe(videoUrl, function (dataUrl) {
+      videoFrameCache[videoUrl] = dataUrl || '';
+      var waiters = videoFramePending[videoUrl] || [];
+      delete videoFramePending[videoUrl];
+      waiters.forEach(function (fn) {
+        fn(dataUrl || '');
+      });
+    });
   }
 
   function renderVideoFramePreview(videoUrl, token) {
@@ -1321,11 +1503,6 @@
     }
 
     videoFramePending[videoUrl] = [];
-    var probe = document.createElement('video');
-    probe.preload = 'metadata';
-    probe.muted = true;
-    probe.playsInline = true;
-    probe.crossOrigin = 'anonymous';
 
     var finish = function (dataUrl) {
       videoFrameCache[videoUrl] = dataUrl || '';
@@ -1340,30 +1517,133 @@
       }
       waiters.forEach(function (fn) { fn(dataUrl || ''); });
     };
+    createVideoFrameProbe(videoUrl, finish);
+  }
 
-    probe.onloadeddata = function () {
-      try {
-        var w = probe.videoWidth || 320;
-        var h = probe.videoHeight || 180;
-        var canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        var ctx = canvas.getContext('2d');
-        if (!ctx) {
-          finish('');
-          return;
-        }
-        ctx.drawImage(probe, 0, 0, w, h);
-        finish(canvas.toDataURL('image/jpeg', 0.86));
-      } catch (e) {
-        finish('');
-      }
+  function updateProjectMediaOrderTools() {
+    var wrap = document.getElementById('project-media-order-wrap');
+    var leftBtn = document.getElementById('project-media-move-left');
+    var rightBtn = document.getElementById('project-media-move-right');
+    var deleteBtn = document.getElementById('project-media-delete');
+    if (!wrap || !leftBtn || !rightBtn || !deleteBtn) return;
+    var canShow =
+      contentMode === 'projects' &&
+      isLiteAdmin &&
+      !!selectedProjectId &&
+      !!activeProjectMedia.length &&
+      !!dbRef;
+    wrap.classList.toggle('is-visible', canShow);
+    wrap.setAttribute('aria-hidden', canShow ? 'false' : 'true');
+    if (!canShow) {
+      leftBtn.disabled = true;
+      rightBtn.disabled = true;
+      deleteBtn.disabled = true;
+      return;
+    }
+    leftBtn.disabled = activeMediaIndex <= 0;
+    rightBtn.disabled = activeMediaIndex >= activeProjectMedia.length - 1;
+    deleteBtn.disabled = !activeProjectMedia.length;
+  }
+
+  function setupProjectMediaOrderTools() {
+    var leftBtn = document.getElementById('project-media-move-left');
+    var rightBtn = document.getElementById('project-media-move-right');
+    var deleteBtn = document.getElementById('project-media-delete');
+    if (!leftBtn || !rightBtn || !deleteBtn) return;
+    leftBtn.addEventListener('click', function () {
+      moveCurrentProjectMediaBy(-1);
+    });
+    rightBtn.addEventListener('click', function () {
+      moveCurrentProjectMediaBy(1);
+    });
+    deleteBtn.addEventListener('click', function () {
+      deleteCurrentProjectMedia();
+    });
+  }
+
+  function saveProjectMediaOrder(project) {
+    if (!dbRef || !project || !project.docId) return Promise.resolve();
+    var mediaItems = Array.isArray(project.mediaItems) ? project.mediaItems : [];
+    var payload = {
+      carouselItems: mediaItems.map(function (item) {
+        return { type: item.type === 'video' ? 'video' : 'image', url: item.src };
+      }),
+      images: mediaItems
+        .filter(function (item) {
+          return item.type !== 'video';
+        })
+        .map(function (item) {
+          return item.src;
+        })
     };
-    probe.onerror = function () {
-      finish('');
-    };
-    probe.src = videoUrl;
-    probe.load();
+    return dbRef.collection('projetos').doc(project.docId).set(payload, { merge: true });
+  }
+
+  function moveCurrentProjectMediaBy(delta) {
+    if (!isLiteAdmin || !selectedProjectId || !delta) return;
+    var project = getProjectByKey(selectedProjectId);
+    if (!project || !Array.isArray(project.mediaItems) || project.mediaItems.length < 2) return;
+    var from = activeMediaIndex;
+    var to = from + Number(delta);
+    if (to < 0 || to >= project.mediaItems.length) return;
+    if (!project.docId || !dbRef) return;
+
+    var reordered = project.mediaItems.slice();
+    var moved = reordered.splice(from, 1)[0];
+    reordered.splice(to, 0, moved);
+    project.mediaItems = reordered;
+    activeProjectMedia = reordered.slice();
+    activeMediaIndex = to;
+    renderProjectMedia({ showControls: true });
+    setProjectPreviewLoading(true);
+    saveProjectMediaOrder(project)
+      .catch(function (error) {
+        console.warn('Erro ao salvar ordem das mídias do projeto:', error);
+        alert('Falha ao salvar ordem das mídias.');
+      })
+      .finally(function () {
+        setProjectPreviewLoading(false);
+        renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
+      });
+  }
+
+  function deleteCurrentProjectMedia() {
+    if (!isLiteAdmin || !selectedProjectId) return;
+    var project = getProjectByKey(selectedProjectId);
+    if (!project || !project.docId || !dbRef) return;
+    if (!Array.isArray(project.mediaItems) || !project.mediaItems.length) return;
+    var index = activeMediaIndex;
+    if (index < 0 || index >= project.mediaItems.length) return;
+    var item = project.mediaItems[index];
+    var label = item && item.type === 'video' ? 'este vídeo' : 'esta imagem';
+    var ok = window.confirm('Deseja excluir ' + label + ' deste projeto?');
+    if (!ok) return;
+
+    var reordered = project.mediaItems.slice();
+    reordered.splice(index, 1);
+    project.mediaItems = reordered;
+    project.preview = reordered.length ? reordered[0].src : '';
+    activeProjectMedia = reordered.slice();
+    if (activeMediaIndex >= activeProjectMedia.length) {
+      activeMediaIndex = Math.max(0, activeProjectMedia.length - 1);
+    }
+
+    if (!activeProjectMedia.length) {
+      updateProjectPreview([], { showControls: true, previewOwnerKey: selectedProjectId });
+    } else {
+      renderProjectMedia({ showControls: true });
+    }
+
+    setProjectPreviewLoading(true);
+    saveProjectMediaOrder(project)
+      .catch(function (error) {
+        console.warn('Erro ao excluir mídia do projeto:', error);
+        alert('Falha ao excluir mídia.');
+      })
+      .finally(function () {
+        setProjectPreviewLoading(false);
+        renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
+      });
   }
 
   function togglePreviewVideoPlayback() {
@@ -1648,6 +1928,9 @@
       restoreSelectedProjectPreview();
     }
     updateProjectListOrderBar();
+    if (orderChanged && synced && isLiteAdmin && dbRef && !adminOrderSaving) {
+      persistProjectOrder();
+    }
   }
 
   function applyProjectOrderFromKeys(orderKeys) {
@@ -2099,6 +2382,7 @@
   setupContentToggle();
   setupProjectsOrderSaveBar();
   setupProjectPreviewUpload();
+  setupProjectMediaOrderTools();
   setupAdminLiteModal();
   setupProjectDeleteModal();
   setupAdminLiteTrigger();
