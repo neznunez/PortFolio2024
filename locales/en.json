@@ -185,5 +185,8 @@
     "saved": "Changes saved.",
     "saveFailed": "Failed to save to database. Try again.",
     "storageError": "Storage unavailable."
+  },
+  "mobile": {
+    "redirecting": "Redirecting to the mobile-optimized version…"
   }
 }

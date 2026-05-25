@@ -2,8 +2,21 @@
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>NEZNUNEZ</title>
+    <script>
+      (function () {
+        try {
+          if (window.location.search.indexOf('immersive=1') !== -1) return;
+          if (!window.matchMedia || !window.matchMedia('(max-width: 768px)').matches) return;
+          var path = (window.location.pathname || '').toLowerCase();
+          if (path.slice(-9) === 'lite.html') return;
+          try { localStorage.setItem('portfolio_mode', 'lite'); } catch (e) {}
+          var target = 'lite.html' + (window.location.search || '') + (window.location.hash || '');
+          window.location.replace(target);
+        } catch (err) { /* ignore */ }
+      })();
+    </script>
     <link rel="icon" href="3d_6297747.ico" type="image/x-icon">
 	 <link rel="stylesheet" href="landing.css">
 	

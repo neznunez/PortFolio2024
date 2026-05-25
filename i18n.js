@@ -1,9 +1,18 @@
 (function (global) {
   var STORAGE_KEY = 'portfolio_locale';
+  var MOBILE_MAX_WIDTH = 768;
   var SUPPORTED = ['pt', 'en'];
   var currentLocale = 'pt';
   var messages = { pt: null, en: null };
   var readyPromise = null;
+
+  function isMobileViewport() {
+    try {
+      return global.matchMedia('(max-width: ' + MOBILE_MAX_WIDTH + 'px)').matches;
+    } catch (e) {
+      return (global.innerWidth || MOBILE_MAX_WIDTH + 1) <= MOBILE_MAX_WIDTH;
+    }
+  }
 
   function detectLocale() {
     var stored = '';
@@ -227,6 +236,8 @@
     setLocale: setLocale,
     apply: apply,
     localized: localized,
+    isMobileViewport: isMobileViewport,
+    MOBILE_MAX_WIDTH: MOBILE_MAX_WIDTH,
     ready: function () {
       return readyPromise || init();
     }

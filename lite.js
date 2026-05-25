@@ -124,9 +124,27 @@
     return skyboxes[0];
   }
 
+  function isMobileViewport() {
+    if (window.I18n && typeof I18n.isMobileViewport === 'function') {
+      return I18n.isMobileViewport();
+    }
+    try {
+      return window.matchMedia('(max-width: 768px)').matches;
+    } catch (e) {
+      return window.innerWidth <= 768;
+    }
+  }
+
   function setupModeToggle() {
     var modeButton = document.getElementById('modeToggle');
     if (!modeButton) return;
+
+    if (isMobileViewport()) {
+      modeButton.classList.add('is-hidden-mobile');
+      modeButton.setAttribute('aria-hidden', 'true');
+      modeButton.tabIndex = -1;
+      return;
+    }
 
     modeButton.addEventListener('click', function () {
       localStorage.setItem('portfolio_mode', 'full');

@@ -183,5 +183,8 @@
     "projectNotIdentified": "Erro: projeto não identificado.",
     "deleteMediaConfirm": "Deseja excluir {{label}} deste projeto?",
     "background": "FUNDO"
+  },
+  "mobile": {
+    "redirecting": "A redirecionar para a versão otimizada para telemóvel…"
   }
 }
