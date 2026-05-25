@@ -67,7 +67,7 @@ body {
 .lang-switch--title {
   flex-shrink: 0;
   align-self: center;
-  margin-left: 4px;
+  margin-left:180px;
 }
 
 .lang-switch--title .lang-switch-btn {
@@ -121,7 +121,8 @@ body {
   line-height: 0.9;
   letter-spacing: 0;
   text-transform: uppercase;
-  max-width: 72%;
+  max-width: min(78%, 920px);
+  flex-wrap: wrap;
   display: flex;
   align-items: center;
   gap: 8px;

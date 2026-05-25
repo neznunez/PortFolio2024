@@ -104,7 +104,8 @@
     "cancel": "Cancel",
     "submit": "Sign in",
     "submitting": "Signing in...",
-    "invalidLogin": "Invalid login. Check email and password."
+    "invalidLogin": "Invalid login. Check email and password.",
+    "fillRequired": "Enter email and password."
   },
   "deleteProject": {
     "title": "Delete project?",

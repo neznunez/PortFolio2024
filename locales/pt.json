@@ -104,7 +104,8 @@
     "cancel": "Cancelar",
     "submit": "Entrar",
     "submitting": "Entrando...",
-    "invalidLogin": "Login inválido. Verifique email e senha."
+    "invalidLogin": "Login inválido. Verifique email e senha.",
+    "fillRequired": "Preencha login e senha."
   },
   "deleteProject": {
     "title": "Excluir projeto?",

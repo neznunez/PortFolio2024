@@ -597,7 +597,7 @@
     var email = String(adminModalElements.emailInput.value || '').trim();
     var password = String(adminModalElements.passwordInput.value || '');
     if (!email || !password) {
-      setAdminModalFeedback('Preencha login e senha.');
+      setAdminModalFeedback(t('admin.fillRequired'));
       return;
     }
 

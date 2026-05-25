@@ -13,8 +13,10 @@
       stored = '';
     }
     if (stored === 'pt' || stored === 'en') return stored;
-    var nav = (global.navigator && global.navigator.language) || 'pt';
-    return String(nav).toLowerCase().indexOf('en') === 0 ? 'en' : 'pt';
+    var nav = (global.navigator && global.navigator.language) || '';
+    var navLower = String(nav).toLowerCase();
+    // PT só para português; qualquer outro idioma do browser → EN (es, fr, de, en, etc.)
+    return navLower.indexOf('pt') === 0 ? 'pt' : 'en';
   }
 
   function getByPath(obj, path) {
