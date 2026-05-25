@@ -1183,19 +1183,28 @@ body {
   }
 
   .lite-copy-nav {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    gap: 10px 14px;
-    padding: 8px 0;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    gap: clamp(4px, 1.2vw, 10px);
+    padding: 6px 0 8px;
     position: sticky;
     top: 0;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .lite-copy-nav a {
-    font-size: clamp(15px, 3.8vw, 20px);
+    flex: 1 1 0;
+    min-width: 0;
+    text-align: center;
+    white-space: nowrap;
+    font-size: clamp(9px, 2.35vw, 12px);
+    letter-spacing: -0.02em;
     min-height: 44px;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    padding: 0 2px;
   }
 
   .lite-section h2 {
@@ -1311,5 +1320,14 @@ body {
   .lite-left {
     min-height: min(34vh, 280px);
     max-height: 40vh;
+  }
+
+  .lite-copy-nav {
+    gap: 2px;
+  }
+
+  .lite-copy-nav a {
+    font-size: clamp(8px, 2.1vw, 11px);
+    padding: 0 1px;
   }
 }
