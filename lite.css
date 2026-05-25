@@ -1185,7 +1185,7 @@ body {
   .lite-copy-nav {
     flex-wrap: nowrap;
     justify-content: space-between;
-    gap: clamp(4px, 1.2vw, 10px);
+    gap: 0;
     padding: 6px 0 8px;
     position: sticky;
     top: 0;
@@ -1198,13 +1198,13 @@ body {
     min-width: 0;
     text-align: center;
     white-space: nowrap;
-    font-size: clamp(9px, 2.35vw, 12px);
-    letter-spacing: -0.02em;
+    font-size: clamp(11px, 3.05vw, 15px);
+    letter-spacing: -0.03em;
     min-height: 44px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0 2px;
+    padding: 0;
   }
 
   .lite-section h2 {
@@ -1322,12 +1322,8 @@ body {
     max-height: 40vh;
   }
 
-  .lite-copy-nav {
-    gap: 2px;
-  }
-
   .lite-copy-nav a {
-    font-size: clamp(8px, 2.1vw, 11px);
-    padding: 0 1px;
+    font-size: clamp(10px, 2.85vw, 14px);
+    letter-spacing: -0.04em;
   }
 }
