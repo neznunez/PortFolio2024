@@ -14,14 +14,18 @@
         <span class="lite-title-top">João</span>
       </span>
       <span class="lite-title-right">Nunez</span>
-      <span class="lite-title-role">| designer multimídia</span>
+      <span class="lite-title-role" data-i18n="ui.titleRole">| designer multimídia</span>
+      <div class="lang-switch lang-switch--title" role="group" data-i18n-attr="aria-label:ui.langLabel">
+        <button type="button" class="lang-switch-btn is-active" data-lang="pt" aria-pressed="true">PT</button>
+        <button type="button" class="lang-switch-btn" data-lang="en" aria-pressed="false">EN</button>
+      </div>
     </h1>
     <div class="header-actions">
-      <nav class="header-content-nav" aria-label="Modo de conteúdo">
-        <button id="showCV" class="header-content-button is-active" type="button">Curriculum</button>
-        <button id="showProjects" class="header-content-button" type="button">Projetos</button>
+      <nav class="header-content-nav" data-i18n-attr="aria-label:ui.contentNav">
+        <button id="showCV" class="header-content-button is-active" type="button" data-i18n="ui.cv">Curriculum</button>
+        <button id="showProjects" class="header-content-button" type="button" data-i18n="ui.projects">Projetos</button>
       </nav>
-      <button id="modeToggle" class="mode-toggle" type="button">Imersivo</button>
+      <button id="modeToggle" class="mode-toggle" type="button" data-i18n="ui.immersive">Imersivo</button>
     </div>
   </header>
 
@@ -30,217 +34,66 @@
       <div id="lite-loading-indicator" class="lite-loading-indicator" aria-live="polite">
         <span class="loading-circle" aria-hidden="true"></span>
       </div>
-      <div id="head-canvas-wrap" aria-label="Render 3D da cabeça"></div>
+      <div id="head-canvas-wrap" data-i18n-attr="aria-label:ui.render3d" aria-label="Render 3D da cabeça"></div>
       <div id="project-preview" class="project-preview is-hidden" aria-live="polite">
         <div id="project-preview-loading" class="project-preview-loading" aria-hidden="true" aria-busy="false">
           <span class="loading-circle" aria-hidden="true"></span>
         </div>
         <div id="project-preview-add-wrap" class="project-preview-add-wrap" aria-hidden="true">
-          <button id="project-preview-add-btn" class="project-preview-add-btn" type="button" aria-label="Adicionar imagens ou vídeos ao projeto">+</button>
+          <button id="project-preview-add-btn" class="project-preview-add-btn" type="button" data-i18n-attr="aria-label:ui.addMedia" aria-label="Adicionar imagens ou vídeos ao projeto">+</button>
           <input id="project-preview-media-input" class="project-preview-media-input" type="file" multiple accept="image/*,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov">
         </div>
-        <img id="project-preview-image" class="project-preview-image" alt="Preview do projeto">
+        <img id="project-preview-image" class="project-preview-image" data-i18n-attr="alt:ui.previewAlt" alt="Preview do projeto">
         <video id="project-preview-video" class="project-preview-video" muted playsinline></video>
-        <button id="project-video-play" class="project-video-play is-hidden" type="button" aria-label="Reproduzir vídeo">&#9658;</button>
+        <button id="project-video-play" class="project-video-play is-hidden" type="button" data-i18n-attr="aria-label:ui.playVideo" aria-label="Reproduzir vídeo">&#9658;</button>
         <div id="project-media-order-wrap" class="project-media-order-wrap" aria-hidden="true">
-          <button id="project-media-move-left" class="project-media-order-btn" type="button" aria-label="Mover mídia para a esquerda">&#8592;</button>
-          <button id="project-media-move-right" class="project-media-order-btn" type="button" aria-label="Mover mídia para a direita">&#8594;</button>
-          <button id="project-media-delete" class="project-media-order-btn is-danger" type="button" aria-label="Excluir mídia atual">&#128465;</button>
+          <button id="project-media-move-left" class="project-media-order-btn" type="button" data-i18n-attr="aria-label:ui.moveMediaLeft" aria-label="Mover mídia para a esquerda">&#8592;</button>
+          <button id="project-media-move-right" class="project-media-order-btn" type="button" data-i18n-attr="aria-label:ui.moveMediaRight" aria-label="Mover mídia para a direita">&#8594;</button>
+          <button id="project-media-delete" class="project-media-order-btn is-danger" type="button" data-i18n-attr="aria-label:ui.deleteMedia" aria-label="Excluir mídia atual">&#128465;</button>
         </div>
         <div id="project-preview-controls" class="project-preview-controls is-hidden">
-          <button id="project-prev" class="project-preview-nav" type="button" aria-label="Imagem anterior">&#8249;</button>
+          <button id="project-prev" class="project-preview-nav" type="button" data-i18n-attr="aria-label:ui.prevImage" aria-label="Imagem anterior">&#8249;</button>
           <span id="project-preview-index" class="project-preview-index">1 / 1</span>
-          <button id="project-next" class="project-preview-nav" type="button" aria-label="Próxima imagem">&#8250;</button>
+          <button id="project-next" class="project-preview-nav" type="button" data-i18n-attr="aria-label:ui.nextImage" aria-label="Próxima imagem">&#8250;</button>
         </div>
-        <div id="project-preview-empty" class="project-preview-empty">Selecione um projeto</div>
+        <div id="project-preview-empty" class="project-preview-empty" data-i18n="ui.selectProject">Selecione um projeto</div>
       </div>
     </section>
 
     <section class="lite-right">
       <article id="cv-panel" class="lite-copy">
-        <nav class="lite-copy-nav" aria-label="Navegação textual">
-          <a href="#sobre-mim">Sobre Mim</a>
-          <a href="#formacao">Formação</a>
-          <a href="#experiencia">Experiência</a>
-          <a href="#skills">Skills</a>
+        <nav class="lite-copy-nav" data-i18n-attr="aria-label:ui.contentNav">
+          <a href="#sobre-mim" data-i18n="cv.nav.about">Sobre Mim</a>
+          <a href="#formacao" data-i18n="cv.nav.education">Formação</a>
+          <a href="#experiencia" data-i18n="cv.nav.experience">Experiência</a>
+          <a href="#skills" data-i18n="cv.nav.skills">Skills</a>
         </nav>
 
         <section id="sobre-mim" class="lite-section">
-          <h2>Sobre Mim</h2>
-          <p>
-            De tudo um pouco. <span class="key-term">Artista urbano</span> e <span class="key-term">designer multimídia</span>, procuro sempre utilizar
-            <span class="key-term">novas tecnologias</span> para impulsionar meu processo
-            criativo. Do <span class="key-term">graffiti ao design</span>,
-            em minha trajetória acadêmica, busquei projetos que conectassem esses meus dois
-            mundos: arte de rua e tecnologia, trazendo temas que abordam a preservação da
-            história e da memória das cidades, além de estudos sobre as futuras relações entre
-            os seres humanos, a tecnologia e o cenário urbano.
-          </p>
-          <p>
-            Em 2022, fui selecionado para a <span class="key-term">Apple Developer Academy</span>, programa internacional
-            de inovação tecnológica da Apple, focado na formação de profissionais criativos e
-            desenvolvedores voltados para a criação de soluções digitais. O aprendizado era
-            guiado pelo <span class="key-term">Challenge Based Learning (CBL)</span>, metodologia criada pela Apple que
-            propõe o desenvolvimento de projetos a partir de desafios reais, conectando
-            tecnologia, colaboração multidisciplinar e impacto social. Durante o programa,
-            tive treinamento intensivo em <span class="key-term">desenvolvimento de software</span>,
-            <span class="key-term">metodologias ágeis</span> e
-            <span class="key-term">design centrado no usuário</span>.
-          </p>
-          <p>
-            Nesse período, me aprofundei no desenvolvimento de ferramentas com realidade
-            aumentada, <span class="key-term">realidade virtual</span> e
-            <span class="key-term">spatial computing</span>, além de estudos e experimentações
-            sobre a <span class="key-term">Web 3.0</span> e as transformações da nova era da internet,
-            investigando soluções descentralizadas com tecnologias como
-            <span class="key-term">inteligência artificial</span>,
-            <span class="key-term">blockchain</span>, <span class="key-term">IoT</span> e
-            <span class="key-term">cidades inteligentes</span>.
-          </p>
-          <p>
-            Em 2023, participei da <span class="key-term">curadoria</span> e
-            <span class="key-term">desenvolvimento de exposições</span> em realidade
-            aumentada, dando vida a obras de arte por meio da interação digital. Atuei em
-            projetos realizados em <span class="key-term">Lisboa</span> e em diversas regiões do
-            <span class="key-term">Brasil</span>, incluindo uma exposição na
-            <span class="key-term">Embaixada do México</span>, em Brasília, em homenagem a Frida Kahlo, com
-            quadros interativos que mostravam como as novas mídias podem ampliar o alcance da
-            arte e criar novas formas de interação com o público.
-          </p>
-          <p>
-            Em 2024, atuei como Designer de Novas Mídias, voltado para entretenimento, no estúdio
-            criativo de inovação tecnológica <span class="key-term">DELED</span>. Desenvolvi e acompanhei
-            <span class="key-term">projetos interativos</span> com foco em
-            <span class="key-term">experiências imersivas</span>, envolvendo
-            <span class="key-term">painéis de LED</span>, <span class="key-term">rastreamento corporal</span>,
-            <span class="key-term">projeção mapeada</span>, <span class="key-term">instalações artísticas</span>
-            e cenários que uniam arte e tecnologia. Ao longo desse período, participei de
-            projetos realizados para o <span class="key-term">Museu do Amanhã</span>,
-            <span class="key-term">Rock in Rio</span> e outras grandes marcas e instituições, atuando em diferentes etapas:
-            da concepção à implementação técnica, incluindo produção e montagem.
-          </p>
+          <h2 data-i18n="cv.about.title">Sobre Mim</h2>
+          <div data-i18n-html="cv.about.body"></div>
         </section>
 
         <section id="formacao" class="lite-section">
-          <h2>Formação</h2>
-          <ul class="lite-list">
-            <li><span class="edu-item-title">PUC-Rio:</span> Bacharelado em Design, Comunicação Visual <span class="item-year">(2019-2025)</span></li>
-            <li><span class="edu-item-title">Shell Iniciativa Jovem:</span> Empreendedorismo e Inovação <span class="item-year">(2024)</span></li>
-            <li><span class="edu-item-title">Extensão PUC-Rio:</span> Chatbots e NLP para IA <span class="item-year">(2025)</span></li>
-            <li><span class="edu-item-title">ECOA-PUC-Rio:</span> IA Generativa e Prompt Engineering <span class="item-year">(2023)</span></li>
-            <li><span class="edu-item-title">EBAC:</span> Desenvolvimento de Games <span class="item-year">(2022)</span></li>
-            <li><span class="edu-item-title">cc.espaço:</span> Programação Visual <span class="item-year">(2021)</span></li>
-            <li><span class="edu-item-title">IED Rio:</span> Workshop de Design Gráfico <span class="item-year">(2019)</span></li>
-            <li><span class="edu-item-title">FIRJAN SESI-RJ:</span> Cidades Inteligentes e Sustentáveis <span class="item-year">(2023)</span></li>
-          </ul>
+          <h2 data-i18n="cv.nav.education">Formação</h2>
+          <ul class="lite-list" data-i18n-list="cv.education"></ul>
         </section>
 
         <section id="experiencia" class="lite-section">
-          <h2>Experiência</h2>
-          <ul class="lite-list">
-            <li><span class="exp-item-title">Apple Developer Academy:</span> Programa de Inovação Tecnológica <span class="item-year">(2022-2023)</span></li>
-            <li><span class="exp-item-title">DELED:</span> Estúdio criativo, Designer de Novas Mídias <span class="item-year">(2024)</span></li>
-            <li><span class="exp-item-title">Studio Kwo:</span> Desenvolvedor Júnior para experiência em Realidade Virtual <span class="item-year">(2024)</span></li>
-            <li><span class="exp-item-title">Museu do Amanhã:</span> Monitoria e assistência no LAA (Laboratório de Atividades do Amanhã) <span class="item-year">(2024)</span></li>
-            <li><span class="exp-item-title">Exposições em Realidade Aumentada:</span> Lisboa, Galeria 284 <span class="item-year">(2022)</span></li>
-            <li><span class="exp-item-title">Exposição em Realidade Aumentada:</span> Homenagem a Frida Kahlo, Embaixada do México, Brasília <span class="item-year">(2022)</span></li>
-            <li><span class="exp-item-title">Rock The Mountain:</span> Instalação imersiva MOV.DOME <span class="item-year">(2024)</span></li>
-            <li><span class="exp-item-title">Rock in Rio 2024:</span> Ativação de marca para TIM <span class="item-year">(2024)</span></li>
-            <li><span class="exp-item-title">Semana de Design PUC-Rio:</span> Espaço digital no metaverso <span class="item-year">(2022)</span></li>
-            <li><span class="exp-item-title">Semana de Design PUC-Rio:</span> Workshop de TouchDesigner e rastreamento corporal <span class="item-year">(2025)</span></li>
-            <li><span class="exp-item-title">ECOA-PUC-Rio:</span> Workshops sobre Web 3.0 e tecnologias emergentes <span class="item-year">(2023)</span></li>
-            <li><span class="exp-item-title">Brazilian Immersive Fashion Week (BRIFW):</span> Vencedor Horizon Latin.x <span class="item-year">(2022 e 2023)</span></li>
-          </ul>
+          <h2 data-i18n="cv.nav.experience">Experiência</h2>
+          <ul class="lite-list" data-i18n-list="cv.experience"></ul>
         </section>
 
         <section id="skills" class="lite-section">
-          <h2>Skills</h2>
-          <div class="skills-group">
-            <div class="skill-topic">Design</div>
-            <div class="skill-row">
-              <div class="skill-meta"><span class="skill-name">Adobe Creative Tools</span></div>
-              <div class="skill-progress">
-                <div class="skill-track"><div class="skill-fill" style="--skill-width: 88%;"></div></div>
-                <span class="skill-level">Avançado</span>
-              </div>
-            </div>
-            <div class="skill-row">
-              <div class="skill-meta"><span class="skill-name">Figma</span></div>
-              <div class="skill-progress">
-                <div class="skill-track"><div class="skill-fill" style="--skill-width: 70%;"></div></div>
-                <span class="skill-level">Intermediário</span>
-              </div>
-            </div>
-
-            <div class="skill-topic">Desenvolvimento de Software</div>
-            <div class="skill-row">
-              <div class="skill-meta"><span class="skill-name">Front-end (web)</span></div>
-              <div class="skill-progress">
-                <div class="skill-track"><div class="skill-fill" style="--skill-width: 72%;"></div></div>
-                <span class="skill-level">Intermediário</span>
-              </div>
-            </div>
-            <div class="skill-row">
-              <div class="skill-meta"><span class="skill-name">Mobile</span></div>
-              <div class="skill-progress">
-                <div class="skill-track"><div class="skill-fill" style="--skill-width: 72%;"></div></div>
-                <span class="skill-level">Intermediário</span>
-              </div>
-            </div>
-            <div class="skill-row">
-              <div class="skill-meta"><span class="skill-name">iOS (Swift/SwiftUI)</span></div>
-              <div class="skill-progress">
-                <div class="skill-track"><div class="skill-fill" style="--skill-width: 38%;"></div></div>
-                <span class="skill-level">Básico</span>
-              </div>
-            </div>
-
-            <div class="skill-topic">3D &amp; Real-Time / Games</div>
-            <div class="skill-row">
-              <div class="skill-meta"><span class="skill-name">Unity</span></div>
-              <div class="skill-progress">
-                <div class="skill-track"><div class="skill-fill" style="--skill-width: 38%;"></div></div>
-                <span class="skill-level">Básico</span>
-              </div>
-            </div>
-            <div class="skill-row">
-              <div class="skill-meta"><span class="skill-name">Blender</span></div>
-              <div class="skill-progress">
-                <div class="skill-track"><div class="skill-fill" style="--skill-width: 69%;"></div></div>
-                <span class="skill-level">Intermediário</span>
-              </div>
-            </div>
-            <div class="skill-row">
-              <div class="skill-meta"><span class="skill-name">Unreal Engine</span></div>
-              <div class="skill-progress">
-                <div class="skill-track"><div class="skill-fill" style="--skill-width: 66%;"></div></div>
-                <span class="skill-level">Intermediário</span>
-              </div>
-            </div>
-
-            <div class="skill-topic">Interatividade &amp; Novas Mídias</div>
-            <div class="skill-row">
-              <div class="skill-meta"><span class="skill-name">TouchDesigner</span></div>
-              <div class="skill-progress">
-                <div class="skill-track"><div class="skill-fill" style="--skill-width: 72%;"></div></div>
-                <span class="skill-level">Intermediário</span>
-              </div>
-            </div>
-            <div class="skill-row">
-              <div class="skill-meta"><span class="skill-name">AR / VR</span></div>
-              <div class="skill-progress">
-                <div class="skill-track"><div class="skill-fill" style="--skill-width: 72%;"></div></div>
-                <span class="skill-level">Intermediário</span>
-              </div>
-            </div>
-          </div>
+          <h2 data-i18n="cv.skills.title">Skills</h2>
+          <div id="skills-content" class="skills-group"></div>
         </section>
       </article>
 
       <article id="projects-panel" class="projects-panel is-hidden">
         <div id="projects-order-bar" class="projects-order-bar is-hidden" aria-live="polite">
-          <span class="projects-order-bar-hint">Ordem alterada — guarde no banco.</span>
-          <button type="button" id="projects-order-save" class="projects-order-save" disabled>Guardar ordem</button>
+          <span class="projects-order-bar-hint" data-i18n="ui.orderChanged">Ordem alterada — guarde no banco.</span>
+          <button type="button" id="projects-order-save" class="projects-order-save" disabled data-i18n="ui.saveOrder">Guardar ordem</button>
         </div>
         <div id="projects-list" class="projects-list"></div>
       </article>
@@ -250,20 +103,20 @@
   <div id="admin-lite-modal" class="admin-lite-modal is-hidden" aria-hidden="true">
     <div class="admin-lite-modal-backdrop" data-admin-modal-close="true"></div>
     <div class="admin-lite-modal-panel" role="dialog" aria-modal="true" aria-labelledby="admin-lite-modal-title">
-      <h2 id="admin-lite-modal-title" class="admin-lite-modal-title">Admin Lite</h2>
-      <p class="admin-lite-modal-subtitle">Use as mesmas credenciais do modo imersivo.</p>
+      <h2 id="admin-lite-modal-title" class="admin-lite-modal-title" data-i18n="admin.title">Admin Lite</h2>
+      <p class="admin-lite-modal-subtitle" data-i18n="admin.subtitle">Use as mesmas credenciais do modo imersivo.</p>
       <form id="admin-lite-form" class="admin-lite-form">
-        <label class="admin-lite-label" for="admin-lite-email">Login (email)</label>
+        <label class="admin-lite-label" for="admin-lite-email" data-i18n="admin.email">Login (email)</label>
         <input id="admin-lite-email" class="admin-lite-input" type="email" autocomplete="username" required>
 
-        <label class="admin-lite-label" for="admin-lite-password">Senha</label>
+        <label class="admin-lite-label" for="admin-lite-password" data-i18n="admin.password">Senha</label>
         <input id="admin-lite-password" class="admin-lite-input" type="password" autocomplete="current-password" required>
 
         <p id="admin-lite-feedback" class="admin-lite-feedback" aria-live="polite"></p>
 
         <div class="admin-lite-actions">
-          <button id="admin-lite-cancel" class="admin-lite-button" type="button">Cancelar</button>
-          <button id="admin-lite-submit" class="admin-lite-button is-primary" type="submit">Entrar</button>
+          <button id="admin-lite-cancel" class="admin-lite-button" type="button" data-i18n="admin.cancel">Cancelar</button>
+          <button id="admin-lite-submit" class="admin-lite-button is-primary" type="submit" data-i18n="admin.submit">Entrar</button>
         </div>
       </form>
     </div>
@@ -272,13 +125,13 @@
   <div id="project-delete-modal" class="admin-lite-modal project-delete-modal is-hidden" aria-hidden="true">
     <div class="admin-lite-modal-backdrop" data-project-delete-close="true"></div>
     <div class="admin-lite-modal-panel" role="alertdialog" aria-modal="true" aria-labelledby="project-delete-title" aria-describedby="project-delete-desc">
-      <h2 id="project-delete-title" class="admin-lite-modal-title">Excluir projeto?</h2>
-      <p id="project-delete-desc" class="admin-lite-modal-subtitle">Esta ação não pode ser desfeita.</p>
+      <h2 id="project-delete-title" class="admin-lite-modal-title" data-i18n="deleteProject.title">Excluir projeto?</h2>
+      <p id="project-delete-desc" class="admin-lite-modal-subtitle" data-i18n="deleteProject.subtitle">Esta ação não pode ser desfeita.</p>
       <p id="project-delete-name" class="project-delete-name" aria-live="polite"></p>
       <p id="project-delete-error" class="admin-lite-feedback project-delete-error" aria-live="polite"></p>
       <div class="admin-lite-actions">
-        <button id="project-delete-cancel" class="admin-lite-button" type="button">Cancelar</button>
-        <button id="project-delete-confirm" class="admin-lite-button is-danger" type="button">Excluir</button>
+        <button id="project-delete-cancel" class="admin-lite-button" type="button" data-i18n="deleteProject.cancel">Cancelar</button>
+        <button id="project-delete-confirm" class="admin-lite-button is-danger" type="button" data-i18n="deleteProject.confirm">Excluir</button>
       </div>
     </div>
   </div>
@@ -290,6 +143,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+  <script src="i18n.js"></script>
   <script src="lite.js"></script>
 </body>
 </html>

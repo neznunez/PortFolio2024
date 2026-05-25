@@ -1,5 +1,19 @@
-/* global THREE */
+/* global THREE, I18n */
 (function () {
+  function t(key, vars) {
+    if (window.I18n && typeof I18n.t === 'function') return I18n.t(key, vars);
+    return key;
+  }
+
+  function loc(project, field) {
+    if (window.I18n && typeof I18n.localized === 'function') return I18n.localized(project, field);
+    if (!project) return '';
+    if (field === 'title') return String(project.title || project.nome || '').trim();
+    if (field === 'description') return String(project.description || project.descricao || '').trim();
+    if (field === 'subtitle') return String(project.subtitle || project.subtitulo || project.meta || '').trim();
+    return '';
+  }
+
   var scene;
   var camera;
   var renderer;
@@ -192,7 +206,7 @@
   function liteUploadProjectMediaFile(docId, file) {
     return new Promise(function (resolve, reject) {
       if (!storageRef) {
-        reject(new Error('Storage indisponível.'));
+        reject(new Error(t('js.storageError')));
         return;
       }
       var fileName = Date.now() + '_' + String(file.name || 'media').replace(/[^\w.\-]+/g, '_');
@@ -306,7 +320,7 @@
       return;
     }
     if (!storageRef) {
-      alert('Firebase Storage não está disponível nesta página.');
+      alert(t('js.storageUnavailable'));
       input.value = '';
       return;
     }
@@ -329,7 +343,7 @@
       return name.endsWith('.mov') || name.endsWith('.mp4') || name.endsWith('.webm');
     });
     if (!imageFiles.length && !videoFiles.length) {
-      alert('Escolha imagens ou vídeos (MP4, WebM ou MOV).');
+      alert(t('js.pickMedia'));
       input.value = '';
       return;
     }
@@ -343,7 +357,7 @@
       return f.size <= vidMax;
     });
     if (!imageFiles.length && !videoFiles.length) {
-      alert('Ficheiro(s) excedem o tamanho máximo permitido.');
+      alert(t('js.fileTooLarge'));
       input.value = '';
       return;
     }
@@ -381,7 +395,7 @@
       .catch(function (err) {
         console.warn('Upload mídia Lite:', err);
         setProjectPreviewLoading(false);
-        alert(err && err.message ? err.message : 'Erro ao enviar ficheiros.');
+        alert(err && err.message ? err.message : t('js.uploadError'));
       })
       .finally(function () {
         adminPreviewUploadBusy = false;
@@ -409,7 +423,7 @@
         isLiteAdmin = false;
         adminDrafts = Object.create(null);
         editingProjectKey = null;
-        alert('Admin Lite desativado.');
+        alert(t('js.adminDisabled'));
         projectListOrderDirty = false;
         renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
         updateProjectPreviewAddButton();
@@ -516,7 +530,7 @@
     if (!projectDeleteModalElements) return;
     projectDeleteModalElements.cancelBtn.disabled = !!isLoading;
     projectDeleteModalElements.confirmBtn.disabled = !!isLoading;
-    projectDeleteModalElements.confirmBtn.textContent = isLoading ? 'Excluindo...' : 'Excluir';
+    projectDeleteModalElements.confirmBtn.textContent = isLoading ? t('deleteProject.confirming') : t('deleteProject.confirm');
   }
 
   function openProjectDeleteModal(projectKey) {
@@ -526,9 +540,10 @@
     if (!project) return;
     pendingDeleteProjectKey = key;
     projectDeleteModalElements.errorEl.textContent = '';
-    projectDeleteModalElements.nameEl.textContent = project.title
-      ? 'Projeto: ' + project.title
-      : 'Projeto sem título';
+    var displayTitle = loc(project, 'title');
+    projectDeleteModalElements.nameEl.textContent = displayTitle
+      ? t('deleteProject.namePrefix') + ' ' + displayTitle
+      : t('deleteProject.untitled');
     projectDeleteModalElements.modal.classList.remove('is-hidden');
     projectDeleteModalElements.modal.setAttribute('aria-hidden', 'false');
     setProjectDeleteModalLoading(false);
@@ -574,7 +589,7 @@
     adminModalElements.passwordInput.disabled = !!isLoading;
     adminModalElements.cancelButton.disabled = !!isLoading;
     adminModalElements.submitButton.disabled = !!isLoading;
-    adminModalElements.submitButton.textContent = isLoading ? 'Entrando...' : 'Entrar';
+    adminModalElements.submitButton.textContent = isLoading ? t('admin.submitting') : t('admin.submit');
   }
 
   function submitAdminLiteLogin() {
@@ -599,7 +614,7 @@
       })
       .catch(function (error) {
         console.warn('Falha no login Admin Lite:', error);
-        setAdminModalFeedback('Login inválido. Verifique email e senha.');
+        setAdminModalFeedback(t('admin.invalidLogin'));
       })
       .finally(function () {
         setAdminModalLoading(false);
@@ -608,12 +623,12 @@
 
   function requestAdminLiteLogin() {
     if (isLiteAdmin) {
-      alert('Admin Lite já está ativo.');
+      alert(t('js.adminAlreadyActive'));
       return;
     }
 
     if (!window.firebase || !window.firebase.auth) {
-      alert('Firebase Auth não está disponível nesta página.');
+      alert(t('js.authUnavailable'));
       return;
     }
 
@@ -840,9 +855,12 @@
         id: String(item.id || item.projectId || idx + 1),
         docId: item.__docId || null,
         key: 'p-' + idx,
-        title: item.title || item.nome || 'Projeto',
+        title: item.title || item.nome || t('projects.defaultTitle'),
+        title_en: item.title_en || item.titleEn || '',
         subtitle: item.subtitle || item.subtitulo || item.meta || '',
+        subtitle_en: item.subtitle_en || item.subtitleEn || '',
         description: item.description || item.descricao || '',
+        description_en: item.description_en || item.descriptionEn || '',
         order: Number(item.order || item.ordem || item.position || item.posicao || idx),
         mediaItems: mediaItems,
         preview: coverCandidate || '',
@@ -895,10 +913,10 @@
     if (!projectsData.length) {
       projectListOrderDirty = false;
       if (isLiteAdmin) {
-        listEl.innerHTML = '<p class="projects-empty-note">Nenhum projeto ainda.</p><button type="button" class="project-add-button" id="project-add-new" aria-label="Adicionar projeto">+</button>';
+        listEl.innerHTML = '<p class="projects-empty-note">' + escapeHtml(t('projects.noneYet')) + '</p><button type="button" class="project-add-button" id="project-add-new" aria-label="' + escapeHtml(t('projects.add')) + '">+</button>';
         bindProjectAddButton(listEl);
       } else {
-        listEl.innerHTML = '<div class="project-item"><p class="project-item-title">Sem projetos disponíveis</p></div>';
+        listEl.innerHTML = '<div class="project-item"><p class="project-item-title">' + escapeHtml(t('projects.noneAvailable')) + '</p></div>';
       }
       updateProjectPreviewAddButton();
       updateProjectListOrderBar();
@@ -915,17 +933,17 @@
     });
 
     listEl.innerHTML = projectsData.map(function (project) {
-      var cleanDescription = toPlainText(project.description || '');
+      var cleanDescription = toPlainText(loc(project, 'description'));
       var safeDescription = cleanDescription.replace(/\n+/g, ' ').trim();
-      var meta = project.subtitle ? String(project.subtitle) : (project.year ? String(project.year) : 'Projeto');
+      var meta = loc(project, 'subtitle') || (project.year ? String(project.year) : t('projects.metaFallback'));
       var isActive = project.key === selectedProjectId;
       var isEditing = isLiteAdmin && isActive && editingProjectKey === project.key;
       var showEditButton = isLiteAdmin && isActive && !isEditing;
       var isEditable = isEditing;
       var draft = isEditable ? getProjectDraft(project.key) : null;
-      var titleValue = isEditable ? (draft.title || '') : project.title;
-      var subtitleValue = isEditable ? (draft.subtitle || '') : meta;
-      var descValue = isEditable ? (draft.description || '') : safeDescription;
+      var titleValue = isEditable ? '' : loc(project, 'title');
+      var subtitleValue = isEditable ? '' : meta;
+      var descValue = isEditable ? '' : safeDescription;
       var isSaving = !!adminSavingByKey[project.key];
       var saveNotice = adminSaveNoticeByKey[project.key];
       var saveNoticeHtml =
@@ -939,30 +957,39 @@
       return [
         '<article class="project-item' + (isActive ? ' is-active' : '') + (isLiteAdmin ? ' project-item--admin' : '') + '" data-project-key="' + project.key + '" data-doc-id="' + escapeHtml(String(project.docId || '')) + '" data-mid="' + escapeHtml(String(project.docId || project.id || project.key)) + '">',
         isLiteAdmin
-          ? '<span class="project-drag-handle" draggable="true" data-drag-handle="true" title="Arrastar para reordenar" aria-label="Arrastar para reordenar">⋮⋮</span>'
+          ? '<span class="project-drag-handle" draggable="true" data-drag-handle="true" title="' + escapeHtml(t('projects.dragReorder')) + '" aria-label="' + escapeHtml(t('projects.dragReorder')) + '">⋮⋮</span>'
           : '',
         '<div class="project-item-content">',
         showEditButton
           ? '<div class="project-item-actions">' +
-              '<button class="project-edit-icon" data-project-action="delete" type="button" aria-label="Excluir projeto">×</button>' +
-              '<button class="project-edit-icon" data-project-action="start-edit" type="button" aria-label="Editar projeto">✎</button>' +
+              '<button class="project-edit-icon" data-project-action="delete" type="button" aria-label="' + escapeHtml(t('projects.delete')) + '">×</button>' +
+              '<button class="project-edit-icon" data-project-action="start-edit" type="button" aria-label="' + escapeHtml(t('projects.edit')) + '">✎</button>' +
             '</div>'
           : '',
         isEditable
-          ? '<input class="project-item-title project-edit-input" data-project-field="title" value="' + escapeHtml(titleValue) + '" />'
-          : '<h3 class="project-item-title">' + escapeHtml(project.title) + '</h3>',
-        isEditable
-          ? '<input class="project-item-meta project-edit-input" data-project-field="subtitle" value="' + escapeHtml(subtitleValue) + '" />'
-          : '<p class="project-item-meta">' + escapeHtml(meta) + '</p>',
-        isEditable
-          ? '<textarea class="project-item-description project-edit-textarea" data-project-field="description">' + escapeHtml(descValue) + '</textarea>'
-          : '<p class="project-item-description">' + escapeHtml(safeDescription) + '</p>',
+          ? '<div class="project-bilingual-fields">' +
+              '<label class="project-bilingual-label">' + escapeHtml(t('projects.labelTitlePt')) + '</label>' +
+              '<input class="project-item-title project-edit-input" data-project-field="title_pt" value="' + escapeHtml(draft.title_pt || '') + '" />' +
+              '<label class="project-bilingual-label">' + escapeHtml(t('projects.labelTitleEn')) + '</label>' +
+              '<input class="project-item-title project-edit-input" data-project-field="title_en" value="' + escapeHtml(draft.title_en || '') + '" />' +
+              '<label class="project-bilingual-label">' + escapeHtml(t('projects.labelSubtitlePt')) + '</label>' +
+              '<input class="project-item-meta project-edit-input" data-project-field="subtitle_pt" value="' + escapeHtml(draft.subtitle_pt || '') + '" />' +
+              '<label class="project-bilingual-label">' + escapeHtml(t('projects.labelSubtitleEn')) + '</label>' +
+              '<input class="project-item-meta project-edit-input" data-project-field="subtitle_en" value="' + escapeHtml(draft.subtitle_en || '') + '" />' +
+              '<label class="project-bilingual-label">' + escapeHtml(t('projects.labelDescPt')) + '</label>' +
+              '<textarea class="project-item-description project-edit-textarea" data-project-field="description_pt">' + escapeHtml(draft.description_pt || '') + '</textarea>' +
+              '<label class="project-bilingual-label">' + escapeHtml(t('projects.labelDescEn')) + '</label>' +
+              '<textarea class="project-item-description project-edit-textarea" data-project-field="description_en">' + escapeHtml(draft.description_en || '') + '</textarea>' +
+            '</div>'
+          : '<h3 class="project-item-title">' + escapeHtml(titleValue) + '</h3>',
+        !isEditable ? '<p class="project-item-meta">' + escapeHtml(subtitleValue) + '</p>' : '',
+        !isEditable ? '<p class="project-item-description">' + escapeHtml(descValue) + '</p>' : '',
         isEditable
           ? '<div class="project-edit-actions">' +
-              '<button class="project-edit-button" data-project-action="save" type="button"' + (isSaving || adminOrderSaving ? ' disabled' : '') + '>Salvar</button>' +
-              '<button class="project-edit-button" data-project-action="cancel" type="button"' + (isSaving || adminOrderSaving ? ' disabled' : '') + '>Cancelar</button>' +
+              '<button class="project-edit-button" data-project-action="save" type="button"' + (isSaving || adminOrderSaving ? ' disabled' : '') + '>' + escapeHtml(t('projects.save')) + '</button>' +
+              '<button class="project-edit-button" data-project-action="cancel" type="button"' + (isSaving || adminOrderSaving ? ' disabled' : '') + '>' + escapeHtml(t('projects.cancel')) + '</button>' +
             '</div>' +
-            '<div class="project-edit-status">' + (isSaving ? 'Salvando conteúdo...' : (adminOrderSaving ? 'Salvando ordem...' : 'Admin Lite ativo')) + '</div>'
+            '<div class="project-edit-status">' + (isSaving ? escapeHtml(t('projects.savingContent')) : (adminOrderSaving ? escapeHtml(t('projects.savingOrder')) : escapeHtml(t('projects.adminActive')))) + '</div>'
           : '',
         saveNoticeHtml,
         '</div>',
@@ -971,7 +998,7 @@
     }).join('');
 
     if (isLiteAdmin) {
-      listEl.innerHTML = listEl.innerHTML + '<button type="button" class="project-add-button" id="project-add-new" aria-label="Adicionar projeto">+</button>';
+      listEl.innerHTML = listEl.innerHTML + '<button type="button" class="project-add-button" id="project-add-new" aria-label="' + escapeHtml(t('projects.add')) + '">+</button>';
     }
 
     Array.prototype.slice.call(listEl.querySelectorAll('.project-item')).forEach(function (itemEl) {
@@ -1118,19 +1145,23 @@
   function createNewProject() {
     if (!isLiteAdmin) return;
     if (!dbRef) {
-      alert('Banco indisponível. É preciso estar no Firebase para criar projetos.');
+      alert(t('js.dbUnavailableCreate'));
       return;
     }
     if (adminOrderSaving) return;
 
     var nextOrder = projectsData.length;
+    var newTitle = t('projects.newProject');
     var payload = {
-      title: 'Novo projeto',
-      nome: 'Novo projeto',
+      title: newTitle,
+      nome: newTitle,
+      title_en: '',
       subtitle: '',
       subtitulo: '',
+      subtitle_en: '',
       description: '',
       descricao: '',
+      description_en: '',
       order: nextOrder,
       ordem: nextOrder,
       images: []
@@ -1142,9 +1173,12 @@
           id: String(docRef.id),
           docId: docRef.id,
           key: 'p-' + nextOrder,
-          title: 'Novo projeto',
+          title: newTitle,
+          title_en: '',
           subtitle: '',
+          subtitle_en: '',
           description: '',
+          description_en: '',
           mediaItems: [],
           preview: '',
           year: '',
@@ -1169,7 +1203,7 @@
       })
       .catch(function (err) {
         console.warn('Erro ao criar projeto:', err);
-        alert('Não foi possível criar o projeto.');
+        alert(t('js.createFailed'));
       });
   }
 
@@ -1601,7 +1635,7 @@
     saveProjectMediaOrder(project)
       .catch(function (error) {
         console.warn('Erro ao salvar ordem das mídias do projeto:', error);
-        alert('Falha ao salvar ordem das mídias.');
+        alert(t('js.mediaOrderFailed'));
       })
       .finally(function () {
         setProjectPreviewLoading(false);
@@ -1618,7 +1652,7 @@
     if (index < 0 || index >= project.mediaItems.length) return;
     var item = project.mediaItems[index];
     var label = item && item.type === 'video' ? 'este vídeo' : 'esta imagem';
-    var ok = window.confirm('Deseja excluir ' + label + ' deste projeto?');
+    var ok = window.confirm(t('immersive.deleteMediaConfirm', { label: label }));
     if (!ok) return;
 
     var reordered = project.mediaItems.slice();
@@ -1640,7 +1674,7 @@
     saveProjectMediaOrder(project)
       .catch(function (error) {
         console.warn('Erro ao excluir mídia do projeto:', error);
-        alert('Falha ao excluir mídia.');
+        alert(t('js.mediaDeleteFailed'));
       })
       .finally(function () {
         setProjectPreviewLoading(false);
@@ -1702,11 +1736,11 @@
     var project = getProjectByKey(key);
     if (!project) return;
     if (!project.docId) {
-      alert('Não foi possível identificar o documento deste projeto.');
+      alert(t('js.docUnknown'));
       return;
     }
     if (!dbRef) {
-      alert('Banco indisponível para excluir.');
+      alert(t('js.dbUnavailableDelete'));
       return;
     }
     openProjectDeleteModal(key);
@@ -1763,7 +1797,7 @@
         console.warn('Erro ao excluir projeto:', err);
         setProjectDeleteModalLoading(false);
         if (projectDeleteModalElements) {
-          projectDeleteModalElements.errorEl.textContent = 'Não foi possível excluir. Tente de novo.';
+          projectDeleteModalElements.errorEl.textContent = t('deleteProject.errorRetry');
         }
       });
   }
@@ -1775,9 +1809,12 @@
     var project = getProjectByKey(key);
     if (!project) return null;
     var draft = {
-      title: project.title || '',
-      subtitle: project.subtitle || (project.year ? String(project.year) : ''),
-      description: toPlainText(project.description || '')
+      title_pt: String(project.title || project.nome || '').trim(),
+      title_en: String(project.title_en || '').trim(),
+      subtitle_pt: String(project.subtitle || project.subtitulo || project.meta || (project.year ? String(project.year) : '')).trim(),
+      subtitle_en: String(project.subtitle_en || '').trim(),
+      description_pt: toPlainText(project.description || project.descricao || ''),
+      description_en: toPlainText(project.description_en || '')
     };
     adminDrafts[key] = draft;
     return draft;
@@ -1994,7 +2031,7 @@
       .catch(function (error) {
         console.warn('Erro ao salvar ordem dos projetos:', error);
         if (hadPendingListOrder) projectListOrderDirty = true;
-        alert('Falha ao salvar ordem dos projetos.');
+        alert(t('js.projectOrderFailed'));
       })
       .finally(function () {
         adminOrderSaving = false;
@@ -2049,13 +2086,13 @@
     var draft = adminDrafts[key];
     if (!project || !draft) return;
     if (!dbRef) {
-      adminSaveNoticeByKey[key] = { text: 'Banco indisponível para salvar.', error: true };
+      adminSaveNoticeByKey[key] = { text: t('js.dbUnavailableSave'), error: true };
       scheduleAdminSaveNoticeClear(key);
       renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
       return;
     }
     if (!project.docId) {
-      adminSaveNoticeByKey[key] = { text: 'Documento do projeto não identificado.', error: true };
+      adminSaveNoticeByKey[key] = { text: t('js.docNotFound'), error: true };
       scheduleAdminSaveNoticeClear(key);
       renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
       return;
@@ -2065,27 +2102,33 @@
     renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
 
     var payload = {
-      title: String(draft.title || '').trim(),
-      nome: String(draft.title || '').trim(),
-      subtitle: String(draft.subtitle || '').trim(),
-      subtitulo: String(draft.subtitle || '').trim(),
-      description: String(draft.description || '').trim(),
-      descricao: String(draft.description || '').trim()
+      title: String(draft.title_pt || '').trim(),
+      nome: String(draft.title_pt || '').trim(),
+      title_en: String(draft.title_en || '').trim(),
+      subtitle: String(draft.subtitle_pt || '').trim(),
+      subtitulo: String(draft.subtitle_pt || '').trim(),
+      subtitle_en: String(draft.subtitle_en || '').trim(),
+      description: String(draft.description_pt || '').trim(),
+      descricao: String(draft.description_pt || '').trim(),
+      description_en: String(draft.description_en || '').trim()
     };
 
     dbRef.collection('projetos').doc(project.docId).set(payload, { merge: true })
       .then(function () {
         project.title = payload.title;
+        project.title_en = payload.title_en;
         project.subtitle = payload.subtitle;
+        project.subtitle_en = payload.subtitle_en;
         project.description = payload.description;
+        project.description_en = payload.description_en;
         delete adminDrafts[key];
         editingProjectKey = null;
-        adminSaveNoticeByKey[key] = { text: 'Alterações guardadas.', error: false };
+        adminSaveNoticeByKey[key] = { text: t('js.saved'), error: false };
         scheduleAdminSaveNoticeClear(key);
       })
       .catch(function (error) {
         console.warn('Erro ao salvar projeto no Admin Lite:', error);
-        adminSaveNoticeByKey[key] = { text: 'Falha ao salvar no banco. Tente novamente.', error: true };
+        adminSaveNoticeByKey[key] = { text: t('js.saveFailed'), error: true };
         scheduleAdminSaveNoticeClear(key);
       })
       .finally(function () {
@@ -2456,19 +2499,37 @@
     renderer.render(scene, camera);
   }
 
-  setupModeToggle();
-  setupContentToggle();
-  setupProjectsOrderSaveBar();
-  setupProjectPreviewUpload();
-  setupProjectMediaOrderTools();
-  setupAdminLiteModal();
-  setupProjectDeleteModal();
-  setupAdminLiteTrigger();
-  setupSectionIndexTracking();
-  dbRef = setupFirebase();
-  loadProjectsData().then(function (rows) {
-    projectsData = rows;
-    renderProjectsList();
+  function startLiteApp() {
+    setupModeToggle();
+    setupContentToggle();
+    setupProjectsOrderSaveBar();
+    setupProjectPreviewUpload();
+    setupProjectMediaOrderTools();
+    setupAdminLiteModal();
+    setupProjectDeleteModal();
+    setupAdminLiteTrigger();
+    setupSectionIndexTracking();
+    dbRef = setupFirebase();
+    loadProjectsData().then(function (rows) {
+      projectsData = rows;
+      renderProjectsList();
+    });
+    setupScene();
+  }
+
+  document.addEventListener('localechange', function () {
+    if (window.I18n && typeof I18n.apply === 'function') I18n.apply();
+    renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
+    if (projectDeleteModalElements && projectDeleteModalElements.modal && !projectDeleteModalElements.modal.classList.contains('is-hidden')) {
+      var pending = pendingDeleteProjectKey ? getProjectByKey(pendingDeleteProjectKey) : null;
+      if (pending) openProjectDeleteModal(pending);
+    }
+    setAdminModalLoading(false);
   });
-  setupScene();
+
+  if (window.I18n && typeof I18n.init === 'function') {
+    I18n.init().then(startLiteApp);
+  } else {
+    startLiteApp();
+  }
 })();

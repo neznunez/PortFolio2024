@@ -168,6 +168,33 @@
             display: flex;
         }
 
+        .lang-switch--immersive {
+            position: fixed;
+            top: 20px;
+            right: 130px;
+            z-index: 10000;
+            display: inline-flex;
+            gap: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.75);
+            padding: 2px;
+            background: rgba(0, 0, 0, 0.55);
+        }
+
+        .lang-switch--immersive .lang-switch-btn {
+            border: none;
+            background: transparent;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 6px 8px;
+            cursor: pointer;
+        }
+
+        .lang-switch--immersive .lang-switch-btn.is-active {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
         .mode-switch-button {
             position: fixed;
             top: 20px;
@@ -723,12 +750,18 @@
 
    <!-- Controles de ambiente HDR (3x Espaço para mostrar) -->
    <div id="envControls" class="env-controls">
-       <button id="skyboxButton" class="skybox-button">FUNDO</button>
+       <button id="skyboxButton" class="skybox-button" data-i18n="immersive.background">FUNDO</button>
    </div>
-   <button id="goToLiteMode" class="mode-switch-button" type="button">Modo Lite</button>
-	
+   <div class="lang-switch lang-switch--immersive" role="group" aria-label="Language">
+     <button type="button" class="lang-switch-btn is-active" data-lang="pt" aria-pressed="true">PT</button>
+     <button type="button" class="lang-switch-btn" data-lang="en" aria-pressed="false">EN</button>
+   </div>
+   <button id="goToLiteMode" class="mode-switch-button" type="button" data-i18n="ui.liteMode">Modo Lite</button>
+
+  <script src="i18n.js"></script>
   <script>
         (function setupModeSwitch() {
+            function bindMode() {
             var modeButton = document.getElementById('goToLiteMode');
             if (!modeButton) return;
 
@@ -736,7 +769,59 @@
                 localStorage.setItem('portfolio_mode', 'lite');
                 window.location.href = 'lite.html';
             });
+            }
+            function refreshImmersiveProjectsLocale() {
+              if (typeof cubeArray !== 'undefined') {
+                cubeArray.forEach(function (cube) {
+                  if (!cube.userData || !cube.userData.projectData) return;
+                  var pid = cube.userData.projectId;
+                  cube.userData.project.name = projectDisplayTitle(pid, cube.userData.projectData);
+                  if (typeof INTERSECTED !== 'undefined' && INTERSECTED === cube && typeof tooltip !== 'undefined' && tooltip) {
+                    tooltip.innerHTML = cube.userData.project.name || i18nT('immersive.noTitle');
+                  }
+                });
+              }
+              if (typeof _panelCurrentProjectId !== 'undefined' && _panelCurrentProjectId && typeof _panelLoadProjectData === 'function') {
+                _panelLoadProjectData(_panelCurrentProjectId);
+              }
+              var cubeNotification = document.getElementById('cube-notification');
+              if (cubeNotification) {
+                cubeNotification.innerHTML = i18nT('immersive.cubeHint') + '<br><span style="font-size: 12px; opacity: 0.8;">' + i18nT('immersive.cubeHintSub') + '</span>';
+              }
+            }
+
+            document.addEventListener('localechange', function () {
+              if (window.I18n && typeof I18n.apply === 'function') I18n.apply();
+              refreshImmersiveProjectsLocale();
+            });
+
+            if (window.I18n && typeof I18n.init === 'function') {
+              I18n.init().then(function () {
+                bindMode();
+                refreshImmersiveProjectsLocale();
+              });
+            } else {
+              bindMode();
+            }
         })();
+
+        function i18nT(key, vars) {
+          if (window.I18n && typeof I18n.t === 'function') return I18n.t(key, vars);
+          return key;
+        }
+
+        function i18nProject(data, field) {
+          if (!data) return '';
+          var row = Object.assign({ docId: data.docId || data.id }, data);
+          if (window.I18n && typeof I18n.localized === 'function') return I18n.localized(row, field);
+          if (field === 'title') return String(row.title || row.nome || '').trim();
+          if (field === 'description') return String(row.description || row.descricao || '').trim();
+          return '';
+        }
+
+        function projectDisplayTitle(projectId, projectData) {
+          return i18nProject(Object.assign({ docId: projectId, id: projectId }, projectData || {}), 'title') || i18nT('immersive.noTitle');
+        }
 
         // --- Firebase Configuration ---
         const firebaseConfig = {
@@ -1043,9 +1128,10 @@
              // Store Firestore data in userData
              cube.userData.projectId = projectId;
              // Keep 'project' object for compatibility with existing tooltip/click logic
+             cube.userData.projectData = projectData || {};
              cube.userData.project = {
                 id: projectId,
-                name: projectTitle // Usar o título para o tooltip
+                name: projectDisplayTitle(projectId, projectData)
              };
              // Armazenar se o cubo tem imagens (para animação usar opacidade correta)
              cube.userData.hasImages = hasImages;
@@ -1155,12 +1241,13 @@
                  if (!cube.userData.project) {
                      cube.userData.project = {};
                  }
+                 cube.userData.projectData = projectData || {};
                  cube.userData.project.id = projectId;
-                 cube.userData.project.name = projectTitle;
+                 cube.userData.project.name = projectDisplayTitle(projectId, projectData);
                  
                  // Se este cubo estiver atualmente com INTERSECTED, atualize o tooltip imediatamente
                  if (INTERSECTED === cube) {
-                    tooltip.innerHTML = projectTitle;
+                    tooltip.innerHTML = cube.userData.project.name;
                  }
                  
                  const newImageUrls = projectData.images || [];
@@ -1882,8 +1969,9 @@ function showNavigationNotification() {
     
     // Criar o elemento de notificação para "Clique no cubo para abrir um projeto"
     var cubeNotification = document.createElement('div');
+    cubeNotification.id = 'cube-notification';
     cubeNotification.className = 'navigation-notification notification-pulse';
-    cubeNotification.innerHTML = 'CLIQUE NO CUBO<br><span style="font-size: 12px; opacity: 0.8;">para abrir um projeto</span>';
+    cubeNotification.innerHTML = i18nT('immersive.cubeHint') + '<br><span style="font-size: 12px; opacity: 0.8;">' + i18nT('immersive.cubeHintSub') + '</span>';
     cubeNotification.style.opacity = "0";
     cubeNotification.style.top = "80px"; // Posicionar abaixo da primeira notificação
     document.body.appendChild(cubeNotification);
@@ -2556,9 +2644,9 @@ function onDocumentMouseMove(event) {
         
         // Garantir que o tooltip exiba o título correto do projeto do Firebase
         if (INTERSECTED.userData && INTERSECTED.userData.project) {
-            tooltip.innerHTML = INTERSECTED.userData.project.name || "Projeto Sem Título";
+            tooltip.innerHTML = INTERSECTED.userData.project.name || i18nT('immersive.noTitle');
         } else {
-            tooltip.innerHTML = "Projeto Desconhecido";
+            tooltip.innerHTML = i18nT('immersive.unknownProject');
         }
         
         tooltip.style.visibility = 'visible';
@@ -2770,7 +2858,7 @@ document.addEventListener('keydown', function(event) {
         var slidesEl = document.getElementById('panel-carousel-slides');
         var dotsEl   = document.getElementById('panel-carousel-dots');
         var navEl    = document.getElementById('panel-carousel-nav');
-        if (titleEl) titleEl.textContent = 'Carregando...';
+        if (titleEl) titleEl.textContent = i18nT('immersive.loading');
         if (descEl)  descEl.innerHTML   = '';
         if (slidesEl) slidesEl.innerHTML = '';
         if (dotsEl)   dotsEl.innerHTML   = '';
@@ -2914,18 +3002,19 @@ document.addEventListener('keydown', function(event) {
             .then(function(doc) {
                 if (!doc.exists) {
                     var titleEl = document.getElementById('panel-project-title');
-                    if (titleEl) titleEl.textContent = 'Projeto não encontrado';
+                    if (titleEl) titleEl.textContent = i18nT('immersive.notFound');
                     return;
                 }
                 var data = doc.data();
+                var row = Object.assign({ docId: projectId, id: projectId }, data);
                 var titleEl = document.getElementById('panel-project-title');
                 var descEl  = document.getElementById('panel-project-description');
                 if (titleEl) {
-                    titleEl.textContent = data.title || 'Sem título';
+                    titleEl.textContent = i18nProject(row, 'title') || i18nT('immersive.noTitle');
                     titleEl.classList.add('visible');
                 }
                 if (descEl) {
-                    descEl.innerHTML = _panelFormatDescription(data.description);
+                    descEl.innerHTML = _panelFormatDescription(i18nProject(row, 'description'));
                     descEl.classList.add('visible');
                 }
                 _panelVideoFit = (data.videoFit === 'contain' || data.videoFit === 'cover') ? data.videoFit : 'cover';
@@ -2942,7 +3031,7 @@ document.addEventListener('keydown', function(event) {
             .catch(function(err) {
                 console.error('Erro ao buscar projeto no painel:', err);
                 var titleEl = document.getElementById('panel-project-title');
-                if (titleEl) titleEl.textContent = 'Erro ao carregar projeto';
+                if (titleEl) titleEl.textContent = i18nT('immersive.loadError');
             });
     }
 
@@ -2963,7 +3052,7 @@ document.addEventListener('keydown', function(event) {
         var videoFit = typeof _panelVideoFit !== 'undefined' ? _panelVideoFit : 'cover';
 
         if (!items || !items.length) {
-            slidesEl.innerHTML = '<p style="color:white;text-align:center;padding:20px;">Nenhuma mídia configurada.</p>';
+            slidesEl.innerHTML = '<p style="color:white;text-align:center;padding:20px;">' + i18nT('immersive.noMedia') + '</p>';
             if (navEl) navEl.style.display = 'none';
             if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) _panelUpdateCarouselList([]);
             return;
@@ -3017,7 +3106,7 @@ document.addEventListener('keydown', function(event) {
                 img.style.objectFit = 'cover';
                 img.style.borderRadius = '8px';
                 img.style.display = 'block';
-                img.onerror = function() { slide.innerHTML = '<p style="color:white;text-align:center;padding:20px;">Erro ao carregar imagem</p>'; };
+                img.onerror = function() { slide.innerHTML = '<p style="color:white;text-align:center;padding:20px;">' + i18nT('immersive.imageError') + '</p>'; };
                 img.src = url;
                 slide.appendChild(img);
             }
@@ -3377,21 +3466,26 @@ document.addEventListener('keydown', function(event) {
     function _panelSaveChanges() {
         if (typeof isAdminLoggedIn === 'undefined' || !isAdminLoggedIn) return;
         var projectId = _panelCurrentProjectId;
-        if (!projectId) { showNotification('Erro: projeto não identificado.', 'error', true); return; }
+        if (!projectId) { showNotification(i18nT('immersive.projectNotIdentified'), 'error', true); return; }
         var titleEl = document.getElementById('panel-project-title');
         var descEl  = document.getElementById('panel-project-description');
         var newTitle = titleEl ? titleEl.textContent.trim() : '';
         var newDesc  = descEl  ? descEl.innerHTML.replace(/<br\s*[/]?>/gi, '\n').trim() : '';
         var saveBtn  = document.getElementById('panel-save-button');
-        if (saveBtn) { saveBtn.textContent = 'Salvando...'; saveBtn.disabled = true; }
-        db.collection('projetos').doc(projectId).update({ title: newTitle, description: newDesc })
+        if (saveBtn) { saveBtn.textContent = i18nT('immersive.saving'); saveBtn.disabled = true; }
+        var isEn = window.I18n && I18n.getLocale() === 'en';
+        var payload = isEn
+          ? { title_en: newTitle, description_en: newDesc }
+          : { title: newTitle, nome: newTitle, description: newDesc, descricao: newDesc };
+        db.collection('projetos').doc(projectId).set(payload, { merge: true })
             .then(function() {
-                if (saveBtn) { saveBtn.textContent = 'Salvar Alterações'; saveBtn.disabled = false; }
-                showNotification('Alterações salvas com sucesso!', 'success', true);
+                if (saveBtn) { saveBtn.textContent = i18nT('immersive.saveChanges'); saveBtn.disabled = false; }
+                showNotification(i18nT('immersive.saved'), 'success', true);
+                _panelLoadProjectData(projectId);
             })
             .catch(function(err) {
-                showNotification('Erro ao salvar: ' + err.message, 'error', true);
-                if (saveBtn) { saveBtn.textContent = 'Salvar Alterações'; saveBtn.disabled = false; }
+                showNotification(i18nT('immersive.saveError') + ' ' + err.message, 'error', true);
+                if (saveBtn) { saveBtn.textContent = i18nT('immersive.saveChanges'); saveBtn.disabled = false; }
             });
     }
 
@@ -3412,7 +3506,7 @@ document.addEventListener('keydown', function(event) {
 
     <!-- ===== PAINEL DE PROJETO (SPA) ===== -->
     <div id="project-panel">
-        <button class="panel-back-button" id="panel-back-button">&#8592; Back</button>
+        <button class="panel-back-button" id="panel-back-button" data-i18n="immersive.back">&#8592; Back</button>
         <div class="project-container">
             <div class="project-images-container">
                 <div class="carousel-container fade-in" id="panel-carousel-container">

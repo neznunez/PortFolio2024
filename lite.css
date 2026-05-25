@@ -39,6 +39,54 @@ body {
   gap: 34px;
 }
 
+.lang-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--text);
+  padding: 2px;
+}
+
+.lang-switch-btn {
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: clamp(14px, 1vw, 18px);
+  font-weight: 600;
+  line-height: 1.2;
+  padding: 4px 8px;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.lang-switch-btn.is-active {
+  background: var(--text);
+  color: var(--bg, #fff);
+}
+
+.lang-switch--title {
+  flex-shrink: 0;
+  align-self: center;
+  margin-left: 4px;
+}
+
+.lang-switch--title .lang-switch-btn {
+  font-size: clamp(12px, 0.95vw, 16px);
+  padding: 3px 7px;
+}
+
+.project-bilingual-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.project-bilingual-label {
+  font-size: clamp(14px, 1vw, 18px);
+  font-weight: 600;
+  margin-top: 4px;
+}
+
 .header-content-nav {
   display: flex;
   gap: 22px;

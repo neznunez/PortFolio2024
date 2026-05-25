@@ -1,0 +1,188 @@
+{
+  "ui": {
+    "titleRole": "| multimedia designer",
+    "cv": "Resume",
+    "projects": "Projects",
+    "immersive": "Immersive",
+    "langLabel": "Language",
+    "selectProject": "Select a project",
+    "prevImage": "Previous image",
+    "nextImage": "Next image",
+    "playVideo": "Play video",
+    "addMedia": "Add images or videos to the project",
+    "moveMediaLeft": "Move media left",
+    "moveMediaRight": "Move media right",
+    "deleteMedia": "Delete current media",
+    "contentNav": "Text navigation",
+    "render3d": "3D head render",
+    "previewAlt": "Project preview",
+    "orderChanged": "Order changed — save to database.",
+    "saveOrder": "Save order",
+    "liteMode": "Lite mode"
+  },
+  "levels": {
+    "basic": "Basic",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced"
+  },
+  "cv": {
+    "nav": {
+      "about": "About Me",
+      "education": "Education",
+      "experience": "Experience",
+      "skills": "Skills"
+    },
+    "about": {
+      "title": "About Me",
+      "body": "<p>A bit of everything. As an <span class=\"key-term\">urban artist</span> and <span class=\"key-term\">multimedia designer</span>, I always look for <span class=\"key-term\">new technologies</span> to push my creative process. From <span class=\"key-term\">graffiti to design</span>, throughout my academic path I sought projects that connected these two worlds: street art and technology, exploring themes around preserving urban history and memory, and studying future relationships between people, technology, and the city.</p><p>In 2022, I was selected for the <span class=\"key-term\">Apple Developer Academy</span>, Apple's international technology innovation program focused on training creative professionals and developers to build digital solutions. Learning was guided by <span class=\"key-term\">Challenge Based Learning (CBL)</span>, an Apple methodology that develops projects from real challenges, connecting technology, multidisciplinary collaboration, and social impact. During the program, I received intensive training in <span class=\"key-term\">software development</span>, <span class=\"key-term\">agile methods</span>, and <span class=\"key-term\">user-centered design</span>.</p><p>In that period, I deepened my work on augmented reality, <span class=\"key-term\">virtual reality</span>, and <span class=\"key-term\">spatial computing</span>, along with research on <span class=\"key-term\">Web 3.0</span> and the shifts of a new internet era, exploring decentralized solutions with <span class=\"key-term\">artificial intelligence</span>, <span class=\"key-term\">blockchain</span>, <span class=\"key-term\">IoT</span>, and <span class=\"key-term\">smart cities</span>.</p><p>In 2023, I took part in <span class=\"key-term\">curation</span> and <span class=\"key-term\">development of exhibitions</span> in augmented reality, bringing artworks to life through digital interaction. I worked on projects in <span class=\"key-term\">Lisbon</span> and across <span class=\"key-term\">Brazil</span>, including an exhibition at the <span class=\"key-term\">Embassy of Mexico</span> in Brasília honoring Frida Kahlo, with interactive paintings showing how new media can expand art's reach and create new ways to engage audiences.</p><p>In 2024, I worked as a New Media Designer focused on entertainment at the technology innovation studio <span class=\"key-term\">DELED</span>. I developed and supported <span class=\"key-term\">interactive projects</span> centered on <span class=\"key-term\">immersive experiences</span>, involving <span class=\"key-term\">LED panels</span>, <span class=\"key-term\">body tracking</span>, <span class=\"key-term\">projection mapping</span>, <span class=\"key-term\">art installations</span>, and scenarios blending art and technology. During that time, I contributed to projects for <span class=\"key-term\">Museu do Amanhã</span>, <span class=\"key-term\">Rock in Rio</span>, and other major brands and institutions, from concept through technical implementation, including production and installation.</p>"
+    },
+    "education": [
+      "<li><span class=\"edu-item-title\">PUC-Rio:</span> Bachelor's in Design, Visual Communication <span class=\"item-year\">(2019-2025)</span></li>",
+      "<li><span class=\"edu-item-title\">Shell Iniciativa Jovem:</span> Entrepreneurship and Innovation <span class=\"item-year\">(2024)</span></li>",
+      "<li><span class=\"edu-item-title\">PUC-Rio Extension:</span> Chatbots and NLP for AI <span class=\"item-year\">(2025)</span></li>",
+      "<li><span class=\"edu-item-title\">ECOA-PUC-Rio:</span> Generative AI and Prompt Engineering <span class=\"item-year\">(2023)</span></li>",
+      "<li><span class=\"edu-item-title\">EBAC:</span> Game Development <span class=\"item-year\">(2022)</span></li>",
+      "<li><span class=\"edu-item-title\">cc.espaço:</span> Visual Programming <span class=\"item-year\">(2021)</span></li>",
+      "<li><span class=\"edu-item-title\">IED Rio:</span> Graphic Design Workshop <span class=\"item-year\">(2019)</span></li>",
+      "<li><span class=\"edu-item-title\">FIRJAN SESI-RJ:</span> Smart and Sustainable Cities <span class=\"item-year\">(2023)</span></li>"
+    ],
+    "experience": [
+      "<li><span class=\"exp-item-title\">Apple Developer Academy:</span> Technology Innovation Program <span class=\"item-year\">(2022-2023)</span></li>",
+      "<li><span class=\"exp-item-title\">DELED:</span> Creative studio, New Media Designer <span class=\"item-year\">(2024)</span></li>",
+      "<li><span class=\"exp-item-title\">Studio Kwo:</span> Junior Developer for Virtual Reality experiences <span class=\"item-year\">(2024)</span></li>",
+      "<li><span class=\"exp-item-title\">Museu do Amanhã:</span> Mentoring and support at LAA (Tomorrow's Activities Lab) <span class=\"item-year\">(2024)</span></li>",
+      "<li><span class=\"exp-item-title\">Augmented Reality Exhibitions:</span> Lisbon, Galeria 284 <span class=\"item-year\">(2022)</span></li>",
+      "<li><span class=\"exp-item-title\">Augmented Reality Exhibition:</span> Tribute to Frida Kahlo, Embassy of Mexico, Brasília <span class=\"item-year\">(2022)</span></li>",
+      "<li><span class=\"exp-item-title\">Rock The Mountain:</span> MOV.DOME immersive installation <span class=\"item-year\">(2024)</span></li>",
+      "<li><span class=\"exp-item-title\">Rock in Rio 2024:</span> Brand activation for TIM <span class=\"item-year\">(2024)</span></li>",
+      "<li><span class=\"exp-item-title\">PUC-Rio Design Week:</span> Digital space in the metaverse <span class=\"item-year\">(2022)</span></li>",
+      "<li><span class=\"exp-item-title\">PUC-Rio Design Week:</span> TouchDesigner and body-tracking workshop <span class=\"item-year\">(2025)</span></li>",
+      "<li><span class=\"exp-item-title\">ECOA-PUC-Rio:</span> Workshops on Web 3.0 and emerging technologies <span class=\"item-year\">(2023)</span></li>",
+      "<li><span class=\"exp-item-title\">Brazilian Immersive Fashion Week (BRIFW):</span> Horizon Latin.x winner <span class=\"item-year\">(2022 and 2023)</span></li>"
+    ],
+    "skills": {
+      "title": "Skills",
+      "groups": [
+        {
+          "topic": "Design",
+          "rows": [
+            { "name": "Adobe Creative Tools", "levelKey": "advanced", "width": "88%" },
+            { "name": "Figma", "levelKey": "intermediate", "width": "70%" }
+          ]
+        },
+        {
+          "topic": "Software Development",
+          "rows": [
+            { "name": "Front-end (web)", "levelKey": "intermediate", "width": "72%" },
+            { "name": "Mobile", "levelKey": "intermediate", "width": "72%" },
+            { "name": "iOS (Swift/SwiftUI)", "levelKey": "basic", "width": "38%" }
+          ]
+        },
+        {
+          "topic": "3D & Real-Time / Games",
+          "rows": [
+            { "name": "Unity", "levelKey": "basic", "width": "38%" },
+            { "name": "Blender", "levelKey": "intermediate", "width": "69%" },
+            { "name": "Unreal Engine", "levelKey": "intermediate", "width": "66%" }
+          ]
+        },
+        {
+          "topic": "Interactivity & New Media",
+          "rows": [
+            { "name": "TouchDesigner", "levelKey": "intermediate", "width": "72%" },
+            { "name": "AR / VR", "levelKey": "intermediate", "width": "72%" }
+          ]
+        }
+      ]
+    }
+  },
+  "admin": {
+    "title": "Admin Lite",
+    "subtitle": "Use the same credentials as immersive mode.",
+    "email": "Login (email)",
+    "password": "Password",
+    "cancel": "Cancel",
+    "submit": "Sign in",
+    "submitting": "Signing in...",
+    "invalidLogin": "Invalid login. Check email and password."
+  },
+  "deleteProject": {
+    "title": "Delete project?",
+    "subtitle": "This action cannot be undone.",
+    "cancel": "Cancel",
+    "confirm": "Delete",
+    "confirming": "Deleting...",
+    "namePrefix": "Project:",
+    "untitled": "Untitled project",
+    "errorRetry": "Could not delete. Please try again."
+  },
+  "projects": {
+    "defaultTitle": "Project",
+    "newProject": "New project",
+    "metaFallback": "Project",
+    "noneYet": "No projects yet.",
+    "noneAvailable": "No projects available",
+    "add": "Add project",
+    "dragReorder": "Drag to reorder",
+    "delete": "Delete project",
+    "edit": "Edit project",
+    "save": "Save",
+    "cancel": "Cancel",
+    "savingContent": "Saving content...",
+    "savingOrder": "Saving order...",
+    "adminActive": "Admin Lite active",
+    "labelTitlePt": "Title (PT)",
+    "labelTitleEn": "Title (EN)",
+    "labelDescPt": "Description (PT)",
+    "labelDescEn": "Description (EN)",
+    "labelSubtitlePt": "Subtitle (PT)",
+    "labelSubtitleEn": "Subtitle (EN)"
+  },
+  "projectCatalog": {
+    "byTitle": {}
+  },
+  "immersive": {
+    "loading": "Loading...",
+    "noTitle": "Untitled",
+    "unknownProject": "Unknown project",
+    "notFound": "Project not found",
+    "loadError": "Error loading project",
+    "noMedia": "No media configured.",
+    "imageError": "Error loading image",
+    "cubeHint": "CLICK THE CUBE",
+    "cubeHintSub": "to open a project",
+    "back": "← Back",
+    "createProject": "Create New Project",
+    "projectNamePlaceholder": "Enter project name...",
+    "addMedia": "📷 Add Images or Videos",
+    "uploadLimits": "(images and videos up to 1 GB — MP4, WebM, MOV)",
+    "saving": "Saving...",
+    "saveChanges": "Save changes",
+    "saved": "Changes saved successfully!",
+    "saveError": "Error saving:",
+    "projectNotIdentified": "Error: project not identified.",
+    "deleteMediaConfirm": "Delete {{label}} from this project?",
+    "background": "BACKGROUND"
+  },
+  "js": {
+    "storageUnavailable": "Firebase Storage is not available on this page.",
+    "pickMedia": "Choose images or videos (MP4, WebM, or MOV).",
+    "fileTooLarge": "File(s) exceed the maximum allowed size.",
+    "uploadError": "Error uploading files.",
+    "adminDisabled": "Admin Lite disabled.",
+    "adminAlreadyActive": "Admin Lite is already active.",
+    "authUnavailable": "Firebase Auth is not available on this page.",
+    "dbUnavailableCreate": "Database unavailable. Firebase is required to create projects.",
+    "createFailed": "Could not create the project.",
+    "mediaOrderFailed": "Failed to save media order.",
+    "mediaDeleteFailed": "Failed to delete media.",
+    "docUnknown": "Could not identify this project's document.",
+    "dbUnavailableDelete": "Database unavailable for delete.",
+    "projectOrderFailed": "Failed to save project order.",
+    "dbUnavailableSave": "Database unavailable for save.",
+    "docNotFound": "Project document not identified.",
+    "saved": "Changes saved.",
+    "saveFailed": "Failed to save to database. Try again.",
+    "storageError": "Storage unavailable."
+  }
+}
