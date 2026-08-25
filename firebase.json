@@ -11,7 +11,14 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "firestore.rules",
+      "storage.rules",
+      "firestore.indexes.json",
+      "package.json",
+      "package-lock.json",
+      "vite.config.js",
+      "start.cmd"
     ],
     "rewrites": [
       {

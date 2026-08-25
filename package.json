@@ -9,6 +9,7 @@
     "start:win": "node node_modules/vite/bin/vite.js"
   },
   "devDependencies": {
+    "firebase-tools": "^15.28.1",
     "vite": "^6.3.5"
   }
 }
