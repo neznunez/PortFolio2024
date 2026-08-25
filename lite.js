@@ -764,6 +764,9 @@
       raw.fileUrl ||
       '';
     if (!src || typeof src !== 'string') return null;
+    if (typeof window.rewriteStorageUrlForLocal === 'function') {
+      src = window.rewriteStorageUrlForLocal(src);
+    }
     var explicitType = (
       raw.type ||
       raw.kind ||

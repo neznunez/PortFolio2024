@@ -845,6 +845,10 @@
         const storage = firebase.storage();
         const ADMIN_UID = window.PORTFOLIO_ADMIN_UID;
 
+        function mediaUrl(url) {
+            return typeof rewriteStorageUrlForLocal === 'function' ? rewriteStorageUrlForLocal(url) : url;
+        }
+
         // --- Firebase Helper Functions ---
 
         // Função para preparar array de 6 imagens (repetir se necessário)
@@ -916,7 +920,7 @@
                     video.src = '';
                 };
                 video.onerror = function() { reject(new Error('Falha ao carregar vídeo')); video.src = ''; };
-                video.src = videoUrl;
+                video.src = mediaUrl(videoUrl);
                 video.load();
             });
         }
@@ -945,7 +949,7 @@
                     if (faceImages[i] && materials[i]) {
                         // Tentar carregar textura
                         textureLoader.load(
-                            faceImages[i],
+                            mediaUrl(faceImages[i]),
                             (texture) => {
                                 // Sucesso: configurar textura para melhor qualidade
                                 try {
@@ -3061,7 +3065,7 @@ document.addEventListener('keydown', function(event) {
                 video.style.objectFit = videoFit;
                 video.style.borderRadius = '8px';
                 video.style.display = 'block';
-                video.src = url;
+                video.src = mediaUrl(url);
                 if (idx !== 0) video.pause();
                 else video.autoplay = true;
                 video.addEventListener('timeupdate', function() {
@@ -3090,7 +3094,7 @@ document.addEventListener('keydown', function(event) {
                 img.style.borderRadius = '8px';
                 img.style.display = 'block';
                 img.onerror = function() { slide.innerHTML = '<p style="color:white;text-align:center;padding:20px;">' + i18nT('immersive.imageError') + '</p>'; };
-                img.src = url;
+                img.src = mediaUrl(url);
                 slide.appendChild(img);
             }
             slidesEl.appendChild(slide);

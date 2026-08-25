@@ -14,4 +14,26 @@
   global.isPortfolioAdmin = function (user) {
     return !!(user && user.uid === global.PORTFOLIO_ADMIN_UID);
   };
+
+  /** Em localhost o Storage recusa CORS; o Vite faz proxy destas origens. */
+  global.rewriteStorageUrlForLocal = function (url) {
+    if (!url || typeof url !== 'string') return url;
+    var host = global.location && global.location.hostname;
+    if (host !== 'localhost' && host !== '127.0.0.1') return url;
+    try {
+      var parsed = new URL(url, global.location.href);
+      if (parsed.hostname === 'firebasestorage.googleapis.com') {
+        return '/fb-storage' + parsed.pathname + parsed.search;
+      }
+      if (parsed.hostname.indexOf('firebasestorage.app') !== -1) {
+        return '/fb-storage-app' + parsed.pathname + parsed.search;
+      }
+      if (parsed.hostname === 'storage.googleapis.com') {
+        return '/gcs-storage' + parsed.pathname + parsed.search;
+      }
+    } catch (e) {
+      /* ignore */
+    }
+    return url;
+  };
 })(window);
