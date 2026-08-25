@@ -313,6 +313,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    <script src="firebase-config.js"></script>
 
     <a href="index.html" class="back-button" id="back-button">Back</a>
     <div class="project-container">
@@ -374,21 +375,11 @@
     <script>
         // --- Firebase Configuration ---
         // !! Certifique-se que esta configuração está correta !!
-        const firebaseConfig = {
-            apiKey: "AIzaSyDSgff-2XhWgAhfzB8U6MjHvpMr61v28so",
-            authDomain: "portfolio-neznunez.firebaseapp.com",
-            projectId: "portfolio-neznunez",
-            storageBucket: "portfolio-neznunez.firebasestorage.app",
-            messagingSenderId: "182523090058",
-            appId: "1:182523090058:web:a0b9aea951268c056d4973",
-            measurementId: "G-XWH6S0H7WN"
-        };
-        
-        // Initialize Firebase
+        const firebaseConfig = window.PORTFOLIO_FIREBASE_CONFIG;
         let db;
         let auth;
         let storage;
-        const ADMIN_UID = "eeT0iJOXYlU7g7l6fh9hL5kCLDL2";
+        const ADMIN_UID = window.PORTFOLIO_ADMIN_UID;
         let isAdminLoggedIn = false;
 
         if (typeof firebase !== 'undefined') {
@@ -458,9 +449,18 @@
         }
 
         // --- Função Auxiliar ---
+        function escapeHtml(text) {
+            return String(text || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         function formatDescription(text) {
             if (!text) return '';
-            return text.replace(/\n/g, '<br>'); // Substitui \n literal por <br>
+            return escapeHtml(text).replace(/\n/g, '<br>');
         }
 
         // --- Funções de Upload de Imagens ---
@@ -494,7 +494,8 @@
                 }
                 
                 // Validar tamanho (máximo 5MB por imagem)
-                const oversizedFiles = validFiles.filter(file => file.size > 5 * 1024 * 1024);
+                const maxImageBytes = (window.PORTFOLIO_MAX_IMAGE_MB || 10) * 1024 * 1024;
+                const oversizedFiles = validFiles.filter(file => file.size > maxImageBytes);
                 if (oversizedFiles.length > 0) {
                     showNotification('Algumas imagens são muito grandes (máximo 5MB por imagem).', 'error');
                     uploadInput.value = '';
@@ -707,11 +708,10 @@
             imageUrls.forEach((url, index) => {
                 const item = document.createElement('div');
                 item.className = 'image-item';
-                item.innerHTML = `
-                    <img src="${url}" alt="Preview" onerror="this.style.display='none'">
-                    <span style="flex: 1; margin-left: 5px;">Imagem ${index + 1}</span>
-                    <button class="delete-image-btn" data-index="${index}">Deletar</button>
-                `;
+                item.innerHTML =
+                    '<img src="' + escapeHtml(url) + '" alt="Preview" onerror="this.style.display=\'none\'">' +
+                    '<span style="flex: 1; margin-left: 5px;">Imagem ' + (index + 1) + '</span>' +
+                    '<button class="delete-image-btn" data-index="' + index + '">Deletar</button>';
                 
                 const deleteBtn = item.querySelector('.delete-image-btn');
                 deleteBtn.addEventListener('click', () => deleteImage(index));
@@ -904,7 +904,7 @@
                 if (user) {
                     // Usuário está logado
                     console.log("Usuário logado:", user.uid);
-                    if (user.uid === ADMIN_UID) {
+                    if (typeof isPortfolioAdmin === 'function' ? isPortfolioAdmin(user) : user.uid === ADMIN_UID) {
                         console.log("É o admin! Habilitando modo de edição.");
                         isAdminLoggedIn = true;
                         enableEditMode();

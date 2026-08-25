@@ -1,0 +1,16 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.uid == 'eeT0iJOXYlU7g7l6fh9hL5kCLDL2';
+    }
+
+    match /projects/{projectId}/{fileName} {
+      allow read: if true;
+      allow delete: if isAdmin();
+      allow create, update: if isAdmin()
+        && request.resource.size < 80 * 1024 * 1024;
+    }
+  }
+}

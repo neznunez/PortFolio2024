@@ -760,6 +760,7 @@
    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+   <script src="firebase-config.js"></script>
 
    <!-- Controles de ambiente HDR (3x Espaço para mostrar) -->
    <div id="envControls" class="env-controls">
@@ -790,7 +791,7 @@
                   var pid = cube.userData.projectId;
                   cube.userData.project.name = projectDisplayTitle(pid, cube.userData.projectData);
                   if (typeof INTERSECTED !== 'undefined' && INTERSECTED === cube && typeof tooltip !== 'undefined' && tooltip) {
-                    tooltip.innerHTML = cube.userData.project.name || i18nT('immersive.noTitle');
+                    tooltip.textContent = cube.userData.project.name || i18nT('immersive.noTitle');
                   }
                 });
               }
@@ -837,52 +838,12 @@
         }
 
         // --- Firebase Configuration ---
-        const firebaseConfig = {
-          apiKey: "AIzaSyDSgff-2XhWgAhfzB8U6MjHvpMr61v28so",
-          authDomain: "portfolio-neznunez.firebaseapp.com",
-          projectId: "portfolio-neznunez",
-          storageBucket: "portfolio-neznunez.firebasestorage.app",
-          messagingSenderId: "182523090058",
-          appId: "1:182523090058:web:a0b9aea951268c056d4973",
-          measurementId: "G-XWH6S0H7WN"
-        };
-        // Initialize Firebase
+        const firebaseConfig = window.PORTFOLIO_FIREBASE_CONFIG;
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
         const storage = firebase.storage();
-        const ADMIN_UID = "eeT0iJOXYlU7g7l6fh9hL5kCLDL2"; // User's Admin UID
-        // --- End Firebase Configuration ---
-
-        // Verificar a conexão com o Firestore e resolver problemas
-        function verificarFirestore() {
-            // Verificar a coleção projects
-            db.collection("projetos").get()
-                .then(snapshot => {
-                    if (snapshot.size === 0) {
-                        // Carregar dados do projects.json
-                        fetch('projects.json')
-                            .then(response => response.json())
-                            .then(projects => {
-                                // Adicionar projetos ao Firestore
-                                const batch = db.batch();
-                                projects.forEach(project => {
-                                    const ref = db.collection("projetos").doc(project.id);
-                                    batch.set(ref, project);
-                                });
-                                
-                                return batch.commit();
-                            })
-                                .catch(error => {
-                                console.error("Erro ao adicionar projetos:", error);
-                            });
-                    }
-                })
-                .catch(error => {
-                    console.error("Erro ao verificar o Firestore:", error);
-                });
-        }
-        
+        const ADMIN_UID = window.PORTFOLIO_ADMIN_UID;
 
         // --- Firebase Helper Functions ---
 
@@ -1260,7 +1221,7 @@
                  
                  // Se este cubo estiver atualmente com INTERSECTED, atualize o tooltip imediatamente
                  if (INTERSECTED === cube) {
-                    tooltip.innerHTML = cube.userData.project.name;
+                    tooltip.textContent = cube.userData.project.name;
                  }
                  
                  const newImageUrls = projectData.images || [];
@@ -2657,9 +2618,9 @@ function onDocumentMouseMove(event) {
         
         // Garantir que o tooltip exiba o título correto do projeto do Firebase
         if (INTERSECTED.userData && INTERSECTED.userData.project) {
-            tooltip.innerHTML = INTERSECTED.userData.project.name || i18nT('immersive.noTitle');
+            tooltip.textContent = INTERSECTED.userData.project.name || i18nT('immersive.noTitle');
         } else {
-            tooltip.innerHTML = i18nT('immersive.unknownProject');
+            tooltip.textContent = i18nT('immersive.unknownProject');
         }
         
         tooltip.style.visibility = 'visible';
@@ -3048,9 +3009,18 @@ document.addEventListener('keydown', function(event) {
             });
     }
 
+    function _escapeHtml(text) {
+        return String(text || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     function _panelFormatDescription(text) {
         if (!text) return '';
-        return text.replace(/\n/g, '<br>');
+        return _escapeHtml(text).replace(/\n/g, '<br>');
     }
 
     // ---------- CARROSSEL (IMAGENS E VÍDEOS) ----------
@@ -3274,8 +3244,8 @@ document.addEventListener('keydown', function(event) {
         _panelLoadProjectImages(projectId);
     }
 
-    var PANEL_MAX_IMAGE_MB = 1000;
-    var PANEL_MAX_VIDEO_MB = 1000;  // vídeos até 1 GB
+    var PANEL_MAX_IMAGE_MB = window.PORTFOLIO_MAX_IMAGE_MB || 10;
+    var PANEL_MAX_VIDEO_MB = window.PORTFOLIO_MAX_VIDEO_MB || 80;
 
     function _panelShowCarouselLoading(message) {
         _panelHideCarouselLoading();

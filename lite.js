@@ -54,8 +54,8 @@
   var pendingDeleteProjectKey = null;
   var storageRef = null;
   var adminPreviewUploadBusy = false;
-  var LITE_MAX_IMAGE_MB = 500;
-  var LITE_MAX_VIDEO_MB = 500;
+  var LITE_MAX_IMAGE_MB = window.PORTFOLIO_MAX_IMAGE_MB || 10;
+  var LITE_MAX_VIDEO_MB = window.PORTFOLIO_MAX_VIDEO_MB || 80;
   var previewDisplayedProjectKey = '';
   var adminSaveNoticeByKey = Object.create(null);
   var adminSaveNoticeClearTimer = null;
@@ -99,15 +99,7 @@
   ];
 
   var skyboxWeights = [5, 1, 3, 1];
-  var firebaseConfig = {
-    apiKey: "AIzaSyDSgff-2XhWgAhfzB8U6MjHvpMr61v28so",
-    authDomain: "portfolio-neznunez.firebaseapp.com",
-    projectId: "portfolio-neznunez",
-    storageBucket: "portfolio-neznunez.firebasestorage.app",
-    messagingSenderId: "182523090058",
-    appId: "1:182523090058:web:a0b9aea951268c056d4973",
-    measurementId: "G-XWH6S0H7WN"
-  };
+  var firebaseConfig = window.PORTFOLIO_FIREBASE_CONFIG || null;
 
   function getWeightedSkybox() {
     var total = skyboxWeights.reduce(function (sum, weight) {
@@ -438,14 +430,7 @@
   function setupAdminLiteTrigger() {
     window.addEventListener('keydown', function (event) {
       if (event.key === 'Escape' && isLiteAdmin) {
-        isLiteAdmin = false;
-        adminDrafts = Object.create(null);
-        editingProjectKey = null;
-        alert(t('js.adminDisabled'));
-        projectListOrderDirty = false;
-        renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
-        updateProjectPreviewAddButton();
-        updateProjectListOrderBar();
+        exitLiteAdmin(true);
         return;
       }
 
@@ -623,7 +608,15 @@
     setAdminModalFeedback('');
 
     window.firebase.auth().signInWithEmailAndPassword(email, password)
-      .then(function () {
+      .then(function (credential) {
+        var user = credential && credential.user;
+        if (typeof window.isPortfolioAdmin === 'function' ? !window.isPortfolioAdmin(user) : true) {
+          return window.firebase.auth().signOut().then(function () {
+            var err = new Error('not-admin');
+            err.code = 'not-admin';
+            throw err;
+          });
+        }
         isLiteAdmin = true;
         closeAdminLiteModal();
         renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
@@ -632,7 +625,11 @@
       })
       .catch(function (error) {
         console.warn('Falha no login Admin Lite:', error);
-        setAdminModalFeedback(t('admin.invalidLogin'));
+        if (error && (error.code === 'not-admin' || error.message === 'not-admin')) {
+          setAdminModalFeedback(t('admin.notAuthorized'));
+        } else {
+          setAdminModalFeedback(t('admin.invalidLogin'));
+        }
       })
       .finally(function () {
         setAdminModalLoading(false);
@@ -683,8 +680,26 @@
     });
   }
 
+  function exitLiteAdmin(showAlert) {
+    isLiteAdmin = false;
+    adminDrafts = Object.create(null);
+    editingProjectKey = null;
+    projectListOrderDirty = false;
+    function afterExit() {
+      if (showAlert) alert(t('js.adminDisabled'));
+      renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
+      updateProjectPreviewAddButton();
+      updateProjectListOrderBar();
+    }
+    if (window.firebase && window.firebase.auth) {
+      window.firebase.auth().signOut().then(afterExit).catch(afterExit);
+    } else {
+      afterExit();
+    }
+  }
+
   function setupFirebase() {
-    if (!window.firebase || !window.firebase.apps) return null;
+    if (!window.firebase || !window.firebase.apps || !firebaseConfig) return null;
     try {
       if (!window.firebase.apps.length) {
         window.firebase.initializeApp(firebaseConfig);
@@ -2528,6 +2543,15 @@
     setupAdminLiteTrigger();
     setupSectionIndexTracking();
     dbRef = setupFirebase();
+    if (window.firebase && window.firebase.auth) {
+      window.firebase.auth().onAuthStateChanged(function (user) {
+        if (!isLiteAdmin) return;
+        var stillAdmin = typeof window.isPortfolioAdmin === 'function'
+          ? window.isPortfolioAdmin(user)
+          : false;
+        if (!stillAdmin) exitLiteAdmin(false);
+      });
+    }
     loadProjectsData().then(function (rows) {
       projectsData = rows;
       renderProjectsList();

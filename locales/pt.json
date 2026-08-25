@@ -105,6 +105,7 @@
     "submit": "Entrar",
     "submitting": "Entrando...",
     "invalidLogin": "Login inválido. Verifique email e senha.",
+    "notAuthorized": "Esta conta não tem permissão de administrador.",
     "fillRequired": "Preencha login e senha."
   },
   "deleteProject": {
@@ -143,7 +144,7 @@
   "js": {
     "storageUnavailable": "Firebase Storage não está disponível nesta página.",
     "pickMedia": "Escolha imagens ou vídeos (MP4, WebM ou MOV).",
-    "fileTooLarge": "Ficheiro(s) excedem o tamanho máximo permitido.",
+    "fileTooLarge": "Ficheiro(s) excedem o máximo (imagens 10 MB, vídeos 80 MB).",
     "uploadError": "Erro ao enviar ficheiros.",
     "adminDisabled": "Admin Lite desativado.",
     "adminAlreadyActive": "Admin Lite já está ativo.",
@@ -175,7 +176,7 @@
     "createProject": "Criar Novo Projeto",
     "projectNamePlaceholder": "Digite o nome do projeto...",
     "addMedia": "📷 Adicionar Imagens ou Vídeos",
-    "uploadLimits": "(imagens e vídeos até 1 GB — MP4, WebM, MOV)",
+    "uploadLimits": "(imagens até 10 MB, vídeos até 80 MB — MP4, WebM, MOV)",
     "saving": "Salvando...",
     "saveChanges": "Salvar Alterações",
     "saved": "Alterações salvas com sucesso!",
