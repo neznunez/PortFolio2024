@@ -18,6 +18,7 @@
       })();
     </script>
     <link rel="icon" href="3d_6297747.ico" type="image/x-icon">
+    <link rel="preload" href="models/NezmodelF2.glb" as="fetch" crossorigin>
 	 <link rel="stylesheet" href="landing.css">
 	
     <style>
@@ -753,6 +754,7 @@
    <script src="ReLibs/OrbitControls.js"></script>
    <script src="ReLibs/gsap.min.js"></script>
    <script src="ReLibs/GLTFLoader.js"></script>
+   <script src="load-head-model.js"></script>
    <script src="https://cdn.jsdelivr.net/npm/vanilla-tilt@1.7.0/dist/vanilla-tilt.min.js"></script>
 
    <!-- Firebase SDK -->
@@ -1468,10 +1470,7 @@
         // Função para atualizar progresso total
         function updateLoadingProgress() {
             // Pesos: Modelo 70%, Skybox 20%, Firestore 10%
-            loadingProgress.total = 
-                (loadingProgress.model * 0.70) + 
-                (loadingProgress.skybox * 0.20) + 
-                (loadingProgress.firestore * 0.10);
+            loadingProgress.total = loadingProgress.model;
             
             if (loadingBar && loadingPercentage) {
                 var displayPercent = Math.min(Math.round(loadingProgress.total), 99); // Máximo 99% até tudo carregar
@@ -1486,9 +1485,7 @@
             updateLoadingProgress();
             
             // Verificar se tudo está completo
-            if (loadingProgress.model === 100 && 
-                loadingProgress.skybox === 100 && 
-                loadingProgress.firestore === 100) {
+            if (loadingProgress.model === 100) {
                 completeLoading();
             }
         }
@@ -1727,11 +1724,9 @@
             }
             
             var loader = new THREE.GLTFLoader();
-            var modelPath = 'models/NezmodelF2.glb';
-            
-            loader.load(
-                modelPath, 
-                function (gltf) {
+            var modelPath = (window.PORTFOLIO_MODEL_URL || 'models/NezmodelF2.glb');
+
+            function onHeadModelLoaded(gltf) {
                     // Modelo carregado
                     model = gltf.scene;
                     model.position.set(0, -3, 0);
@@ -1774,21 +1769,20 @@
                         });
                     }
                     
-                    // Marcar modelo como completo
                     markComponentComplete('model');
-                    
-                    // Parar piscar quando modelo começar a carregar
                     stopBlinking();
-                    
-                    // Configurar animações
+
                     mixer = new THREE.AnimationMixer(model);
                     gltf.animations.forEach((clip) => {
                         mixer.clipAction(clip).play();
                     });
 
                     animateCameraToPosition(0, 0, 5);
-                }, 
-                function (xhr) {
+                    loadHDREnvironment();
+                    loadSkyboxBackground();
+            }
+
+            function onHeadModelProgress(xhr) {
                     if (xhr.lengthComputable && xhr.total > 0) {
                         loadingProgress.model = (xhr.loaded / xhr.total) * 100;
                         updateLoadingProgress();
@@ -1797,8 +1791,9 @@
                     } else {
                         if (loadingText) loadingText.textContent = 'Loading';
                     }
-                }, 
-                function (error) {
+            }
+
+            function onHeadModelError(error) {
                     console.error(error);
                     stopBlinking();
                     if (loadingText) {
@@ -1810,8 +1805,13 @@
                         loadingBar.style.backgroundColor = '#ff3333';
                         loadingBar.style.boxShadow = '0 0 15px #ff3333';
                     }
-                }
-            );
+            }
+
+            if (typeof loadPortfolioHeadGltf === 'function') {
+                loadPortfolioHeadGltf(loader, onHeadModelLoaded, onHeadModelProgress, onHeadModelError);
+            } else {
+                loader.load(modelPath, onHeadModelLoaded, onHeadModelProgress, onHeadModelError);
+            }
         }
 	  
         var composer;
@@ -1856,17 +1856,11 @@
                 total: 0
             };
             
-            // Carregar tudo em paralelo
-            addModel();              // Inicia carregamento do modelo
-            loadHDREnvironment();    // HDR para iluminação (scene.environment)
-            loadSkyboxBackground();  // Cubemap para fundo visual (scene.background)
+            addModel();
             
-            // Timeout de segurança: libera o loading após 20s se travar
             setTimeout(function() {
-                if (loadingScreen && loadingProgress && (loadingProgress.model < 100 || loadingProgress.skybox < 100 || loadingProgress.firestore < 100)) {
+                if (loadingScreen && loadingProgress && loadingProgress.model < 100) {
                     loadingProgress.model = 100;
-                    loadingProgress.skybox = 100;
-                    loadingProgress.firestore = 100;
                     if (typeof completeLoading === 'function') completeLoading();
                 }
             }, 20000);

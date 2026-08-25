@@ -60,8 +60,7 @@
   var adminSaveNoticeByKey = Object.create(null);
   var adminSaveNoticeClearTimer = null;
   var projectListOrderDirty = false;
-  var LITE_MODEL_URL = 'models/NezmodelF2.glb';
-  var LITE_MODEL_CACHE_NAME = 'portfolio-lite-model-cache-v1';
+  var LITE_MODEL_URL = window.PORTFOLIO_MODEL_URL || 'models/NezmodelF2.glb';
 
   var skyboxes = [
     [
@@ -2284,7 +2283,6 @@
     setupControls();
     addLights();
     loadModel();
-    loadSkyboxBackground();
 
     window.addEventListener('resize', handleResize);
     animate();
@@ -2426,88 +2424,21 @@
       }
 
       hideLoadingIndicator();
+      loadSkyboxBackground();
     }
 
-    function warmModelCacheInBackground() {
-      if (!window.fetch || !window.caches) return;
-      window.caches
-        .open(LITE_MODEL_CACHE_NAME)
-        .then(function (cache) {
-          return cache.match(LITE_MODEL_URL).then(function (cachedResponse) {
-            if (cachedResponse) return;
-            return fetch(LITE_MODEL_URL, { cache: 'force-cache' }).then(function (networkResponse) {
-              if (!networkResponse || !networkResponse.ok) return;
-              return cache.put(LITE_MODEL_URL, networkResponse.clone()).catch(function () {});
-            });
-          });
-        })
-        .catch(function () {});
+    function onModelError(error) {
+      if (modelResolved) return;
+      console.error('Erro ao carregar modelo no modo lite:', error);
+      hideLoadingIndicator();
     }
 
-    function loadModelViaUrl() {
-      loader.load(
-        LITE_MODEL_URL,
-        function (gltf) {
-          attachLoadedModel(gltf);
-          // Mantém próximas visitas rápidas sem bloquear o primeiro render.
-          warmModelCacheInBackground();
-        },
-        undefined,
-        function (error) {
-          if (modelResolved) return;
-          console.error('Erro ao carregar modelo no modo lite:', error);
-          hideLoadingIndicator();
-        }
-      );
+    if (typeof window.loadPortfolioHeadGltf === 'function') {
+      window.loadPortfolioHeadGltf(loader, attachLoadedModel, undefined, onModelError);
+      return;
     }
 
-    function loadModelViaArrayBuffer(buffer) {
-      try {
-        loader.parse(
-          buffer,
-          '',
-          function (gltf) {
-            attachLoadedModel(gltf);
-          },
-          function (error) {
-            if (modelResolved) return;
-            console.warn('Falha ao parsear GLB em cache, usando loader padrão:', error);
-            loadModelViaUrl();
-          }
-        );
-      } catch (parseErr) {
-        if (modelResolved) return;
-        console.warn('Falha ao inicializar parse GLB, usando loader padrão:', parseErr);
-        loadModelViaUrl();
-      }
-    }
-
-    function tryLoadModelFromPersistentCache() {
-      if (!window.caches) return Promise.resolve(false);
-      return window.caches
-        .open(LITE_MODEL_CACHE_NAME)
-        .then(function (cache) {
-          return cache.match(LITE_MODEL_URL);
-        })
-        .then(function (cachedResponse) {
-          if (!cachedResponse) return false;
-          return cachedResponse.arrayBuffer().then(function (buffer) {
-            if (!buffer) return false;
-            loadModelViaArrayBuffer(buffer);
-            return true;
-          });
-        })
-        .catch(function () {
-          return false;
-        });
-    }
-
-    tryLoadModelFromPersistentCache().then(function (loadedFromCache) {
-      if (loadedFromCache) return;
-      // Garante primeiro carregamento sem depender da estratégia de cache.
-      loadModelViaUrl();
-      warmModelCacheInBackground();
-    });
+    loader.load(LITE_MODEL_URL, attachLoadedModel, undefined, onModelError);
   }
 
   function hideLoadingIndicator() {
@@ -2559,7 +2490,6 @@
       projectsData = rows;
       renderProjectsList();
     });
-    setupScene();
   }
 
   document.addEventListener('localechange', function () {
@@ -2572,6 +2502,7 @@
     setAdminModalLoading(false);
   });
 
+  setupScene();
   if (window.I18n && typeof I18n.init === 'function') {
     I18n.init().then(startLiteApp);
   } else {
