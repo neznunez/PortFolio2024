@@ -18,7 +18,7 @@
     "previewAlt": "Project preview",
     "orderChanged": "Order changed — save to database.",
     "saveOrder": "Save order",
-    "liteMode": "Lite mode"
+    "liteMode": "Lite"
   },
   "levels": {
     "basic": "Basic",
@@ -151,8 +151,12 @@
     "loadError": "Error loading project",
     "noMedia": "No media configured.",
     "imageError": "Error loading image",
-    "cubeHint": "CLICK THE CUBE",
+    "cubeHint": "Tap the cube",
     "cubeHintSub": "to open a project",
+    "dragHint": "Click and drag",
+    "dragHintSub": "to look around",
+    "headHint": "Tap the head",
+    "headHintSub": "to see the projects",
     "back": "← Back",
     "createProject": "Create New Project",
     "projectNamePlaceholder": "Enter project name...",
@@ -164,7 +168,10 @@
     "saveError": "Error saving:",
     "projectNotIdentified": "Error: project not identified.",
     "deleteMediaConfirm": "Delete {{label}} from this project?",
-    "background": "BACKGROUND"
+    "background": "BACKGROUND",
+    "uiClassic": "Classic",
+    "uiMacos": "macOS",
+    "uiAero": "Aero"
   },
   "js": {
     "storageUnavailable": "Firebase Storage is not available on this page.",

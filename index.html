@@ -4,22 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>NEZNUNEZ</title>
-    <script>
-      (function () {
-        try {
-          if (window.location.search.indexOf('immersive=1') !== -1) return;
-          if (!window.matchMedia || !window.matchMedia('(max-width: 768px)').matches) return;
-          var path = (window.location.pathname || '').toLowerCase();
-          if (path.slice(-9) === 'lite.html') return;
-          try { localStorage.setItem('portfolio_mode', 'lite'); } catch (e) {}
-          var target = 'lite.html' + (window.location.search || '') + (window.location.hash || '');
-          window.location.replace(target);
-        } catch (err) { /* ignore */ }
-      })();
-    </script>
     <link rel="icon" href="3d_6297747.ico" type="image/x-icon">
     <link rel="preload" href="models/NezmodelF2.glb" as="fetch" crossorigin>
+    <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin>
+    <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com">
 	 <link rel="stylesheet" href="landing.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap">
 	
     <style>
         body, html {
@@ -28,6 +20,27 @@
             height: 100%;
             font-family: Arial, sans-serif;
             background-color: #000;
+        }
+
+        body {
+            --ih-top: 0px;
+            --ih-side: 0px;
+            --ih-height: 62px;
+            --ih-gap: 0px;
+        }
+
+        body.ui-macos {
+            --ih-top: 10px;
+            --ih-side: 12px;
+            --ih-height: 76px;
+            --ih-gap: 8px;
+        }
+
+        body.ui-aero {
+            --ih-top: 12px;
+            --ih-side: 16px;
+            --ih-height: 76px;
+            --ih-gap: 8px;
         }
         
         #loading-screen, .loading-screen {
@@ -58,6 +71,8 @@
             display: block;
             width: 100%;
             height: 100%;
+            position: relative;
+            z-index: 0;
             filter: saturate(1.08) contrast(1.01);
         }
         .tooltip {
@@ -176,83 +191,1157 @@
             left: 20px;
             display: none;
             align-items: center;
+            gap: 10px;
             z-index: 999;
         }
         .env-controls.visible {
             display: flex;
         }
 
-        .lang-switch--immersive {
-            position: fixed;
-            top: 20px;
-            right: 130px;
-            z-index: 10000;
-            display: inline-flex;
-            gap: 4px;
-            border: 1px solid rgba(255, 255, 255, 0.75);
-            padding: 2px;
-            background: rgba(0, 0, 0, 0.55);
+        body.ui-macos .immersive-header,
+        body.ui-aero .immersive-header {
+            top: var(--ih-top);
+            left: var(--ih-side);
+            right: var(--ih-side);
         }
 
-        .lang-switch--immersive .lang-switch-btn {
+        body.ui-macos .immersive-header-inner,
+        body.ui-aero .immersive-header-inner {
+            position: relative;
+            isolation: isolate;
+            overflow: hidden;
+            flex-wrap: nowrap;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 14px;
+            box-sizing: border-box;
+            transform: translateZ(0);
+        }
+
+        body.ui-macos .immersive-header .lite-title,
+        body.ui-aero .immersive-header .lite-title {
+            position: relative;
+            z-index: 1;
+            flex: 1 1 auto;
+            min-width: 0;
+            text-transform: none;
+        }
+
+        body.ui-macos .immersive-header .header-actions,
+        body.ui-aero .immersive-header .header-actions {
+            margin-left: auto;
+            position: relative;
+            z-index: 1;
+            flex: 0 0 auto;
+            gap: 12px;
+        }
+
+        body.ui-macos .immersive-header .header-content-button,
+        body.ui-aero .immersive-header .header-content-button,
+        body.ui-macos .immersive-header .mode-toggle,
+        body.ui-aero .immersive-header .mode-toggle {
+            -webkit-appearance: none;
+            appearance: none;
+            box-sizing: border-box;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            cursor: pointer;
+            white-space: nowrap;
+            line-height: 1;
+        }
+
+        body.ui-macos .immersive-header {
+            top: var(--ih-top);
+            left: var(--ih-side);
+            right: var(--ih-side);
+        }
+
+        body.ui-macos .immersive-header-inner {
+            min-height: var(--ih-height);
+            padding: 12px 22px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.75);
+            border-bottom: 1px solid rgba(70, 70, 80, 0.4);
+            background:
+                repeating-linear-gradient(
+                    180deg,
+                    rgba(255, 255, 255, 0.12) 0px,
+                    rgba(255, 255, 255, 0.12) 1px,
+                    transparent 1px,
+                    transparent 3px
+                ),
+                linear-gradient(180deg, #f6f6f8 0%, #d8d8de 48%, #c0c0c8 49%, #d2d2d8 100%);
+            backdrop-filter: blur(12px) saturate(140%);
+            -webkit-backdrop-filter: blur(12px) saturate(140%);
+            box-shadow:
+                0 8px 22px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.95);
+            font-family: "Lucida Grande", "Lucida Sans Unicode", "Segoe UI", sans-serif;
+            color: #1b1b1f;
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
+        }
+
+        body.ui-macos .immersive-header-inner::before {
+            content: "";
+            position: absolute;
+            inset: 0 0 auto 0;
+            height: 46%;
+            z-index: 0;
+            border-radius: 10px 10px 0 0;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0));
+            pointer-events: none;
+        }
+
+        body.ui-macos .immersive-header .lite-title-top,
+        body.ui-macos .immersive-header .lite-title-right,
+        body.ui-macos .immersive-header .lite-title-role {
+            color: #1b1b1f;
+            font-family: "Lucida Grande", "Lucida Sans Unicode", "Segoe UI", sans-serif;
+        }
+
+        body.ui-macos .immersive-header .lite-title-role {
+            font-size: clamp(13px, 1vw, 16px);
+        }
+
+        body.ui-macos .immersive-header .lite-title-top,
+        body.ui-macos .immersive-header .lite-title-right {
+            font-weight: 600;
+            font-size: clamp(20px, 1.7vw, 26px);
+        }
+
+        body.ui-macos .immersive-header-handle {
+            border-radius: 0 0 8px 8px;
+            background: linear-gradient(180deg, #d8d8de, #b4b4bc);
+            border: 1px solid rgba(120, 120, 128, 0.55);
+            border-top: none;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22);
+        }
+
+        body.ui-macos .immersive-header-handle span {
+            border-color: #3a3a42;
+        }
+
+        body.ui-macos .immersive-header .header-content-nav {
+            display: inline-flex;
+            align-items: stretch;
+            gap: 0;
+            height: 38px;
+            padding: 0;
+            border-radius: 9px;
+            overflow: hidden;
+            background: #c8c8d0;
+            border: 1px solid #6e6e78;
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.7), 0 1px 1px rgba(0, 0, 0, 0.12);
+        }
+
+        body.ui-macos .immersive-header .header-content-button {
+            min-width: 124px;
+            height: 100%;
+            padding: 0 18px;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0;
+            text-transform: none;
+            color: #1c1c22;
+            border: none;
+            border-right: 1px solid #8a8a94;
+            border-radius: 0;
+            background: linear-gradient(180deg, #f7f7fa 0%, #d8d8e0 48%, #c2c2cc 49%, #d4d4dc 100%);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+        }
+
+        body.ui-macos .immersive-header .header-content-button:last-child {
+            border-right: none;
+        }
+
+        body.ui-macos .immersive-header .header-content-button:hover,
+        body.ui-macos .immersive-header .header-content-button.is-active {
+            color: #fff;
+            border-bottom: none;
+            border-bottom-width: 0;
+            background: linear-gradient(180deg, #f0f7ff 0%, #8ec0f4 18%, #3d8ee0 49%, #1a62b4 50%, #3b8ad8 100%);
+            text-shadow: 0 -1px 0 rgba(20, 50, 90, 0.4);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+        }
+
+        body.ui-macos .immersive-header .lang-switch {
+            border: 1px solid #8a8a94;
+            background: linear-gradient(180deg, #f6f6f8, #c8c8d0);
+            border-radius: 12px;
+            padding: 3px;
+        }
+
+        body.ui-macos .immersive-header .lang-switch-btn {
+            border-radius: 9px;
+            color: #222;
+            text-shadow: none;
+            font-size: 12px;
+            padding: 5px 10px;
+        }
+
+        body.ui-macos .immersive-header .lang-switch-btn.is-active {
+            color: #fff;
+            background: linear-gradient(180deg, #8ec4f5 0%, #2f78c8 50%, #1a5ca8 100%);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+
+        body.ui-macos .immersive-header .mode-toggle {
+            height: 38px;
+            padding: 0 16px;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0;
+            text-transform: none;
+            border-radius: 9px;
+            border: 1px solid #3d6eaa;
+            color: #fff;
+            background: linear-gradient(180deg, #f4f9ff 0%, #b7d4f7 14%, #5b9ee6 49%, #1f6ec0 50%, #4b94de 100%);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 1px 2px rgba(0, 0, 0, 0.22);
+            text-shadow: 0 -1px 0 rgba(20, 50, 90, 0.4);
+        }
+
+        body.ui-macos .immersive-cv-panel {
+            top: calc(var(--ih-top) + var(--ih-height) + var(--ih-gap));
+            right: var(--ih-side);
+            bottom: var(--ih-side);
+            overflow: hidden;
+            border-radius: 8px;
+        }
+
+        body.ui-macos .immersive-projects-panel {
+            width: min(26vw, 320px);
+        }
+
+        body.ui-macos.immersive-cv-open .immersive-header-inner,
+        body.ui-macos.immersive-projects-open .immersive-header-inner {
+            background:
+                repeating-linear-gradient(
+                    180deg,
+                    rgba(255, 255, 255, 0.14) 0px,
+                    rgba(255, 255, 255, 0.14) 1px,
+                    transparent 1px,
+                    transparent 3px
+                ),
+                linear-gradient(180deg, #f4f4f6 0%, #d5d5db 46%, #b8b8c0 47%, #cfcfd6 100%);
+            backdrop-filter: blur(10px) saturate(140%);
+            -webkit-backdrop-filter: blur(10px) saturate(140%);
+        }
+
+        body.ui-macos .immersive-cv-frame,
+        body.ui-macos #immersive-cv-panel .immersive-cv-frame {
+            background:
+                linear-gradient(180deg, rgba(248, 248, 252, 0.22) 0%, rgba(40, 70, 110, 0.42) 100%);
+            backdrop-filter: blur(18px) saturate(150%);
+            -webkit-backdrop-filter: blur(18px) saturate(150%);
+            border: 1px solid rgba(255, 255, 255, 0.55);
+            border-left: 1px solid rgba(255, 255, 255, 0.55);
+            border-radius: 8px;
+            font-family: "Lucida Grande", "Lucida Sans Unicode", "Segoe UI", sans-serif;
+            box-shadow:
+                0 16px 40px rgba(0, 0, 0, 0.38),
+                inset 0 1px 0 rgba(255, 255, 255, 0.65);
+        }
+
+        body.ui-macos .immersive-cv-nav {
+            padding: 10px 14px;
+            background:
+                repeating-linear-gradient(
+                    180deg,
+                    rgba(255, 255, 255, 0.12) 0px,
+                    rgba(255, 255, 255, 0.12) 1px,
+                    transparent 1px,
+                    transparent 3px
+                ),
+                linear-gradient(180deg, rgba(240, 240, 244, 0.55), rgba(170, 170, 180, 0.35));
+            border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+        }
+
+        body.ui-macos .immersive-cv-nav a {
+            text-transform: none;
+            letter-spacing: 0;
+            font-size: 13px;
+            font-weight: 600;
+            opacity: 0.92;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+        }
+
+        body.ui-macos .immersive-projects-list .project-item {
+            border-bottom-color: rgba(255, 255, 255, 0.18);
+        }
+
+        body.ui-macos .immersive-projects-list .project-item:hover {
+            background: rgba(90, 160, 230, 0.22);
+        }
+
+        body.ui-macos .immersive-projects-list .project-item.is-active {
+            background: linear-gradient(180deg, rgba(110, 175, 235, 0.45), rgba(30, 90, 160, 0.4));
+        }
+
+        body.ui-aero .immersive-header {
+            top: var(--ih-top);
+            left: var(--ih-side);
+            right: var(--ih-side);
+        }
+
+        body.ui-aero .immersive-header-inner {
+            min-height: var(--ih-height);
+            padding: 12px 22px 12px 26px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.72);
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0.06) 42%, transparent 42%),
+                linear-gradient(180deg, rgba(70, 185, 210, 0.42) 0%, rgba(20, 110, 150, 0.5) 100%);
+            backdrop-filter: blur(22px) saturate(190%);
+            -webkit-backdrop-filter: blur(22px) saturate(190%);
+            box-shadow:
+                0 6px 18px rgba(0, 40, 70, 0.28),
+                inset 0 1px 0 rgba(255, 255, 255, 0.75),
+                inset 0 -1px 0 rgba(0, 60, 90, 0.2);
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            color: #f3fbff;
+            text-shadow: 0 1px 6px rgba(8, 50, 90, 0.35);
+        }
+
+        body.ui-aero .immersive-header-inner::before,
+        body.ui-aero .immersive-header-inner::after {
+            content: none;
+            display: none;
+        }
+
+        body.ui-aero .immersive-header .lite-title-top,
+        body.ui-aero .immersive-header .lite-title-right,
+        body.ui-aero .immersive-header .lite-title-role {
+            color: #f4fcff;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body.ui-aero .immersive-header .lite-title-role {
+            font-size: clamp(13px, 1vw, 16px);
+        }
+
+        body.ui-aero .immersive-header .lite-title-top,
+        body.ui-aero .immersive-header .lite-title-right {
+            font-weight: 600;
+            font-size: clamp(20px, 1.7vw, 26px);
+        }
+
+        body.ui-aero .immersive-header:not(.is-collapsed) .immersive-header-handle {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        body.ui-aero .immersive-header-handle {
+            width: 56px;
+            height: 12px;
+            border-radius: 0 0 12px 12px;
+            background: linear-gradient(180deg, rgba(160, 220, 240, 0.75), rgba(30, 120, 165, 0.7));
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            border-top: none;
+            box-shadow: none;
+        }
+
+        body.ui-aero .immersive-header .header-content-nav {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        body.ui-aero .immersive-header .header-content-button {
+            min-width: 124px;
+            height: 38px;
+            padding: 0 20px;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0;
+            text-transform: none;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            color: #07344c;
+            background: linear-gradient(180deg, #ffffff 0%, #d2f0ff 40%, #45b0e6 100%);
+            box-shadow: inset 0 1px 0 #fff, 0 3px 8px rgba(16, 90, 140, 0.28);
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.75);
+        }
+
+        body.ui-aero .immersive-header .header-content-button:hover,
+        body.ui-aero .immersive-header .header-content-button.is-active {
+            color: #043224;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.9);
+            border-bottom-width: 1px;
+            background: linear-gradient(180deg, #ffffff 0%, #d2ffe8 38%, #2ec07a 100%);
+            box-shadow: inset 0 1px 0 #fff, 0 3px 10px rgba(16, 120, 80, 0.26);
+        }
+
+        body.ui-aero .immersive-header .mode-toggle {
+            height: 38px;
+            padding: 0 18px;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0;
+            text-transform: none;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.85);
+            color: #07344c;
+            background: linear-gradient(180deg, #ffffff 0%, #d2f0ff 40%, #45b0e6 100%);
+            box-shadow: inset 0 1px 0 #fff, 0 3px 8px rgba(16, 90, 140, 0.28);
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.75);
+        }
+
+        body.ui-aero .immersive-header .mode-toggle:hover {
+            color: #043224;
+            background: linear-gradient(180deg, #ffffff 0%, #d2ffe8 38%, #2ec07a 100%);
+        }
+
+        body.ui-aero .immersive-header .lang-switch {
+            border: 1px solid rgba(255, 255, 255, 0.55);
+            background: rgba(0, 40, 70, 0.22);
+            border-radius: 999px;
+            padding: 3px;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.18);
+        }
+
+        body.ui-aero .immersive-header .lang-switch-btn {
+            border-radius: 999px;
+            color: #eaf7ff;
+            text-shadow: none;
+            font-size: 12px;
+            padding: 5px 10px;
+        }
+
+        body.ui-aero .immersive-header .lang-switch-btn.is-active {
+            color: #fff;
+            background:
+                radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.55), transparent 60%),
+                linear-gradient(180deg, #8ad8ff 0%, #1a88d0 100%);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 0 10px rgba(80, 200, 255, 0.45);
+        }
+
+        body.ui-aero .immersive-cv-panel {
+            top: calc(var(--ih-top) + var(--ih-height) + var(--ih-gap));
+            right: var(--ih-side);
+            bottom: var(--ih-side);
+            overflow: hidden;
+            border-radius: 22px;
+        }
+
+        body.ui-aero .immersive-projects-panel {
+            width: min(26vw, 320px);
+        }
+
+        body.ui-aero.immersive-cv-open .immersive-header-inner,
+        body.ui-aero.immersive-projects-open .immersive-header-inner {
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0.06) 42%, transparent 42%),
+                linear-gradient(180deg, rgba(70, 185, 210, 0.42) 0%, rgba(20, 110, 150, 0.5) 100%);
+            backdrop-filter: blur(22px) saturate(190%);
+            -webkit-backdrop-filter: blur(22px) saturate(190%);
+        }
+
+        body.ui-aero .immersive-cv-frame,
+        body.ui-aero #immersive-cv-panel .immersive-cv-frame {
+            position: relative;
+            background:
+                radial-gradient(120% 80% at 100% 0%, rgba(120, 255, 200, 0.16), transparent 42%),
+                radial-gradient(90% 70% at 0% 0%, rgba(255, 255, 255, 0.28), transparent 50%),
+                linear-gradient(180deg, rgba(210, 245, 255, 0.32) 0%, rgba(40, 140, 200, 0.42) 100%);
+            backdrop-filter: blur(34px) saturate(230%);
+            -webkit-backdrop-filter: blur(34px) saturate(230%);
+            border: 1px solid rgba(255, 255, 255, 0.78);
+            border-left: 1px solid rgba(255, 255, 255, 0.78);
+            border-radius: 22px;
+            overflow: hidden;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            box-shadow:
+                0 0 0 1px rgba(90, 210, 255, 0.2),
+                0 22px 55px rgba(8, 60, 110, 0.45),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            text-shadow: 0 1px 8px rgba(8, 50, 90, 0.4);
+        }
+
+        body.ui-aero .immersive-cv-nav {
+            padding: 12px 16px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.46), rgba(255, 255, 255, 0.06));
+            border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        body.ui-aero .immersive-cv-nav a {
+            text-transform: none;
+            letter-spacing: 0;
+            font-size: 13px;
+            font-weight: 600;
+            opacity: 0.95;
+        }
+
+        body.ui-aero .immersive-projects-list .project-item {
+            border-bottom-color: rgba(255, 255, 255, 0.28);
+        }
+
+        body.ui-aero .immersive-projects-list .project-item:hover {
+            background: rgba(120, 220, 255, 0.16);
+        }
+
+        body.ui-aero .immersive-projects-list .project-item.is-active {
+            background: linear-gradient(180deg, rgba(160, 240, 255, 0.28), rgba(40, 150, 210, 0.28));
+        }
+
+        .immersive-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1300;
+            pointer-events: none;
+            transform: translateY(0);
+            transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .immersive-header.is-collapsed {
+            transform: translateY(-100%);
+        }
+
+        .immersive-header.is-locked {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translateY(-100%);
+        }
+
+        .immersive-header.is-locked .immersive-header-handle,
+        .immersive-header.is-locked .immersive-header-hotzone,
+        .immersive-header.is-locked .immersive-header-inner {
+            pointer-events: none;
+        }
+
+        body:has(#project-panel.visible) .immersive-header,
+        body:has(#project-panel.visible) .immersive-header-inner,
+        body:has(#project-panel.visible) .immersive-header-handle,
+        body:has(#project-panel.visible) .immersive-header-hotzone {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none !important;
+        }
+
+        .immersive-header-inner,
+        .immersive-header-handle,
+        .immersive-header-hotzone {
+            pointer-events: auto;
+        }
+
+        .immersive-header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            min-height: var(--ih-height);
+            padding: 8px 18px;
+            box-sizing: border-box;
+            background: transparent;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+            color: #fff;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+        }
+
+        .immersive-header .lite-title {
+            margin: 0;
+            font-family: "EB Garamond", "Times New Roman", Georgia, serif;
+            line-height: 1;
+            letter-spacing: 0;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .immersive-header .lite-title-top,
+        .immersive-header .lite-title-right {
+            font-size: clamp(21px, 1.65vw, 27px);
+            font-weight: 400;
+            white-space: nowrap;
+        }
+
+        .immersive-header .lite-title-role {
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: clamp(12px, 0.8vw, 14px);
+            text-transform: none;
+            opacity: 0.88;
+        }
+
+        .immersive-header .lang-switch {
+            display: inline-flex;
+            gap: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            padding: 2px;
+            margin-left: 12px;
+        }
+
+        .immersive-header .lang-switch-btn {
             border: none;
             background: transparent;
             color: #fff;
-            font-family: 'Courier New', monospace;
             font-size: 11px;
-            font-weight: bold;
-            padding: 6px 8px;
+            padding: 4px 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .immersive-header .lang-switch-btn.is-active {
+            background: #fff;
+            color: #111;
+        }
+
+        .immersive-header .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            flex-shrink: 0;
+        }
+
+        .immersive-header .header-content-nav {
+            display: flex;
+            gap: 16px;
+        }
+
+        .immersive-header .header-content-button {
+            border: none;
+            border-bottom: 1px solid transparent;
+            background: transparent;
+            color: #fff;
+            font-size: 13px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            padding: 0 2px 4px;
             cursor: pointer;
         }
 
-        .lang-switch--immersive .lang-switch-btn.is-active {
-            background: rgba(255, 255, 255, 0.2);
+        .immersive-header .header-content-button:hover,
+        .immersive-header .header-content-button.is-active {
+            border-bottom-color: #fff;
+            border-bottom-width: 2px;
         }
 
-        .mode-switch-button {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 10000;
-            padding: 9px 12px;
-            border: 1px solid rgba(255, 255, 255, 0.75);
-            background: rgba(0, 0, 0, 0.55);
-            color: #ffffff;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
+        body.ui-macos .immersive-header .header-content-button,
+        body.ui-macos .immersive-header .header-content-button:hover,
+        body.ui-macos .immersive-header .header-content-button.is-active {
+            border-bottom: none;
+            border-bottom-width: 0;
+        }
+
+        body.ui-aero .immersive-header .header-content-button:hover,
+        body.ui-aero .immersive-header .header-content-button.is-active {
+            border-bottom-width: 1px;
+            border-bottom-color: rgba(255, 255, 255, 0.9);
+        }
+
+        .immersive-header .mode-toggle {
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            background: transparent;
+            color: #fff;
+            padding: 6px 12px;
             font-size: 12px;
-            font-weight: bold;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.06em;
             text-transform: uppercase;
             cursor: pointer;
-            transition: background-color 0.2s ease;
         }
 
-        .mode-switch-button:hover {
-            background: rgba(255, 255, 255, 0.1);
+        .immersive-header .mode-toggle:hover {
+            background: rgba(255, 255, 255, 0.12);
         }
 
-        /* Estilo para a notificação inicial */
-        .initial-notification,
+        .immersive-header-hotzone {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 36px;
+            transform: translateY(100%);
+        }
+
+        .immersive-header-handle {
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            transform: translate(-50%, 100%);
+            width: 72px;
+            height: 16px;
+            border: none;
+            border-radius: 0 0 10px 10px;
+            background: rgba(255, 255, 255, 0.14);
+            color: #fff;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .immersive-header-handle span {
+            display: block;
+            width: 10px;
+            height: 10px;
+            border-right: 1.5px solid #fff;
+            border-bottom: 1.5px solid #fff;
+            transform: rotate(45deg) translate(-2px, -2px);
+            opacity: 0.9;
+        }
+
+        .immersive-header.is-collapsed .immersive-header-handle span {
+            transform: rotate(-135deg) translate(-2px, -2px);
+        }
+
+        body.immersive-cv-open .immersive-header,
+        body.immersive-cv-open .immersive-header.is-collapsed,
+        body.immersive-projects-open .immersive-header,
+        body.immersive-projects-open .immersive-header.is-collapsed {
+            transform: none;
+        }
+
+        body.immersive-cv-open .immersive-header-handle,
+        body.immersive-cv-open .immersive-header-hotzone,
+        body.immersive-projects-open .immersive-header-handle,
+        body.immersive-projects-open .immersive-header-hotzone {
+            display: none;
+        }
+
+        body.immersive-cv-open .immersive-header-inner,
+        body.immersive-projects-open .immersive-header-inner {
+            background: transparent;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+
+        .immersive-cv-panel {
+            position: fixed;
+            top: calc(var(--ih-top) + var(--ih-height) + var(--ih-gap));
+            right: var(--ih-side);
+            bottom: 0;
+            left: auto;
+            width: min(44vw, 540px);
+            z-index: 1090;
+            display: none;
+            box-sizing: border-box;
+        }
+
+        .immersive-cv-panel.is-open {
+            display: flex;
+        }
+
+        .immersive-projects-panel {
+            width: min(28vw, 340px);
+        }
+
+        .immersive-cv-frame {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            background: rgba(0, 0, 0, 0.38);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: none;
+            border-left: 1px solid rgba(255, 255, 255, 0.22);
+            color: #fff;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+        }
+
+        #immersive-cv-panel .immersive-cv-frame {
+            background: rgba(0, 0, 0, 0.82);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+        }
+
+        .immersive-cv-nav {
+            margin: 0;
+            padding: 12px 16px 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px 18px;
+            justify-content: flex-start;
+            flex-shrink: 0;
+            background: transparent;
+        }
+
+        .immersive-cv-nav a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 12px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            opacity: 0.75;
+        }
+
+        .immersive-cv-nav a:hover,
+        .immersive-cv-nav a.is-active {
+            opacity: 1;
+            text-decoration: underline;
+            text-underline-offset: 4px;
+        }
+
+        .immersive-cv-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 18px 32px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.38) transparent;
+        }
+
+        .immersive-cv-scroll h2 {
+            margin: 18px 0 10px;
+            font-family: "EB Garamond", "Times New Roman", Georgia, serif;
+            font-size: clamp(20px, 1.4vw, 26px);
+            font-weight: 400;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            border-top: 1px solid rgba(255, 255, 255, 0.22);
+            padding-top: 12px;
+        }
+
+        .immersive-cv-scroll .lite-section:first-child h2 {
+            border-top: none;
+            padding-top: 8px;
+        }
+
+        .immersive-cv-scroll p,
+        .immersive-cv-scroll li {
+            font-size: clamp(15px, 1.05vw, 18px);
+            line-height: 1.4;
+            margin: 0 0 12px;
+        }
+
+        .immersive-cv-scroll .lite-list {
+            margin: 0 0 16px;
+            padding-left: 22px;
+        }
+
+        .immersive-cv-scroll .key-term,
+        .immersive-cv-scroll .exp-item-title,
+        .immersive-cv-scroll .edu-item-title,
+        .immersive-cv-scroll .item-year {
+            font-weight: 500;
+        }
+
+        .immersive-cv-scroll .skill-topic {
+            margin: 16px 0 8px;
+            font-family: "EB Garamond", Georgia, serif;
+            font-size: clamp(18px, 1.2vw, 22px);
+            font-weight: 400;
+        }
+
+        .immersive-cv-scroll .skill-row {
+            margin-bottom: 12px;
+        }
+
+        .immersive-cv-scroll .skill-name,
+        .immersive-cv-scroll .skill-level {
+            font-size: clamp(14px, 1vw, 16px);
+        }
+
+        .immersive-cv-scroll .skill-progress {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .immersive-cv-scroll .skill-track {
+            width: min(280px, 100%);
+            height: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            background: transparent;
+        }
+
+        .immersive-cv-scroll .skill-fill {
+            height: 100%;
+            width: var(--skill-width);
+            background: #fff;
+        }
+
+        .immersive-projects-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.38) transparent;
+        }
+
+        .immersive-cv-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.38) transparent;
+        }
+
+        .immersive-projects-list::-webkit-scrollbar,
+        .immersive-cv-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .immersive-projects-list::-webkit-scrollbar-track,
+        .immersive-cv-scroll::-webkit-scrollbar-track {
+            background: transparent;
+            margin: 8px 0;
+        }
+
+        .immersive-projects-list::-webkit-scrollbar-thumb,
+        .immersive-cv-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.28);
+            border-radius: 999px;
+            border: 1px solid transparent;
+            background-clip: padding-box;
+        }
+
+        .immersive-projects-list::-webkit-scrollbar-thumb:hover,
+        .immersive-cv-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.55);
+            background-clip: padding-box;
+        }
+
+        .immersive-projects-list::-webkit-scrollbar-corner,
+        .immersive-cv-scroll::-webkit-scrollbar-corner {
+            background: transparent;
+        }
+
+        .immersive-projects-empty {
+            margin: 0;
+            padding: 18px;
+            font-size: clamp(14px, 1vw, 16px);
+            line-height: 1.4;
+            opacity: 0.75;
+        }
+
+        .immersive-projects-list .project-item {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+            padding: 14px 18px;
+            cursor: pointer;
+            color: #fff;
+        }
+
+        .immersive-projects-list .project-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .immersive-projects-list .project-item.is-active {
+            background: rgba(0, 0, 0, 0.45);
+        }
+
+        .immersive-projects-list .project-item-title {
+            margin: 0 0 2px;
+            font-family: "EB Garamond", "Times New Roman", Georgia, serif;
+            font-size: clamp(16px, 1.15vw, 20px);
+            font-weight: 400;
+            letter-spacing: 0;
+            line-height: 1.15;
+            text-transform: uppercase;
+        }
+
+        .immersive-projects-list .project-item-meta {
+            margin: 0;
+            font-size: clamp(13px, 0.9vw, 15px);
+            line-height: 1.2;
+            opacity: 0.85;
+        }
+
+        .immersive-projects-list .project-item-description {
+            margin: 8px 0 0;
+            font-size: clamp(14px, 0.95vw, 16px);
+            line-height: 1.35;
+            display: none;
+        }
+
+        .immersive-projects-list .project-item.is-active .project-item-description {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .immersive-cv-panel {
+                width: 100%;
+            }
+        }
+
+        /* Toasts de instrução (bolha iMessage, sem cauda) */
         .navigation-notification,
         .return-notification {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            background-color: rgba(0, 0, 0, 0.8);
-            color: #ffffff;
-            border: none;
-            padding: 15px;
-            border-radius: 10px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            text-align: right;
-            z-index: 9999;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
-            max-width: 250px;
+            z-index: 1200;
             pointer-events: none;
-            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
-            letter-spacing: 1px;
+            background: none;
+            border: none;
+            box-shadow: none;
+            padding: 0;
+            max-width: none;
+            text-align: left;
+            font-size: inherit;
+            letter-spacing: 0;
+            text-shadow: none;
+        }
+
+        .imsg-toast--drag,
+        .imsg-toast--cube,
+        .return-notification {
+            left: auto;
+            right: max(18px, env(safe-area-inset-right, 0px));
+            top: auto;
+            transform: none;
+        }
+
+        .imsg-toast--drag {
+            bottom: max(108px, calc(env(safe-area-inset-bottom, 0px) + 102px));
+        }
+
+        .imsg-toast--cube,
+        .return-notification {
+            bottom: max(54px, calc(env(safe-area-inset-bottom, 0px) + 50px));
+        }
+
+        .head-hint.is-static-msg .head-hint-msg {
+            display: block;
+        }
+
+        .imsg-toast--drag .head-hint,
+        .imsg-toast--cube .head-hint,
+        .return-notification .head-hint {
+            transform: none;
+            animation: head-hint-bob 3.4s ease-in-out infinite;
+        }
+
+        .initial-notification {
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 1200;
+            pointer-events: none;
+            background: none;
+            border: none;
+            box-shadow: none;
+            padding: 0;
+            max-width: none;
+            opacity: 0;
+            transform-origin: left center;
+            will-change: left, top, opacity, transform;
+        }
+
+        .initial-notification.is-left {
+            transform-origin: right center;
+        }
+
+        .initial-notification.is-visible .head-hint {
+            animation: head-hint-pop 0.48s cubic-bezier(0.2, 1.32, 0.36, 1) both, head-hint-bob 3.4s ease-in-out 0.48s infinite;
+        }
+
+        .head-hint {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0;
+            min-width: 58px;
+            max-width: min(72vw, 248px);
+            padding: 10px 15px 11px;
+            background: linear-gradient(165deg, #4da3ff 0%, #0a84ff 42%, #0071e3 100%);
+            color: #fff;
+            border-radius: 999px;
+            filter: drop-shadow(0 10px 22px rgba(0, 82, 204, 0.38));
+            text-align: left;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+            transform: translate(52px, -86%);
+            -webkit-font-smoothing: antialiased;
+            overflow: visible;
+        }
+
+        .head-hint::after {
+            content: "";
+            position: absolute;
+            left: 10px;
+            right: 10px;
+            top: 1px;
+            height: 46%;
+            border-radius: 999px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0));
+            pointer-events: none;
+        }
+
+        .initial-notification.is-left .head-hint {
+            transform: translate(calc(-100% - 52px), -86%);
+        }
+
+        .head-hint-typing {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            height: 18px;
+            padding: 1px 4px;
+        }
+
+        .head-hint-typing span {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.92);
+            animation: head-hint-dot 1.05s ease-in-out infinite;
+        }
+
+        .head-hint-typing span:nth-child(2) { animation-delay: 0.15s; }
+        .head-hint-typing span:nth-child(3) { animation-delay: 0.3s; }
+
+        .head-hint-msg {
+            display: none;
+            margin: 0;
+            font-size: 17px;
+            font-weight: 400;
+            letter-spacing: -0.024em;
+            line-height: 1.27;
+            color: #fff;
+        }
+
+        .initial-notification.is-ready .head-hint-typing {
+            display: none;
+        }
+
+        .initial-notification.is-ready .head-hint-msg {
+            display: block;
+        }
+
+        .head-hint-title,
+        .head-hint-sub {
+            display: inline;
+            margin: 0;
+            font-size: inherit;
+            font-weight: inherit;
+            letter-spacing: inherit;
+            line-height: inherit;
+            color: inherit;
+            text-transform: none;
+            opacity: 1;
+        }
+
+        .head-hint-sub::before {
+            content: " ";
+        }
+
+        @keyframes head-hint-pop {
+            0% { opacity: 0; transform: translate(52px, -86%) scale(0.72); }
+            100% { opacity: 1; transform: translate(52px, -86%) scale(1); }
+        }
+
+        .initial-notification.is-left.is-visible .head-hint {
+            animation-name: head-hint-pop-left, head-hint-bob;
+        }
+
+        @keyframes head-hint-pop-left {
+            0% { opacity: 0; transform: translate(calc(-100% - 52px), -86%) scale(0.72); }
+            100% { opacity: 1; transform: translate(calc(-100% - 52px), -86%) scale(1); }
+        }
+
+        @keyframes head-hint-bob {
+            0%, 100% { margin-top: 0; }
+            50% { margin-top: -6px; }
+        }
+
+        @keyframes head-hint-dot {
+            0%, 80%, 100% { transform: translateY(0); opacity: 0.45; }
+            40% { transform: translateY(-4px); opacity: 1; }
         }
 
         .notification-pulse {
@@ -292,26 +1381,29 @@
         #project-panel {
             position: fixed;
             inset: 0;
-            z-index: 500;
+            z-index: 1400;
             display: none;
-            align-items: center;
+            align-items: stretch;
             justify-content: center;
-            font-family: 'Roboto', sans-serif;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
             background-color: transparent;
+            pointer-events: none;
         }
         #project-panel.visible {
             display: flex;
-            pointer-events: auto;
         }
         #project-panel .project-container {
             position: absolute;
-            width: 90%;
-            height: 75%;
-            top: 52%;
-            transform: translateY(-50%);
+            left: 3%;
+            right: 3%;
+            top: 72px;
+            bottom: 3%;
+            width: auto;
+            height: auto;
+            transform: none;
             background: rgba(0, 0, 0, 0.5);
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-            border-radius: 16px;
+            border-radius: 0;
             display: flex;
             flex-direction: row;
             align-items: flex-start;
@@ -320,6 +1412,7 @@
             backdrop-filter: blur(5px);
             overflow: hidden;
             padding: 20px;
+            pointer-events: auto;
         }
         #project-panel .project-images-container {
             flex: 1;
@@ -339,7 +1432,7 @@
             min-height: 200px;
             position: relative;
             overflow: hidden;
-            border-radius: 8px;
+            border-radius: 0;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             background: rgba(0, 0, 0, 0.4);
         }
@@ -371,7 +1464,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            border-radius: 8px;
+            border-radius: 0;
             display: block;
         }
         #project-panel #panel-carousel-loading-overlay {
@@ -383,7 +1476,7 @@
             align-items: center;
             justify-content: center;
             z-index: 100;
-            border-radius: 8px;
+            border-radius: 0;
             color: #33ff33;
             font-family: 'Courier New', monospace;
             font-size: 16px;
@@ -496,7 +1589,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            border-radius: 8px;
+            border-radius: 0;
             margin: 0;
             display: block;
         }
@@ -523,26 +1616,34 @@
         }
         #project-panel .panel-back-button {
             position: absolute;
-            top: 10px;
-            left: 20px;
-            color: #ffffff;
+            top: 14px;
+            left: 16px;
+            z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 40px;
+            padding: 8px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: 0;
+            background: rgba(0, 0, 0, 0.35);
+            color: #fff;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 12px;
+            font-weight: 400;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
             text-decoration: none;
-            font-size: 18px;
-            font-weight: bold;
-            font-family: 'Courier New', monospace;
-            transition: all 0.3s ease;
-            z-index: 600;
-            background-color: rgba(0, 0, 0, 0.8);
-            padding: 5px 10px;
-            border-radius: 8px;
-            border: none;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
-            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+            text-shadow: none;
+            box-shadow: none;
             cursor: pointer;
+            pointer-events: auto;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
         }
         #project-panel .panel-back-button:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.12);
+            border-color: #fff;
+            transform: none;
         }
         #project-panel .image-upload-container {
             position: absolute;
@@ -740,11 +1841,11 @@
 </head>
 <body>
    <script>
-      // Modo lite como padrão, mas permite entrar no full quando solicitado.
-      var currentMode = localStorage.getItem('portfolio_mode');
-      if (currentMode !== 'full') {
-        window.location.replace('lite.html');
-      }
+     try {
+       var bootUi = localStorage.getItem('immersive_ui_style');
+       if (bootUi === 'macos') document.body.classList.add('ui-macos');
+       if (bootUi === 'aero') document.body.classList.add('ui-aero');
+     } catch (e) {}
    </script>
    <script src="ReLibs/three.min.js"></script>
    <script type="module">
@@ -766,13 +1867,120 @@
 
    <!-- Controles de ambiente HDR (3x Espaço para mostrar) -->
    <div id="envControls" class="env-controls">
-       <button id="skyboxButton" class="skybox-button" data-i18n="immersive.background">FUNDO</button>
+       <button id="skyboxButton" class="skybox-button" type="button" data-i18n="immersive.background">FUNDO</button>
+       <button id="uiStyleButton" class="skybox-button" type="button">macOS</button>
    </div>
-   <div class="lang-switch lang-switch--immersive" role="group" aria-label="Language">
-     <button type="button" class="lang-switch-btn is-active" data-lang="pt" aria-pressed="true">PT</button>
-     <button type="button" class="lang-switch-btn" data-lang="en" aria-pressed="false">EN</button>
-   </div>
-   <button id="goToLiteMode" class="mode-switch-button" type="button" data-i18n="ui.liteMode">Modo Lite</button>
+   <header class="immersive-header is-collapsed is-locked" id="immersiveHeader">
+     <div class="immersive-header-inner">
+       <h1 class="lite-title">
+         <span class="lite-title-top">João</span>
+         <span class="lite-title-right">Nunez</span>
+         <span class="lite-title-role" data-i18n="ui.titleRole">| designer multimídia</span>
+         <div class="lang-switch" role="group" data-i18n-attr="aria-label:ui.langLabel">
+           <button type="button" class="lang-switch-btn is-active" data-lang="pt" aria-pressed="true">PT</button>
+           <button type="button" class="lang-switch-btn" data-lang="en" aria-pressed="false">EN</button>
+         </div>
+       </h1>
+       <div class="header-actions">
+         <nav class="header-content-nav" data-i18n-attr="aria-label:ui.contentNav">
+           <button id="immersiveShowProjects" class="header-content-button" type="button" data-i18n="ui.projects">Projetos</button>
+           <button id="immersiveShowCV" class="header-content-button" type="button" data-i18n="ui.cv">Curriculum</button>
+         </nav>
+         <button id="goToLiteMode" class="mode-toggle" type="button" data-i18n="ui.liteMode">Lite</button>
+       </div>
+     </div>
+     <div class="immersive-header-hotzone" aria-hidden="true"></div>
+     <button type="button" class="immersive-header-handle" id="immersiveHeaderToggle" aria-expanded="false" aria-label="Menu">
+       <span></span>
+     </button>
+   </header>
+   <script>
+     (function () {
+       var UI_STYLES = ['classic', 'macos', 'aero'];
+       var UI_NEXT_LABEL = {
+         classic: { key: 'immersive.uiMacos', fallback: 'macOS' },
+         macos: { key: 'immersive.uiAero', fallback: 'Aero' },
+         aero: { key: 'immersive.uiClassic', fallback: 'Clássico' }
+       };
+       function getImmersiveUiStyle() {
+         try {
+           var stored = localStorage.getItem('immersive_ui_style');
+           if (stored === 'macos' || stored === 'aero') return stored;
+         } catch (e) {}
+         return 'classic';
+       }
+       function currentImmersiveUiStyle() {
+         if (document.body.classList.contains('ui-aero')) return 'aero';
+         if (document.body.classList.contains('ui-macos')) return 'macos';
+         return 'classic';
+       }
+       function updateUiStyleButton() {
+         var btn = document.getElementById('uiStyleButton');
+         if (!btn) return;
+         var next = UI_NEXT_LABEL[currentImmersiveUiStyle()] || UI_NEXT_LABEL.classic;
+         btn.textContent = (window.I18n && typeof I18n.t === 'function') ? I18n.t(next.key) : next.fallback;
+       }
+       function applyImmersiveUiStyle(style) {
+         var next = UI_STYLES.indexOf(style) >= 0 ? style : 'classic';
+         document.body.classList.toggle('ui-macos', next === 'macos');
+         document.body.classList.toggle('ui-aero', next === 'aero');
+         try {
+           localStorage.setItem('immersive_ui_style', next);
+         } catch (e) {}
+         updateUiStyleButton();
+       }
+       window.updateUiStyleButton = updateUiStyleButton;
+       window.applyImmersiveUiStyle = applyImmersiveUiStyle;
+       applyImmersiveUiStyle(getImmersiveUiStyle());
+       var uiStyleButton = document.getElementById('uiStyleButton');
+       if (uiStyleButton) {
+         uiStyleButton.addEventListener('click', function () {
+           var idx = UI_STYLES.indexOf(currentImmersiveUiStyle());
+           applyImmersiveUiStyle(UI_STYLES[(idx + 1) % UI_STYLES.length]);
+           if (window.gsap) {
+             gsap.to(this, { scale: 0.95, duration: 0.1, onComplete: function () {
+               gsap.to(uiStyleButton, { scale: 1, duration: 0.2 });
+             }});
+           }
+         });
+       }
+     })();
+   </script>
+
+   <aside id="immersive-cv-panel" class="immersive-cv-panel">
+     <div class="immersive-cv-frame">
+       <nav class="immersive-cv-nav" data-i18n-attr="aria-label:ui.contentNav">
+         <a href="#immersive-sobre-mim" data-i18n="cv.nav.about">Sobre Mim</a>
+         <a href="#immersive-formacao" data-i18n="cv.nav.education">Formação</a>
+         <a href="#immersive-experiencia" data-i18n="cv.nav.experience">Experiência</a>
+         <a href="#immersive-skills" data-i18n="cv.nav.skills">Skills</a>
+       </nav>
+       <div class="immersive-cv-scroll">
+         <section id="immersive-sobre-mim" class="lite-section">
+           <h2 data-i18n="cv.about.title">Sobre Mim</h2>
+           <div data-i18n-html="cv.about.body"></div>
+         </section>
+         <section id="immersive-formacao" class="lite-section">
+           <h2 data-i18n="cv.nav.education">Formação</h2>
+           <ul class="lite-list" data-i18n-list="cv.education"></ul>
+         </section>
+         <section id="immersive-experiencia" class="lite-section">
+           <h2 data-i18n="cv.nav.experience">Experiência</h2>
+           <ul class="lite-list" data-i18n-list="cv.experience"></ul>
+         </section>
+         <section id="immersive-skills" class="lite-section">
+           <h2 data-i18n="cv.skills.title">Skills</h2>
+           <div id="skills-content" class="skills-group"></div>
+         </section>
+       </div>
+     </div>
+   </aside>
+
+   <aside id="immersive-projects-panel" class="immersive-cv-panel immersive-projects-panel">
+     <div class="immersive-cv-frame">
+       <div id="immersive-projects-list" class="immersive-projects-list" role="list"></div>
+     </div>
+   </aside>
 
   <script src="i18n.js"></script>
   <script>
@@ -785,6 +1993,123 @@
                 localStorage.setItem('portfolio_mode', 'lite');
                 window.location.href = 'lite.html';
             });
+            var cvBtn = document.getElementById('immersiveShowCV');
+            var projectsBtn = document.getElementById('immersiveShowProjects');
+            var cvPanel = document.getElementById('immersive-cv-panel');
+            var projectsPanel = document.getElementById('immersive-projects-panel');
+            var projectsList = document.getElementById('immersive-projects-list');
+            var header = document.getElementById('immersiveHeader');
+            var headerToggle = document.getElementById('immersiveHeaderToggle');
+            var uiHoverCount = 0;
+            var headerHideTimer;
+            function isHeaderLocked() {
+              return !!(header && header.classList.contains('is-locked'));
+            }
+            function setHeaderCollapsed(collapsed) {
+              if (!header) return;
+              header.classList.toggle('is-collapsed', collapsed);
+              if (headerToggle) headerToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            }
+            function collapseImmersiveUi() {
+              setImmersiveView('scene');
+              setHeaderCollapsed(true);
+            }
+            function scheduleCollapseImmersiveUi() {
+              clearTimeout(headerHideTimer);
+              headerHideTimer = setTimeout(function () {
+                if (uiHoverCount > 0 || isHeaderLocked()) return;
+                collapseImmersiveUi();
+              }, 220);
+            }
+            function bindUiHover(el) {
+              if (!el) return;
+              el.addEventListener('mouseenter', function () {
+                uiHoverCount += 1;
+                clearTimeout(headerHideTimer);
+                if (!isHeaderLocked()) setHeaderCollapsed(false);
+              });
+              el.addEventListener('mouseleave', function () {
+                uiHoverCount = Math.max(0, uiHoverCount - 1);
+                scheduleCollapseImmersiveUi();
+              });
+            }
+            function setImmersiveView(view) {
+              var isCv = view === 'cv';
+              var isProjects = view === 'projects';
+              var projectPanel = document.getElementById('project-panel');
+              var projectOpen = projectPanel && projectPanel.classList.contains('visible');
+              if ((isCv || isProjects) && projectOpen && typeof closeProject === 'function') {
+                closeProject();
+                projectOpen = false;
+              }
+              document.body.classList.toggle('immersive-cv-open', isCv);
+              document.body.classList.toggle('immersive-projects-open', isProjects);
+              if (cvPanel) cvPanel.classList.toggle('is-open', isCv);
+              if (projectsPanel) projectsPanel.classList.toggle('is-open', isProjects);
+              if (cvBtn) cvBtn.classList.toggle('is-active', isCv);
+              if (projectsBtn) projectsBtn.classList.toggle('is-active', isProjects);
+              if (isCv || isProjects) setHeaderCollapsed(false);
+              if (isProjects && typeof window.renderImmersiveProjectsList === 'function') {
+                window.renderImmersiveProjectsList();
+              }
+              if (typeof controls !== 'undefined' && controls) {
+                controls.enabled = !projectOpen;
+              }
+            }
+            window.setImmersiveView = setImmersiveView;
+            window.collapseImmersiveUi = collapseImmersiveUi;
+            if (cvBtn) {
+              cvBtn.addEventListener('click', function () {
+                var isOpen = document.body.classList.contains('immersive-cv-open');
+                setImmersiveView(isOpen ? 'scene' : 'cv');
+              });
+            }
+            if (projectsBtn) {
+              projectsBtn.addEventListener('click', function () {
+                var isOpen = document.body.classList.contains('immersive-projects-open');
+                setImmersiveView(isOpen ? 'scene' : 'projects');
+              });
+            }
+            if (projectsList) {
+              projectsList.addEventListener('click', function (event) {
+                var item = event.target.closest('[data-project-id]');
+                if (!item) return;
+                if (typeof window.focusImmersiveProject === 'function') {
+                  window.focusImmersiveProject(item.getAttribute('data-project-id'));
+                }
+              });
+            }
+            if (cvPanel) {
+              Array.prototype.forEach.call(cvPanel.querySelectorAll('.immersive-cv-nav a'), function (link) {
+                link.addEventListener('click', function (event) {
+                  event.preventDefault();
+                  var href = link.getAttribute('href') || '';
+                  var id = href.charAt(0) === '#' ? href.slice(1) : '';
+                  var target = id ? document.getElementById(id) : null;
+                  var scroller = cvPanel.querySelector('.immersive-cv-scroll');
+                  if (target && scroller) {
+                    scroller.scrollTo({ top: Math.max(0, target.offsetTop - 12), behavior: 'smooth' });
+                  }
+                  Array.prototype.forEach.call(cvPanel.querySelectorAll('.immersive-cv-nav a'), function (other) {
+                    other.classList.toggle('is-active', other === link);
+                  });
+                });
+              });
+            }
+            bindUiHover(header);
+            bindUiHover(cvPanel);
+            bindUiHover(projectsPanel);
+            if (headerToggle) {
+              headerToggle.addEventListener('click', function (e) {
+                e.stopPropagation();
+                if (isHeaderLocked()) return;
+                if (header.classList.contains('is-collapsed')) {
+                  setHeaderCollapsed(false);
+                } else {
+                  collapseImmersiveUi();
+                }
+              });
+            }
             }
             function refreshImmersiveProjectsLocale() {
               if (typeof cubeArray !== 'undefined') {
@@ -797,24 +2122,39 @@
                   }
                 });
               }
+              if (typeof window.renderImmersiveProjectsList === 'function') {
+                window.renderImmersiveProjectsList();
+              }
               if (typeof _panelCurrentProjectId !== 'undefined' && _panelCurrentProjectId && typeof _panelLoadProjectData === 'function') {
                 _panelLoadProjectData(_panelCurrentProjectId);
               }
               var cubeNotification = document.getElementById('cube-notification');
               if (cubeNotification) {
-                cubeNotification.innerHTML = i18nT('immersive.cubeHint') + '<br><span style="font-size: 12px; opacity: 0.8;">' + i18nT('immersive.cubeHintSub') + '</span>';
+                var title = cubeNotification.querySelector('.head-hint-title');
+                var sub = cubeNotification.querySelector('.head-hint-sub');
+                if (title) title.textContent = i18nT('immersive.cubeHint');
+                if (sub) sub.textContent = i18nT('immersive.cubeHintSub');
+              }
+              var dragNotification = document.querySelector('.imsg-toast--drag');
+              if (dragNotification) {
+                var dragTitle = dragNotification.querySelector('.head-hint-title');
+                var dragSub = dragNotification.querySelector('.head-hint-sub');
+                if (dragTitle) dragTitle.textContent = i18nT('immersive.dragHint');
+                if (dragSub) dragSub.textContent = i18nT('immersive.dragHintSub');
               }
             }
 
             document.addEventListener('localechange', function () {
               if (window.I18n && typeof I18n.apply === 'function') I18n.apply();
               refreshImmersiveProjectsLocale();
+              if (typeof window.updateUiStyleButton === 'function') window.updateUiStyleButton();
             });
 
             if (window.I18n && typeof I18n.init === 'function') {
               I18n.init().then(function () {
                 bindMode();
                 refreshImmersiveProjectsLocale();
+                if (typeof window.updateUiStyleButton === 'function') window.updateUiStyleButton();
               });
             } else {
               bindMode();
@@ -832,12 +2172,112 @@
           if (window.I18n && typeof I18n.localized === 'function') return I18n.localized(row, field);
           if (field === 'title') return String(row.title || row.nome || '').trim();
           if (field === 'description') return String(row.description || row.descricao || '').trim();
+          if (field === 'subtitle') return String(row.subtitle || row.subtitulo || row.meta || '').trim();
           return '';
         }
 
         function projectDisplayTitle(projectId, projectData) {
           return i18nProject(Object.assign({ docId: projectId, id: projectId }, projectData || {}), 'title') || i18nT('immersive.noTitle');
         }
+
+        var immersiveSelectedProjectId = null;
+
+        function immersiveEscapeHtml(text) {
+          return String(text == null ? '' : text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+        }
+
+        function projectSortOrder(data) {
+          if (!data) return 0;
+          var raw = data.order != null ? data.order : data.ordem != null ? data.ordem : data.position != null ? data.position : data.posicao != null ? data.posicao : 0;
+          var n = Number(raw);
+          return isNaN(n) ? 0 : n;
+        }
+
+        function highlightImmersiveProjectList() {
+          var list = document.getElementById('immersive-projects-list');
+          if (!list) return;
+          var items = list.querySelectorAll('[data-project-id]');
+          for (var i = 0; i < items.length; i++) {
+            items[i].classList.toggle('is-active', items[i].getAttribute('data-project-id') === immersiveSelectedProjectId);
+          }
+        }
+
+        function renderImmersiveProjectsList() {
+          var list = document.getElementById('immersive-projects-list');
+          if (!list || typeof cubeArray === 'undefined') return;
+          var items = cubeArray.slice().sort(function (a, b) {
+            var ao = projectSortOrder(a.userData && a.userData.projectData);
+            var bo = projectSortOrder(b.userData && b.userData.projectData);
+            if (ao !== bo) return ao - bo;
+            var at = projectDisplayTitle(a.userData.projectId, a.userData.projectData);
+            var bt = projectDisplayTitle(b.userData.projectId, b.userData.projectData);
+            return String(at).localeCompare(String(bt), undefined, { sensitivity: 'base' });
+          });
+          if (!items.length) {
+            list.innerHTML = '<p class="immersive-projects-empty">' + immersiveEscapeHtml(i18nT('projects.noneAvailable')) + '</p>';
+            return;
+          }
+          list.innerHTML = items.map(function (cube) {
+            var id = cube.userData.projectId;
+            var data = cube.userData.projectData || {};
+            var row = Object.assign({ docId: id, id: id }, data);
+            var title = projectDisplayTitle(id, data);
+            var meta = i18nProject(row, 'subtitle') || (data.year ? String(data.year) : '');
+            var desc = String(i18nProject(row, 'description') || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+            var active = id === immersiveSelectedProjectId ? ' is-active' : '';
+            return '<article class="project-item' + active + '" data-project-id="' + immersiveEscapeHtml(String(id)) + '" role="listitem">' +
+              '<p class="project-item-title">' + immersiveEscapeHtml(title) + '</p>' +
+              (meta ? '<p class="project-item-meta">' + immersiveEscapeHtml(meta) + '</p>' : '') +
+              (desc ? '<p class="project-item-description">' + immersiveEscapeHtml(desc) + '</p>' : '') +
+              '</article>';
+          }).join('');
+        }
+        window.renderImmersiveProjectsList = renderImmersiveProjectsList;
+
+        function focusImmersiveCube(cube) {
+          if (!cube) return;
+          revealCubesIfNeeded();
+          selectedCube = cube;
+          var cubeCenter = new THREE.Vector3();
+          if (cube.geometry) {
+            cube.geometry.computeBoundingBox();
+            if (cube.geometry.boundingBox) {
+              cube.geometry.boundingBox.getCenter(cubeCenter);
+              cubeCenter.applyMatrix4(cube.matrixWorld);
+            }
+          }
+          if (!isFinite(cubeCenter.x) || (cube.scale && cube.scale.x < 0.05)) {
+            cubeCenter.copy(cube.position);
+          }
+          gsap.to(camera.position, {
+            x: cubeCenter.x,
+            y: cubeCenter.y,
+            z: cubeCenter.z + 2,
+            duration: 2,
+            ease: 'power3.inOut'
+          });
+          if (controls) controls.target.set(cubeCenter.x, cubeCenter.y, cubeCenter.z);
+          cubeFocused = true;
+          immersiveSelectedProjectId = cube.userData.projectId;
+          highlightImmersiveProjectList();
+        }
+
+        function focusImmersiveProject(projectId) {
+          if (!projectId) return;
+          var cube = cubeArray.find(function (c) { return c.userData && c.userData.projectId === projectId; });
+          if (cubeFocused && selectedCube && selectedCube.userData && selectedCube.userData.projectId === projectId) {
+            openProject(projectId);
+            return;
+          }
+          immersiveSelectedProjectId = projectId;
+          highlightImmersiveProjectList();
+          if (cube) focusImmersiveCube(cube);
+        }
+        window.focusImmersiveProject = focusImmersiveProject;
 
         // --- Firebase Configuration ---
         const firebaseConfig = window.PORTFOLIO_FIREBASE_CONFIG;
@@ -880,8 +2320,131 @@
             }
         }
 
+        function applyCubeLoadingGlass(material) {
+            if (!material || material.map) return;
+            material.color.setHex(0xE8F4FF);
+            material.transparent = true;
+            material.opacity = 0.75;
+            material.transmission = 0.92;
+            material.roughness = 0.05;
+            material.metalness = 0;
+            material.thickness = 0.12;
+            material.ior = 1.45;
+            material.clearcoat = 0;
+            material.depthWrite = false;
+            material.needsUpdate = true;
+        }
+
+        function applyCubeFaceTexture(material, texture, fade) {
+            if (!material || !texture) return;
+            if (material.map && material.map !== texture) {
+                try { material.map.dispose(); } catch (e) {}
+            }
+            texture.wrapS = THREE.ClampToEdgeWrapping;
+            texture.wrapT = THREE.ClampToEdgeWrapping;
+            texture.minFilter = THREE.LinearMipmapLinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.colorSpace = THREE.SRGBColorSpace;
+            texture.generateMipmaps = true;
+            if (renderer && renderer.capabilities) {
+                texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+            }
+            material.map = texture;
+            material.transparent = true;
+            material.depthWrite = true;
+            material.roughness = 0.3;
+            material.metalness = 0.02;
+            material.thickness = 0.05;
+            material.clearcoat = 0.15;
+            material.clearcoatRoughness = 0.2;
+            material.needsUpdate = true;
+            if (typeof gsap !== 'undefined') {
+                gsap.killTweensOf(material.color);
+                gsap.killTweensOf(material);
+            }
+            if (fade) {
+                material.color.setHex(0xE8F4FF);
+                material.transmission = 0.62;
+                material.opacity = 0.82;
+                gsap.to(material.color, {
+                    r: 1,
+                    g: 1,
+                    b: 1,
+                    duration: 0.7,
+                    ease: 'power2.out'
+                });
+                gsap.to(material, {
+                    transmission: 0.08,
+                    opacity: 0.98,
+                    duration: 0.7,
+                    ease: 'power2.out'
+                });
+            } else {
+                material.color.setHex(0xffffff);
+                material.transmission = 0.08;
+                material.opacity = 0.98;
+            }
+        }
+
+        function markCubeTexturesReady(cube) {
+            if (!cube || cube.userData.texturesReady) return;
+            cube.userData.texturesReady = true;
+            cube.userData.videoTextureLoaded = true;
+            if (cube.userData.loadingPulse) {
+                cube.userData.loadingPulse.kill();
+                cube.userData.loadingPulse = null;
+            }
+            if (typeof gsap !== 'undefined') gsap.killTweensOf(cube.scale);
+            var mats = Array.isArray(cube.material) ? cube.material : [cube.material];
+            if (mats[0] && mats[0].color) cube.currentHex = mats[0].color.getHex();
+            if (cube.visible) {
+                gsap.to(cube.scale, {
+                    x: 1,
+                    y: 1,
+                    z: 1,
+                    duration: 0.75,
+                    ease: 'power3.out'
+                });
+            }
+        }
+
+        function startCubeLoadingPulse(cube) {
+            if (!cube || cube.userData.texturesReady) return;
+            if (typeof gsap !== 'undefined') gsap.killTweensOf(cube.scale);
+            if (cube.userData.loadingPulse) {
+                cube.userData.loadingPulse.kill();
+                cube.userData.loadingPulse = null;
+            }
+            var mats = Array.isArray(cube.material) ? cube.material : [cube.material];
+            mats.forEach(function (mat) {
+                applyCubeLoadingGlass(mat);
+            });
+            gsap.to(cube.scale, {
+                x: 0.74,
+                y: 0.74,
+                z: 0.74,
+                duration: 0.48,
+                ease: 'power2.out',
+                onComplete: function () {
+                    if (cube.userData.texturesReady) {
+                        gsap.to(cube.scale, { x: 1, y: 1, z: 1, duration: 0.75, ease: 'power3.out' });
+                        return;
+                    }
+                    cube.userData.loadingPulse = gsap.to(cube.scale, {
+                        x: 0.86,
+                        y: 0.86,
+                        z: 0.86,
+                        duration: 0.72,
+                        repeat: -1,
+                        yoyo: true,
+                        ease: 'sine.inOut'
+                    });
+                }
+            });
+        }
+
         // Gera textura a partir do primeiro frame de um vídeo (para cubos sem imagens)
-        function loadCubeTexturesFromVideoFirstFrame(videoUrl, materials) {
+        function loadCubeTexturesFromVideoFirstFrame(videoUrl, materials, cube) {
             return new Promise(function(resolve, reject) {
                 if (!materials || !materials.length) { resolve(); return; }
                 var video = document.createElement('video');
@@ -889,117 +2452,118 @@
                 video.preload = 'metadata';
                 video.muted = true;
                 video.playsInline = true;
-                video.onloadeddata = function() {
-                    video.currentTime = 0;
+                video.onloadedmetadata = function() {
+                    try {
+                        var d = Number(video.duration || 0);
+                        video.currentTime = isFinite(d) && d > 0.2 ? 0.12 : 0;
+                    } catch (e) {
+                        video.currentTime = 0;
+                    }
                 };
                 video.onseeked = function() {
                     try {
                         var w = video.videoWidth || 256;
                         var h = video.videoHeight || 256;
+                        var maxEdge = 256;
+                        var longest = Math.max(w, h);
+                        var scale = longest > maxEdge ? maxEdge / longest : 1;
                         var canvas = document.createElement('canvas');
-                        canvas.width = w;
-                        canvas.height = h;
+                        canvas.width = Math.max(1, Math.round(w * scale));
+                        canvas.height = Math.max(1, Math.round(h * scale));
                         var ctx = canvas.getContext('2d');
-                        ctx.drawImage(video, 0, 0, w, h);
+                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                         var texture = new THREE.CanvasTexture(canvas);
-                        texture.wrapS = THREE.ClampToEdgeWrapping;
-                        texture.wrapT = THREE.ClampToEdgeWrapping;
-                        texture.minFilter = THREE.LinearMipmapLinearFilter;
-                        texture.magFilter = THREE.LinearFilter;
-                        texture.colorSpace = THREE.SRGBColorSpace;
-                        texture.needsUpdate = true;
+                        var fade = !!(cube && cube.visible);
                         for (var i = 0; i < materials.length; i++) {
-                            if (materials[i]) {
-                                materials[i].map = texture;
-                                materials[i].needsUpdate = true;
-                            }
+                            if (materials[i]) applyCubeFaceTexture(materials[i], texture, fade);
                         }
                         resolve();
                     } catch (err) {
                         console.warn('Erro ao extrair primeiro frame do vídeo:', err);
                         reject(err);
                     }
-                    video.src = '';
+                    video.removeAttribute('src');
+                    try { video.load(); } catch (e) {}
                 };
-                video.onerror = function() { reject(new Error('Falha ao carregar vídeo')); video.src = ''; };
+                video.onerror = function() { reject(new Error('Falha ao carregar vídeo')); video.removeAttribute('src'); };
                 video.src = mediaUrl(videoUrl);
                 video.load();
             });
         }
 
+        var cubeVideoTextureQueue = [];
+        var cubeVideoTextureBusy = false;
+        function enqueueCubeVideoTexture(cube) {
+            if (!cube || cube.userData.texturesReady || !cube.userData.firstVideoUrl) return;
+            if (cubeVideoTextureQueue.indexOf(cube) !== -1) return;
+            cubeVideoTextureQueue.push(cube);
+            drainCubeVideoTextureQueue();
+        }
+        function drainCubeVideoTextureQueue() {
+            if (cubeVideoTextureBusy) return;
+            var cube = cubeVideoTextureQueue.shift();
+            if (!cube) return;
+            if (cube.userData.texturesReady || !cube.userData.firstVideoUrl) {
+                drainCubeVideoTextureQueue();
+                return;
+            }
+            cubeVideoTextureBusy = true;
+            loadCubeTexturesFromVideoFirstFrame(cube.userData.firstVideoUrl, cube.material, cube)
+                .catch(function() {})
+                .then(function() {
+                    markCubeTexturesReady(cube);
+                    cubeVideoTextureBusy = false;
+                    drainCubeVideoTextureQueue();
+                });
+        }
+
         // Função para carregar texturas nas faces do cubo
-        function loadCubeTextures(faceImages, materials) {
+        function loadCubeTextures(faceImages, materials, cube) {
             return new Promise((resolve) => {
                 let loadedCount = 0;
                 let errorCount = 0;
                 const totalFaces = 6;
                 const validImages = faceImages.filter(img => img !== null).length;
+                const fade = !!(cube && cube.visible);
                 
-                // Se não houver imagens válidas, resolver imediatamente
                 if (validImages === 0) {
+                    if (cube) markCubeTexturesReady(cube);
                     resolve();
                     return;
                 }
                 
-                // Usar o textureLoader global (definido em init())
                 if (!textureLoader) {
                     textureLoader = new THREE.TextureLoader();
                     textureLoader.setCrossOrigin('anonymous');
                 }
                 
+                function settle() {
+                    if (loadedCount + errorCount < validImages) return;
+                    if (cube) markCubeTexturesReady(cube);
+                    resolve();
+                }
+
                 for (let i = 0; i < totalFaces; i++) {
                     if (faceImages[i] && materials[i]) {
-                        // Tentar carregar textura
                         textureLoader.load(
                             mediaUrl(faceImages[i]),
                             (texture) => {
-                                // Sucesso: configurar textura para melhor qualidade
                                 try {
-                                    texture.wrapS = THREE.ClampToEdgeWrapping;
-                                    texture.wrapT = THREE.ClampToEdgeWrapping;
-                                    texture.minFilter = THREE.LinearMipmapLinearFilter;
-                                    texture.magFilter = THREE.LinearFilter;
-                                    texture.colorSpace = THREE.SRGBColorSpace;
-                                    texture.generateMipmaps = true;
-                                    if (renderer && renderer.capabilities) {
-                                        texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
-                                    }
-                                    
-                                    materials[i].map = texture;
-                                    materials[i].needsUpdate = true;
-                                    
+                                    applyCubeFaceTexture(materials[i], texture, fade);
                                     loadedCount++;
                                 } catch (error) {
                                     console.warn(`Erro ao configurar textura da face ${i}:`, error);
                                     errorCount++;
                                 }
-                                
-                                // Resolver quando todas tentarem carregar
-                                if (loadedCount + errorCount === validImages) {
-                                    resolve();
-                                }
+                                settle();
                             },
-                            undefined, // onProgress
+                            undefined,
                             (error) => {
-                                // Erro ao carregar (CORS, 404, etc.)
                                 console.warn(`Erro ao carregar textura da face ${i} (${faceImages[i]}):`, error);
                                 errorCount++;
-                                
-                                // Manter material padrão (sem textura)
-                                // Não fazer nada, material já está configurado
-                                
-                                // Resolver quando todas tentarem carregar
-                                if (loadedCount + errorCount === validImages) {
-                                    resolve();
-                                }
+                                settle();
                             }
                         );
-                    } else {
-                        // Sem imagem: contar como processado
-                        loadedCount++;
-                        if (loadedCount === totalFaces) {
-                            resolve();
-                        }
                     }
                 }
             });
@@ -1039,48 +2603,29 @@
                  }
              } while ((isTooClose || position.length() < minDistanceFromSphere) && attempts <= MAX_ATTEMPTS); // Check min distance from sphere center too
 
-             // Buscar imagens e carouselItems do Firestore
-             let imageUrls = [];
-             let carouselItems = [];
-             try {
-                 if (db) {
-                     const projectDoc = await db.collection("projetos").doc(projectId).get();
-                     if (projectDoc.exists) {
-                         const data = projectDoc.data() || {};
-                         imageUrls = data.images || [];
-                         carouselItems = (data.carouselItems && Array.isArray(data.carouselItems)) ? data.carouselItems : [];
-                     }
-                 }
-             } catch (error) {
-                 console.warn(`Erro ao buscar dados do projeto ${projectId}:`, error);
-             }
+             // Usar dados já recebidos do listener; evita um get extra por cubo.
+             let imageUrls = (projectData && Array.isArray(projectData.images)) ? projectData.images : [];
+             let carouselItems = (projectData && Array.isArray(projectData.carouselItems)) ? projectData.carouselItems : [];
              
              const faceImages = prepareFaceImages(imageUrls);
-             const firstVideoUrl = carouselItems && carouselItems.length ? (function() {
-                 for (var i = 0; i < carouselItems.length; i++) { if (carouselItems[i].type === 'video' && carouselItems[i].url) return carouselItems[i].url; }
+             const firstVideo = carouselItems && carouselItems.length ? (function() {
+                 for (var i = 0; i < carouselItems.length; i++) {
+                     if (carouselItems[i] && carouselItems[i].type === 'video' && carouselItems[i].url) {
+                         return carouselItems[i];
+                     }
+                 }
                  return null;
              }()) : null;
-             const hasImages = faceImages.some(img => img !== null) || !!firstVideoUrl;
+             const firstVideoUrl = firstVideo ? firstVideo.url : null;
+             const firstVideoPoster = firstVideo && firstVideo.poster ? firstVideo.poster : null;
+             const hasImages = faceImages.some(img => img !== null) || !!firstVideoPoster || !!firstVideoUrl;
              
              // Criar array de 6 materiais (um para cada face)
              // Com imagens: faces com textura, reflexões do ambiente, leve translucidez
              // Sem imagens: vidro translúcido, reflexões do HDR/skybox
             const materials = [];
             for (let i = 0; i < 6; i++) {
-               const matOptions = hasImages ? {
-                    // Cubo com imagem: caixa sólida com “sticker”
-                    color: 0xFFFFFF,
-                    roughness: 0.3,
-                    metalness: 0.02,
-                    transparent: false,
-                    opacity: 1.0,
-                    transmission: 0.0,
-                    thickness: 0.0,
-                    clearcoat: 0.15,
-                    clearcoatRoughness: 0.2,
-                    side: THREE.FrontSide
-                } : {
-                    // Cubo sem imagem: vidro translúcido
+               const matOptions = {
                     color: 0xE8F4FF,
                     roughness: 0.05,
                     metalness: 0,
@@ -1115,6 +2660,10 @@
              };
              // Armazenar se o cubo tem imagens (para animação usar opacidade correta)
              cube.userData.hasImages = hasImages;
+             cube.userData.firstVideoUrl = firstVideoUrl;
+             cube.userData.firstVideoPoster = firstVideoPoster;
+             cube.userData.videoTextureLoaded = false;
+             cube.userData.texturesReady = !hasImages;
              
              // Store original hex color for hover effect reset
              // Para array de materiais, usar o primeiro
@@ -1133,14 +2682,15 @@
             // Cubos começam invisíveis - só aparecem quando clicar na cabeça
             cube.visible = false;
             
-            // Carregar texturas: imagens ou primeiro frame do primeiro vídeo
+            // Texturas leves já; extração de frame de vídeo fica para quando o cubo aparecer.
             if (faceImages.some(function(img) { return img !== null; })) {
-                loadCubeTextures(faceImages, materials).catch(function(error) {
+                loadCubeTextures(faceImages, materials, cube).catch(function(error) {
                     console.warn('Erro ao carregar texturas do cubo ' + projectId + ':', error);
+                    markCubeTexturesReady(cube);
                 });
-            } else if (firstVideoUrl) {
-                loadCubeTexturesFromVideoFirstFrame(firstVideoUrl, materials).catch(function(error) {
-                    console.warn('Erro ao carregar primeiro frame do vídeo do cubo ' + projectId + ':', error);
+            } else if (firstVideoPoster) {
+                loadCubeTextures(prepareFaceImages([firstVideoPoster]), materials, cube).catch(function() {
+                    markCubeTexturesReady(cube);
                 });
             }
         }
@@ -1149,29 +2699,32 @@
         function animateCubeEntry(cube) {
             if (!cube) return;
             
-            // Tornar visível antes da animação
             cube.visible = true;
+            if (!cube.userData.texturesReady && cube.userData.firstVideoPoster && !cube.userData.hasImages) {
+                loadCubeTextures(prepareFaceImages([cube.userData.firstVideoPoster]), cube.material, cube).catch(function() {
+                    markCubeTexturesReady(cube);
+                });
+            } else if (!cube.userData.texturesReady && cube.userData.firstVideoUrl) {
+                enqueueCubeVideoTexture(cube);
+            }
             
-            // Para array de materiais, animar todos
             const materials = Array.isArray(cube.material) ? cube.material : [cube.material];
-            
-            // Verificar se o cubo tem imagens (armazenado no userData)
             const hasImages = cube.userData.hasImages || false;
+            const targetOpacity = cube.userData.texturesReady && hasImages ? 0.98 : 0.75;
             
-            // Opacidade final: 0.98 se tiver imagens, 0.75 se não tiver (vidro)
-            const targetOpacity = hasImages ? 0.98 : 0.75;
+            if (hasImages && !cube.userData.texturesReady) {
+                startCubeLoadingPulse(cube);
+            } else {
+                gsap.to(cube.scale, {
+                    x: 1,
+                    y: 1,
+                    z: 1,
+                    duration: 0.8,
+                    ease: "back.out(1.7)",
+                    delay: 0.1
+                });
+            }
             
-            // Animação de escala (0 → 1)
-            gsap.to(cube.scale, {
-                x: 1,
-                y: 1,
-                z: 1,
-                duration: 0.8,
-                ease: "back.out(1.7)", // Efeito de "bounce"
-                delay: 0.1
-            });
-            
-            // Animação de fade para todos os materiais
             materials.forEach(mat => {
                 gsap.to(mat, {
                     opacity: targetOpacity,
@@ -1186,6 +2739,10 @@
              const index = cubeArray.findIndex(cube => cube.userData.projectId === projectId);
              if (index !== -1) {
                  const cubeToRemove = cubeArray[index];
+                 if (cubeToRemove.userData && cubeToRemove.userData.loadingPulse) {
+                     cubeToRemove.userData.loadingPulse.kill();
+                     cubeToRemove.userData.loadingPulse = null;
+                 }
                  gsap.to(cubeToRemove.scale, { x: 0, y: 0, z: 0, duration: 0.3, ease: "power1.in", onComplete: () => {
                      scene.remove(cubeToRemove);
                      if (cubeToRemove.geometry) cubeToRemove.geometry.dispose();
@@ -1206,8 +2763,11 @@
                      resetCamera(); // Or handle focus reset appropriately
                      cubeFocused = false;
                      selectedCube = null;
+                     immersiveSelectedProjectId = null;
+                     highlightImmersiveProjectList();
                  }
              }
+             if (typeof renderImmersiveProjectsList === 'function') renderImmersiveProjectsList();
         }
 
          // Function to update cube data (e.g., for tooltips)
@@ -1232,10 +2792,22 @@
                  
                  const newImageUrls = projectData.images || [];
                  const newCarouselItems = (projectData.carouselItems && Array.isArray(projectData.carouselItems)) ? projectData.carouselItems : [];
+                 cube.userData.videoTextureLoaded = false;
+                 cube.userData.texturesReady = false;
+                 var nextVideo = null;
+                 for (var ci = 0; ci < newCarouselItems.length; ci++) {
+                     if (newCarouselItems[ci] && newCarouselItems[ci].type === 'video' && newCarouselItems[ci].url) {
+                         nextVideo = newCarouselItems[ci];
+                         break;
+                     }
+                 }
+                 cube.userData.firstVideoUrl = nextVideo ? nextVideo.url : null;
+                 cube.userData.firstVideoPoster = nextVideo && nextVideo.poster ? nextVideo.poster : null;
                  updateCubeTextures(cube, newImageUrls, newCarouselItems);
              } else {
                  console.warn("Cubo não encontrado para atualização:", projectId);
              }
+             if (typeof renderImmersiveProjectsList === 'function') renderImmersiveProjectsList();
         }
 
         // Função para atualizar texturas do cubo
@@ -1244,23 +2816,34 @@
             carouselItems = carouselItems || [];
             
             var faceImages = prepareFaceImages(imageUrls);
-            var firstVideoUrl = null;
-            for (var c = 0; c < carouselItems.length; c++) {
-                if (carouselItems[c].type === 'video' && carouselItems[c].url) { firstVideoUrl = carouselItems[c].url; break; }
+            var firstVideoUrl = cube.userData.firstVideoUrl || null;
+            var firstVideoPoster = cube.userData.firstVideoPoster || null;
+            if (!firstVideoUrl) {
+                for (var c = 0; c < carouselItems.length; c++) {
+                    if (carouselItems[c].type === 'video' && carouselItems[c].url) {
+                        firstVideoUrl = carouselItems[c].url;
+                        firstVideoPoster = carouselItems[c].poster || null;
+                        break;
+                    }
+                }
             }
-            var hasImages = faceImages.some(function(img) { return img !== null; }) || !!firstVideoUrl;
+            var hasImages = faceImages.some(function(img) { return img !== null; }) || !!firstVideoPoster || !!firstVideoUrl;
             
             cube.userData.hasImages = hasImages;
+            if (hasImages) {
+                cube.userData.texturesReady = false;
+                if (cube.visible) startCubeLoadingPulse(cube);
+            } else {
+                markCubeTexturesReady(cube);
+            }
             
             cube.material.forEach(function(mat) {
                 if (hasImages) {
-                    mat.opacity = 0.98;
-                    mat.transmission = 0.08;
-                    mat.roughness = 0.3;
-                    mat.metalness = 0.02;
-                    mat.thickness = 0.05;
-                    mat.clearcoat = 0.15;
-                    mat.clearcoatRoughness = 0.2;
+                    if (mat.map) {
+                        try { mat.map.dispose(); } catch (e) {}
+                        mat.map = null;
+                    }
+                    applyCubeLoadingGlass(mat);
                 } else {
                     mat.opacity = 0.75;
                     mat.transmission = 0.92;
@@ -1269,15 +2852,19 @@
                     mat.thickness = 0.12;
                     mat.ior = 1.45;
                     mat.clearcoat = 0;
+                    mat.color.setHex(0xE8F4FF);
                 }
-                mat.color.setHex(hasImages ? 0xFFFFFF : 0xE8F4FF);
                 mat.needsUpdate = true;
             });
             
             if (faceImages.some(function(img) { return img !== null; })) {
-                await loadCubeTextures(faceImages, cube.material);
-            } else if (firstVideoUrl) {
-                await loadCubeTexturesFromVideoFirstFrame(firstVideoUrl, cube.material).catch(function() {});
+                await loadCubeTextures(faceImages, cube.material, cube);
+            } else if (firstVideoPoster) {
+                await loadCubeTextures(prepareFaceImages([firstVideoPoster]), cube.material, cube);
+            } else if (firstVideoUrl && cube.visible) {
+                enqueueCubeVideoTexture(cube);
+            } else if (!hasImages) {
+                markCubeTexturesReady(cube);
             }
         }
 
@@ -1370,6 +2957,7 @@
                        removeCube(projectId); // Remove o cubo da cena
                     }
                 });
+                if (typeof renderImmersiveProjectsList === 'function') renderImmersiveProjectsList();
             }, (error) => {
                 console.error("Erro ao ouvir mudanças no Firestore:", error);
                 // Se o listener falhar, tentar criar manualmente do JSON
@@ -1403,6 +2991,7 @@
                         
                         createAndAddCube(project.id, project); // Esta função define visible = false
                     });
+                    if (typeof renderImmersiveProjectsList === 'function') renderImmersiveProjectsList();
                 })
                 .catch(error => {
                     console.error("Erro ao carregar projects.json para criação manual:", error);
@@ -1434,6 +3023,7 @@
             defaultProjects.forEach(project => {
                 createAndAddCube(project.id, project); // Esta função define visible = false
             });
+            if (typeof renderImmersiveProjectsList === 'function') renderImmersiveProjectsList();
         }
         // --- Fim Novas Funções Firebase ---
 
@@ -1449,6 +3039,14 @@
         var headHitbox;
         var mixer;
         var headClicked = false;
+        var _hintWorld;
+        var _hintRight;
+        var _hintFwd;
+        var _hintEl;
+        var _hintSx;
+        var _hintSy;
+        var _hintSc;
+        var _hintReady;
         var mouseDown = false;
         var clock = new THREE.Clock();
         var isAdminLoggedIn = false;
@@ -1519,6 +3117,7 @@
                         document.body.removeChild(loadingScreen);
                         loadingScreen = null;
                     }
+                    showHeadChatBubble();
                 }, 300);
             }, 0); // Sem delay - transição imediata
         }
@@ -1541,69 +3140,190 @@
         'desertdawn/desertdawn_up.jpg', 'desertdawn/desertdawn_dn.jpg',
         'desertdawn/desertdawn_rt.jpg', 'desertdawn/desertdawn_lf.jpg'
     ],
-    // Novo conjunto de skybox adicionado corretamente como um array separado
-    [
-        'Park2/posx.jpg', 'Park2/negx.jpg', 
-        'Park2/posy.jpg', 'Park2/negy.jpg',
-        'Park2/posz.jpg', 'Park2/negz.jpg'
-    ],		  
 		   [
         'Rainbow/rainbow_ft.png', 'Rainbow/rainbow_bk.png',
         'Rainbow/rainbow_up.png', 'Rainbow/rainbow_dn.png',
         'Rainbow/rainbow_rt.png', 'Rainbow/rainbow_lf.png'
-    ],
-		[
-        'Lycksele3/posx.jpg', 'Lycksele3/negx.jpg', 
-        'Lycksele3/posy.jpg', 'Lycksele3/negy.jpg',
-        'Lycksele3/posz.jpg', 'Lycksele3/negz.jpg'
     ]
-		  
-		  
-		  
-    // Adicione mais conjuntos de skybox aqui conforme necessário, cada um como seu próprio array
 ];
 			
-      // Pesos para cada skybox (na mesma ordem de skyboxes)
-      // Valores maiores = aparecem com mais frequência.
-      // Aumentamos o peso do desertdawn (índice 0) para aparecer mais vezes.
-      // Ordem: [desertdawn, Park2, Rainbow, Lycksele3]
-      var skyboxWeights = [5, 1, 3, 1];
+      var skyboxWeights = [5, 3];
+        var skyboxTextures = [];
+        var currentSkyIndex = -1;
+        var worldSkyMesh = null;
+        var worldSkyMat = null;
+        var skyZapBusy = false;
+        var skyCycleTimer = null;
+        var SKYBOX_CYCLE_MS = 60000;
 
-        // Função para carregar cubemap apenas como fundo (environment vem do HDR)
-        function loadSkyboxBackground() {
-            // Escolha ponderada de skybox com base em skyboxWeights
+        function pickWeightedSkyboxIndex() {
             var totalWeight = skyboxWeights.reduce(function(sum, w) { return sum + w; }, 0);
             var r = Math.random() * totalWeight;
             var accumulated = 0;
-            var selectedIndex = 0;
             for (var i = 0; i < skyboxWeights.length; i++) {
                 accumulated += skyboxWeights[i];
-                if (r <= accumulated) {
-                    selectedIndex = i;
-                    break;
-                }
+                if (r <= accumulated) return i;
             }
-            var selectedSkybox = skyboxes[selectedIndex];
-            var loader = new THREE.CubeTextureLoader();
-            loader.load(
-                selectedSkybox, 
-                function(texture) {
-                    scene.background = texture;
-                    onEnvLoadComplete();
+            return 0;
+        }
+
+        function ensureWorldSkybox() {
+            if (worldSkyMesh) return;
+            worldSkyMat = new THREE.ShaderMaterial({
+                uniforms: {
+                    tFrom: { value: null },
+                    tTo: { value: null },
+                    uProgress: { value: 0 },
+                    uTime: { value: 0 }
                 },
-                // Callback de progresso do skybox
-                function(xhr) {
-                    if (xhr.lengthComputable && xhr.total > 0) {
-                        // Atualizar progresso do skybox (0-100%)
-                        loadingProgress.skybox = (xhr.loaded / xhr.total) * 100;
-                        updateLoadingProgress();
-                    }
-                },
-                function(error) {
-                    console.error('Erro ao carregar skybox:', error);
-                    onEnvLoadComplete();
+                vertexShader: [
+                    'varying vec3 vDir;',
+                    'void main() {',
+                    '  vDir = position;',
+                    '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
+                    '}'
+                ].join('\n'),
+                fragmentShader: [
+                    'uniform samplerCube tFrom;',
+                    'uniform samplerCube tTo;',
+                    'uniform float uProgress;',
+                    'uniform float uTime;',
+                    'varying vec3 vDir;',
+                    'float hash(vec2 p) {',
+                    '  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);',
+                    '}',
+                    'vec3 sat(vec3 c, float s) {',
+                    '  float l = dot(c, vec3(0.2126, 0.7152, 0.0722));',
+                    '  return mix(vec3(l), c, s);',
+                    '}',
+                    'void main() {',
+                    '  vec3 dir = normalize(vDir);',
+                    '  float p = clamp(uProgress, 0.0, 1.0);',
+                    '  float n = hash(gl_FragCoord.xy + vec2(uTime * 60.0, uTime * 17.0));',
+                    '  float n2 = hash(gl_FragCoord.yx * 1.7 + uTime * 90.0);',
+                    '  float zap = smoothstep(0.02, 0.12, p) * smoothstep(0.98, 0.82, p);',
+                    '  dir.x += (n - 0.5) * 0.08 * zap;',
+                    '  dir.y += sin(gl_FragCoord.y * 0.35 + uTime * 28.0) * 0.05 * zap;',
+                    '  dir.y += (p - 0.5) * 0.22 * zap;',
+                    '  float cut = step(0.38 + (n - 0.5) * 0.28, p);',
+                    '  float shift = (0.08 + 0.05 * sin(uTime * 14.0)) * max(zap, 0.15 * p);',
+                    '  vec3 dR = normalize(dir + vec3(shift, 0.015 * zap, 0.0));',
+                    '  vec3 dG = normalize(dir + vec3(0.0, -0.04 * zap, 0.0));',
+                    '  vec3 dB = normalize(dir + vec3(-shift, 0.02 * zap, 0.0));',
+                    '  vec3 fromR = textureCube(tFrom, dR).rgb;',
+                    '  vec3 fromG = textureCube(tFrom, dG).rgb;',
+                    '  vec3 fromB = textureCube(tFrom, dB).rgb;',
+                    '  vec3 toR = textureCube(tTo, dR).rgb;',
+                    '  vec3 toG = textureCube(tTo, dG).rgb;',
+                    '  vec3 toB = textureCube(tTo, dB).rgb;',
+                    '  vec3 col;',
+                    '  col.r = mix(fromR.r, toR.r, cut);',
+                    '  col.g = mix(fromG.g, toG.g, cut);',
+                    '  col.b = mix(fromB.b, toB.b, cut);',
+                    '  col = sat(col, 1.28 + zap * 0.7);',
+                    '  float bars = step(0.9, fract(gl_FragCoord.y * 0.08 + uTime * 4.0));',
+                    '  col = mix(col, col * vec3(1.25, 0.4, 1.35), bars * zap * 0.4);',
+                    '  vec3 snow = sat(vec3(col.r * n, col.g * n2, col.b * fract(n + n2)), 2.0);',
+                    '  col = mix(col, snow, zap * 0.22);',
+                    '  gl_FragColor = vec4(col, 1.0);',
+                    '}'
+                ].join('\n'),
+                side: THREE.BackSide,
+                depthWrite: false,
+                depthTest: false,
+                fog: false
+            });
+            worldSkyMesh = new THREE.Mesh(new THREE.BoxGeometry(20, 20, 20), worldSkyMat);
+            worldSkyMesh.frustumCulled = false;
+            worldSkyMesh.renderOrder = -1000;
+            scene.add(worldSkyMesh);
+        }
+
+        function applyWorldSkybox(texture, withZap) {
+            if (!texture) return;
+            ensureWorldSkybox();
+            scene.background = null;
+            if (texture.colorSpace !== undefined) texture.colorSpace = THREE.SRGBColorSpace;
+            if (!worldSkyMat.uniforms.tFrom.value || !withZap) {
+                worldSkyMat.uniforms.tFrom.value = texture;
+                worldSkyMat.uniforms.tTo.value = texture;
+                worldSkyMat.uniforms.uProgress.value = 0;
+                skyZapBusy = false;
+                return;
+            }
+            if (worldSkyMat.uniforms.tFrom.value === texture) return;
+            skyZapBusy = true;
+            if (typeof gsap !== 'undefined') gsap.killTweensOf(worldSkyMat.uniforms.uProgress);
+            worldSkyMat.uniforms.tTo.value = texture;
+            worldSkyMat.uniforms.uProgress.value = 0;
+            gsap.to(worldSkyMat.uniforms.uProgress, {
+                value: 1,
+                duration: 1.15,
+                ease: 'power1.inOut',
+                onComplete: function () {
+                    worldSkyMat.uniforms.tFrom.value = texture;
+                    worldSkyMat.uniforms.uProgress.value = 0;
+                    skyZapBusy = false;
                 }
-            );
+            });
+        }
+
+        function loadSkyboxTexture(index) {
+            return new Promise(function (resolve, reject) {
+                if (skyboxTextures[index]) {
+                    resolve(skyboxTextures[index]);
+                    return;
+                }
+                var loader = new THREE.CubeTextureLoader();
+                loader.load(
+                    skyboxes[index],
+                    function (texture) {
+                        if (texture.colorSpace !== undefined) texture.colorSpace = THREE.SRGBColorSpace;
+                        skyboxTextures[index] = texture;
+                        resolve(texture);
+                    },
+                    undefined,
+                    function (error) {
+                        reject(error);
+                    }
+                );
+            });
+        }
+
+        function startSkyboxChannelCycle() {
+            if (skyCycleTimer || skyboxes.length < 2) return;
+            skyCycleTimer = setInterval(function () {
+                cycleSkyboxChannel();
+            }, SKYBOX_CYCLE_MS);
+        }
+
+        function cycleSkyboxChannel() {
+            if (!skyboxes.length || skyZapBusy) return;
+            var next = currentSkyIndex < 0 ? pickWeightedSkyboxIndex() : (currentSkyIndex + 1) % skyboxes.length;
+            if (next === currentSkyIndex && skyboxes.length > 1) {
+                next = (next + 1) % skyboxes.length;
+            }
+            var isFirst = currentSkyIndex < 0;
+            loadSkyboxTexture(next).then(function (texture) {
+                currentSkyIndex = next;
+                applyWorldSkybox(texture, !isFirst);
+                if (isFirst) onEnvLoadComplete();
+                startSkyboxChannelCycle();
+                var lookahead = (next + 1) % skyboxes.length;
+                loadSkyboxTexture(lookahead).catch(function () {});
+            }).catch(function (error) {
+                console.error('Erro ao carregar skybox:', error);
+                if (isFirst) onEnvLoadComplete();
+            });
+        }
+
+        // Função para carregar cubemap apenas como fundo (environment vem do HDR)
+        function loadSkyboxBackground() {
+            if (currentSkyIndex >= 0) {
+                cycleSkyboxChannel();
+                return;
+            }
+            cycleSkyboxChannel();
         }
 
         // Contador para saber quando HDR e background terminaram
@@ -1668,7 +3388,18 @@
             }
         }
 
-        // Aplica envMapIntensity aos materiais (usado por skybox e HDR)
+        // Aparência da cabeça alinhada ao modo Lite (estúdio, pouco IBL).
+        function applyLiteHeadMaterial(mat, envTexture) {
+            if (!mat || !(mat.isMeshStandardMaterial || mat.isMeshPhysicalMaterial)) return;
+            if (envTexture) {
+                mat.envMap = envTexture;
+                mat.envMapIntensity = 0.4;
+            }
+            if (mat.roughness !== undefined) mat.roughness = Math.max(mat.roughness || 0, 0.55);
+            if (mat.metalness !== undefined) mat.metalness = Math.min(mat.metalness || 0, 0.15);
+            mat.needsUpdate = true;
+        }
+
         function applyEnvMapIntensityToScene(texture) {
             var isCubeMesh = function(mesh) {
                 return cubeArray && cubeArray.some(function(c) { return c === mesh; });
@@ -1676,15 +3407,13 @@
             scene.traverse(function(child) {
                 if (child.isMesh && child.material) {
                     var mats = Array.isArray(child.material) ? child.material : [child.material];
-                    var name = (child.name || '').toLowerCase();
-                    var isEye = name.includes('eye') || name.includes('olho');
                     var isHeadModel = !isCubeMesh(child);
-                    var intensity = isEye ? 0.7 : (isHeadModel ? 0.8 : 1.7);
                     mats.forEach(function(mat) {
-                        if (mat && (mat.isMeshStandardMaterial || mat.isMeshPhysicalMaterial)) {
+                        if (isHeadModel) {
+                            applyLiteHeadMaterial(mat, texture);
+                        } else if (mat && (mat.isMeshStandardMaterial || mat.isMeshPhysicalMaterial)) {
                             mat.envMap = texture;
-                            mat.envMapIntensity = intensity;
-                            if (isHeadModel && mat.roughness !== undefined) mat.roughness = Math.max(mat.roughness || 0.5, 0.5);
+                            mat.envMapIntensity = 1.7;
                             mat.needsUpdate = true;
                         }
                     });
@@ -1751,23 +3480,14 @@
                     model.add(headHitbox);
                     
                     // Aplicar envMapIntensity ao modelo (caso HDR já tenha carregado)
-                    if (scene.environment) {
-                        model.traverse(function(child) {
-                            if (child.isMesh && child.material) {
-                                var mats = Array.isArray(child.material) ? child.material : [child.material];
-                                var name = (child.name || '').toLowerCase();
-                                var isEye = name.includes('eye') || name.includes('olho');
-                                var intensity = isEye ? 0.7 : 0.8;
-                                mats.forEach(function(mat) {
-                                    if (mat && (mat.isMeshStandardMaterial || mat.isMeshPhysicalMaterial)) {
-                                        mat.envMap = scene.environment;
-                                        mat.envMapIntensity = intensity;
-                                        if (!isEye && mat.roughness !== undefined) mat.roughness = Math.max(mat.roughness || 0.5, 0.5);
-                                    }
-                                });
-                            }
-                        });
-                    }
+                    model.traverse(function(child) {
+                        if (child.isMesh && child.material) {
+                            var mats = Array.isArray(child.material) ? child.material : [child.material];
+                            mats.forEach(function(mat) {
+                                applyLiteHeadMaterial(mat, scene.environment || null);
+                            });
+                        }
+                    });
                     
                     markComponentComplete('model');
                     stopBlinking();
@@ -1777,7 +3497,7 @@
                         mixer.clipAction(clip).play();
                     });
 
-                    animateCameraToPosition(0, 0, 5);
+                    animateCameraToPosition(0, 0, 5.8);
                     loadHDREnvironment();
                     loadSkyboxBackground();
             }
@@ -1828,7 +3548,7 @@
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             renderer.outputColorSpace = THREE.SRGBColorSpace;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 1;
+            renderer.toneMappingExposure = 0.9;
             document.body.appendChild(renderer.domElement);
 
             // TextureLoader global com CORS configurado
@@ -1836,7 +3556,7 @@
             textureLoader.setCrossOrigin('anonymous');
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.minDistance = 6.5;
+            controls.minDistance = 5.7;
             controls.maxDistance = 8;
             controls.enablePan = false;
 			
@@ -1873,14 +3593,82 @@
             animate();
         }
 	  
-function handleHeadClick() {
-    // Remover a notificação se ainda estiver presente
+function updateHeadChatBubble() {
+    var el = _hintEl || document.querySelector('.initial-notification');
+    _hintEl = el;
+    if (!el || headClicked || !headHitbox || !camera) return;
+    if (!_hintWorld) {
+        _hintWorld = new THREE.Vector3();
+        _hintRight = new THREE.Vector3();
+        _hintFwd = new THREE.Vector3();
+    }
+    headHitbox.getWorldPosition(_hintWorld);
+    var dist = camera.position.distanceTo(_hintWorld);
+    camera.getWorldDirection(_hintFwd);
+    _hintRight.copy(_hintWorld).sub(camera.position);
+    if (_hintRight.dot(_hintFwd) < 0.25) {
+        el.style.visibility = 'hidden';
+        _hintReady = false;
+        return;
+    }
+    _hintRight.setFromMatrixColumn(camera.matrixWorld, 0).normalize();
+    _hintWorld.addScaledVector(_hintRight, 2.05);
+    _hintWorld.y -= 0.12;
+    _hintWorld.project(camera);
+    if (_hintWorld.z > 1) {
+        el.style.visibility = 'hidden';
+        _hintReady = false;
+        return;
+    }
+    var x = (_hintWorld.x * 0.5 + 0.5) * window.innerWidth;
+    var y = (-_hintWorld.y * 0.5 + 0.5) * window.innerHeight;
+    var placeLeft = x > window.innerWidth * 0.64;
+    var scale = Math.max(0.82, Math.min(1.14, 6.8 / dist));
+    if (placeLeft !== el.classList.contains('is-left')) {
+        _hintReady = false;
+    }
+    if (!_hintReady) {
+        _hintSx = x;
+        _hintSy = y;
+        _hintSc = scale;
+        _hintReady = true;
+    } else {
+        _hintSx += (x - _hintSx) * 0.16;
+        _hintSy += (y - _hintSy) * 0.16;
+        _hintSc += (scale - _hintSc) * 0.12;
+    }
+    el.classList.toggle('is-left', placeLeft);
+    el.style.visibility = 'visible';
+    el.style.left = Math.round(_hintSx) + 'px';
+    el.style.top = Math.round(_hintSy) + 'px';
+    el.style.transform = 'scale(' + _hintSc.toFixed(3) + ')';
+}
+
+function showHeadChatBubble() {
+    if (headClicked) return;
+    var el = document.querySelector('.initial-notification');
+    if (!el) return;
+    _hintEl = el;
+    _hintReady = false;
+    updateHeadChatBubble();
+    el.classList.add('is-visible');
+    gsap.to(el, {
+        opacity: 1,
+        duration: 0.35,
+        ease: 'power2.out'
+    });
+    window.setTimeout(function () {
+        if (headClicked || !el.parentNode) return;
+        el.classList.add('is-ready');
+    }, 1100);
+}
+
+function hideHeadHintNotification() {
     var notification = document.querySelector('.initial-notification');
     if (notification) {
         gsap.to(notification, {
             opacity: 0,
-            y: -20,
-            duration: 0.5,
+            duration: 0.4,
             ease: "power3.in",
             onComplete: function() {
                 if (notification.parentNode) {
@@ -1889,29 +3677,45 @@ function handleHeadClick() {
             }
         });
     }
+}
 
-    // Marcar que já clicou na cabeça
+function revealCubesIfNeeded() {
+    if (headClicked) return;
+    hideHeadHintNotification();
     headClicked = true;
-
-    // Tornar todos os cubos visíveis com animação
-    cubeArray.forEach(cube => {
-        // Usar a função de animação que já existe
+    var header = document.getElementById('immersiveHeader');
+    if (header) header.classList.remove('is-locked');
+    cubeArray.forEach(function (cube) {
         animateCubeEntry(cube);
     });
-
-    // Mostrar a notificação de navegação após um pequeno atraso
     setTimeout(function() {
         showNavigationNotification();
     }, 1000);
+}
+
+function handleHeadClick() {
+    revealCubesIfNeeded();
+
+    if (typeof gsap !== 'undefined') {
+        gsap.killTweensOf(camera.position);
+        gsap.killTweensOf(camera.quaternion);
+    }
+    if (controls) {
+        controls.minDistance = 6.5;
+        controls.maxDistance = 8;
+    }
 
     gsap.to(camera.position, {
         x: initialCameraPosition.x,
         y: initialCameraPosition.y,
         z: initialCameraPosition.z,
-        duration: 2,
+        duration: 1.6,
         ease: "power3.inOut",
         onUpdate: function() {
             camera.lookAt(scene.position);
+        },
+        onComplete: function() {
+            if (controls) controls.update();
         }
     });
 
@@ -1920,89 +3724,103 @@ function handleHeadClick() {
         y: initialCameraQuaternion.y,
         z: initialCameraQuaternion.z,
         w: initialCameraQuaternion.w,
-        duration: 2,
+        duration: 1.6,
         ease: "power3.inOut"
     });
-    
-    // Adicionar nova notificação após o clique na cabeça
-    setTimeout(function() {
-        showNavigationNotification();
-    }, 1000); // Espera 1 segundo após o clique para mostrar a nova notificação
+
+    if (controls) {
+        gsap.to(controls.target, {
+            x: scene.position.x,
+            y: scene.position.y,
+            z: scene.position.z,
+            duration: 1.6,
+            ease: "power3.inOut"
+        });
+    }
 }
 
 // Função para mostrar a notificação de navegação
+function buildImsgBubbleHtml() {
+    return '<div class="head-hint is-static-msg"><p class="head-hint-msg"><span class="head-hint-title"></span><span class="head-hint-sub"></span></p></div>';
+}
+
+function fillImsgBubble(root, title, sub) {
+    var titleEl = root.querySelector('.head-hint-title');
+    var subEl = root.querySelector('.head-hint-sub');
+    if (titleEl) titleEl.textContent = title;
+    if (subEl) subEl.textContent = sub;
+}
+
 function showNavigationNotification() {
-    // Criar o elemento de notificação para navegação
+    if (document.querySelector('.imsg-toast--drag') || document.getElementById('cube-notification')) return;
+
     var notification = document.createElement('div');
-    notification.className = 'navigation-notification notification-pulse';
-    notification.innerHTML = 'CLIQUE E ARRASTE<br><span style="font-size: 12px; opacity: 0.8;">para navegar pelo ambiente</span>';
-    notification.style.opacity = "0";
+    notification.className = 'navigation-notification imsg-toast--drag';
+    notification.innerHTML = buildImsgBubbleHtml();
+    fillImsgBubble(notification, i18nT('immersive.dragHint'), i18nT('immersive.dragHintSub'));
+    notification.style.opacity = '0';
     document.body.appendChild(notification);
-    
-    // Criar o elemento de notificação para "Clique no cubo para abrir um projeto"
+
     var cubeNotification = document.createElement('div');
     cubeNotification.id = 'cube-notification';
-    cubeNotification.className = 'navigation-notification notification-pulse';
-    cubeNotification.innerHTML = i18nT('immersive.cubeHint') + '<br><span style="font-size: 12px; opacity: 0.8;">' + i18nT('immersive.cubeHintSub') + '</span>';
-    cubeNotification.style.opacity = "0";
-    cubeNotification.style.top = "80px"; // Posicionar abaixo da primeira notificação
+    cubeNotification.className = 'navigation-notification imsg-toast--cube';
+    cubeNotification.innerHTML = buildImsgBubbleHtml();
+    fillImsgBubble(cubeNotification, i18nT('immersive.cubeHint'), i18nT('immersive.cubeHintSub'));
+    cubeNotification.style.opacity = '0';
     document.body.appendChild(cubeNotification);
-    
-    // Forçar um reflow
-    void notification.offsetWidth;
-    void cubeNotification.offsetWidth;
-    
-    // Animar a entrada das notificações
+
     gsap.to(notification, {
         opacity: 1,
-        scale: 1,
-        duration: 0.2,
-        ease: "power3.out"
+        duration: 0.35,
+        ease: 'power2.out'
     });
-    
     gsap.to(cubeNotification, {
         opacity: 1,
-        scale: 1,
-        duration: 0.2,
-        delay: 0.2,
-        ease: "power3.out"
+        duration: 0.35,
+        delay: 0.15,
+        ease: 'power2.out'
     });
-    
-    // Configurar o timeout para remover as notificações
+
     setTimeout(function() {
         gsap.to(notification, {
             opacity: 0,
-            y: -20,
-            duration: 0.2,
-            ease: "power3.in",
+            duration: 0.35,
+            ease: 'power2.in',
             onComplete: function() {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
+                if (notification.parentNode) notification.parentNode.removeChild(notification);
             }
         });
-        
         gsap.to(cubeNotification, {
             opacity: 0,
-            y: -20,
-            duration: 0.2,
-            ease: "power3.in",
+            duration: 0.35,
+            ease: 'power2.in',
             onComplete: function() {
-                if (cubeNotification.parentNode) {
-                    cubeNotification.parentNode.removeChild(cubeNotification);
-                }
+                if (cubeNotification.parentNode) cubeNotification.parentNode.removeChild(cubeNotification);
             }
         });
-    }, 3000);
+    }, 4500);
 }
 
         function addLighting() {
-            var ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
-            scene.add(ambientLight);
+            var ambient = new THREE.AmbientLight(0xffffff, 0.95);
+            scene.add(ambient);
+
+            var hemi = new THREE.HemisphereLight(0xffffff, 0x303030, 0.45);
+            scene.add(hemi);
+
+            var key = new THREE.DirectionalLight(0xffffff, 0.65);
+            key.position.set(2.2, 3.4, 4.3);
+            scene.add(key);
+
+            var fill = new THREE.DirectionalLight(0xffffff, 0.2);
+            fill.position.set(-3, -1.5, -2.5);
+            scene.add(fill);
         }
 		
 		// Função para redefinir a câmera para a vista original
         function resetCamera() {
+            immersiveSelectedProjectId = null;
+            if (typeof highlightImmersiveProjectList === 'function') highlightImmersiveProjectList();
             gsap.to(camera.position, {
                 x: initialCameraPosition.x,
                 y: initialCameraPosition.y,
@@ -2554,15 +4372,22 @@ function showNavigationNotification() {
 
 	  
 	   function animateCameraToPosition(x, y, z) {
-        // Implementação de uma animação de câmera usando GSAP para mover suavemente para a posição especificada
+        if (controls) {
+            controls.enabled = false;
+            controls.minDistance = 4.6;
+        }
         gsap.to(camera.position, {
             x: x,
             y: y,
             z: z,
-            duration: 2,
-            ease: "power3.inOut",
+            duration: 0.85,
+            ease: "back.out(1.85)",
             onComplete: function() {
-                // Opcional: qualquer lógica a ser executada após a conclusão da animação da câmera
+                if (controls) {
+                    controls.minDistance = 5.7;
+                    controls.enabled = true;
+                    controls.update();
+                }
             }
         });
     }
@@ -2577,7 +4402,24 @@ function showNavigationNotification() {
         resetCamera();
     }
 
+function isCanvasPointerEvent(event) {
+    return !!(renderer && renderer.domElement && event && event.target === renderer.domElement);
+}
+
+function clearCubeHoverTooltip() {
+    if (typeof INTERSECTED !== 'undefined' && INTERSECTED) {
+        var mats = Array.isArray(INTERSECTED.material) ? INTERSECTED.material : [INTERSECTED.material];
+        mats.forEach(function(m) { m.color.setHex(INTERSECTED.currentHex); });
+        INTERSECTED = null;
+    }
+    if (typeof tooltip !== 'undefined' && tooltip) tooltip.style.visibility = 'hidden';
+}
+
 function onDocumentMouseMove(event) {
+    if (!isCanvasPointerEvent(event)) {
+        clearCubeHoverTooltip();
+        return;
+    }
     var panel = document.getElementById('project-panel');
     if (panel && panel.classList.contains('visible')) {
         if (typeof INTERSECTED !== 'undefined' && INTERSECTED) {
@@ -2604,11 +4446,11 @@ function onDocumentMouseMove(event) {
             }
             
             INTERSECTED = intersects[0].object;
-            // Obter cor atual (usar primeiro material se for array)
             const materials = Array.isArray(INTERSECTED.material) ? INTERSECTED.material : [INTERSECTED.material];
             INTERSECTED.currentHex = materials[0].color.getHex();
-            // Aplicar hover em todos os materiais
-            materials.forEach(mat => mat.color.setHex(0xff0000));
+            if (INTERSECTED.userData && INTERSECTED.userData.texturesReady) {
+                materials.forEach(mat => mat.color.setHex(0xff0000));
+            }
         }
 
         tooltip.style.left = event.clientX + 'px';
@@ -2640,6 +4482,7 @@ function onDocumentMouseMove(event) {
         }
 	  
 	  function onDocumentMouseDown(event) {
+    if (!isCanvasPointerEvent(event)) return;
     var panel = document.getElementById('project-panel');
     if (panel && panel.classList.contains('visible')) return;
     event.preventDefault();
@@ -2663,6 +4506,7 @@ function onDocumentMouseMove(event) {
 var cubeFocused = false;
 
 function onDocumentMouseUp(event) {
+    if (!isCanvasPointerEvent(event)) { mouseDown = false; return; }
     var panel = document.getElementById('project-panel');
     if (panel && panel.classList.contains('visible')) { mouseDown = false; return; }
     if (!mouseDown) return;
@@ -2672,23 +4516,7 @@ function onDocumentMouseUp(event) {
     
     if (intersects.length > 0) {
         if (!cubeFocused) {
-            selectedCube = intersects[0].object;
-            
-            var cubeCenter = new THREE.Vector3();
-            selectedCube.geometry.computeBoundingBox();
-            selectedCube.geometry.boundingBox.getCenter(cubeCenter);
-            cubeCenter.applyMatrix4(selectedCube.matrixWorld);
-
-            gsap.to(camera.position, {
-                x: cubeCenter.x,
-                y: cubeCenter.y,
-                z: cubeCenter.z + 2,
-                duration: 2,
-                ease: "power3.inOut"
-            });
-
-            controls.target.set(cubeCenter.x, cubeCenter.y, cubeCenter.z);
-            cubeFocused = true;
+            focusImmersiveCube(intersects[0].object);
         } else {
             const projectId = selectedCube.userData.projectId;
             if (projectId) {
@@ -2710,16 +4538,65 @@ function onDocumentMouseUp(event) {
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
+  var handheldTime = 0;
+  var handheldPos = new THREE.Vector3();
+  var handheldQuat = new THREE.Quaternion();
+  var handheldActive = false;
+
+  function restoreHandheldCamera() {
+    if (!handheldActive || !camera) return;
+    camera.position.sub(handheldPos);
+    camera.quaternion.copy(handheldQuat);
+    handheldActive = false;
+  }
+
+  function applyHandheldCamera(dt) {
+    if (!camera) return;
+    if (typeof mouseDown !== 'undefined' && mouseDown) return;
+    if (typeof cubeFocused !== 'undefined' && cubeFocused) return;
+    var panel = document.getElementById('project-panel');
+    if (panel && panel.classList.contains('visible')) return;
+    if (typeof gsap !== 'undefined' && gsap.isTweening) {
+      if (gsap.isTweening(camera.position) || gsap.isTweening(camera.quaternion)) return;
+    }
+    handheldTime += dt;
+    var t = handheldTime;
+    var amp = 0.011;
+    var rot = 0.0011;
+    handheldQuat.copy(camera.quaternion);
+    handheldPos.set(
+      Math.sin(t * 1.13) * amp + Math.sin(t * 2.61) * amp * 0.4 + Math.sin(t * 5.05) * amp * 0.14,
+      Math.sin(t * 1.37 + 0.6) * amp * 0.82 + Math.sin(t * 3.18 + 1.05) * amp * 0.3,
+      Math.sin(t * 0.94 + 0.25) * amp * 0.38 + Math.sin(t * 4.35) * amp * 0.11
+    );
+    camera.position.add(handheldPos);
+    camera.rotateX(Math.sin(t * 1.52) * rot + Math.sin(t * 3.72) * rot * 0.42);
+    camera.rotateY(Math.sin(t * 1.21 + 0.45) * rot * 0.75);
+    camera.rotateZ(Math.sin(t * 0.86) * rot * 1.15 + Math.sin(t * 2.88) * rot * 0.38);
+    handheldActive = true;
+  }
+
   function animate() {
     requestAnimationFrame(animate);
     
     const deltaTime = clock.getDelta();
+    restoreHandheldCamera();
 
     if (mixer) {
         mixer.update(deltaTime); 
     }
 
+    applyHandheldCamera(deltaTime);
+
+    if (worldSkyMat && worldSkyMat.uniforms && worldSkyMat.uniforms.uTime) {
+        worldSkyMat.uniforms.uTime.value += deltaTime;
+    }
+    if (worldSkyMesh && camera) {
+        worldSkyMesh.position.copy(camera.position);
+    }
+
     renderer.render(scene, camera);
+    updateHeadChatBubble();
     
     cubeArray.forEach(cube => {
         var radius = Math.sqrt(cube.position.x * cube.position.x + cube.position.z * cube.position.z);
@@ -2814,6 +4691,7 @@ document.addEventListener('keydown', function(event) {
     // ---------- ABRIR / FECHAR PAINEL ----------
     function openProject(projectId) {
         if (!projectId) return;
+        if (typeof window.setImmersiveView === 'function') window.setImmersiveView('scene');
         _panelCurrentProjectId = projectId;
 
         var panel = document.getElementById('project-panel');
@@ -2867,6 +4745,7 @@ document.addEventListener('keydown', function(event) {
         if (!panel) return;
 
         var doClose = function() {
+            _panelUnloadAllCarouselMedia();
             panel.classList.remove('visible');
             panel.style.opacity = '';
             _panelCurrentProjectId = null;
@@ -2893,6 +4772,7 @@ document.addEventListener('keydown', function(event) {
         if (panel && panel.classList.contains('visible')) {
             // Estava no painel, fechar sem pushState (já voltou)
             var doClose = function() {
+                _panelUnloadAllCarouselMedia();
                 panel.classList.remove('visible');
                 panel.style.opacity = '';
                 _panelCurrentProjectId = null;
@@ -2909,14 +4789,14 @@ document.addEventListener('keydown', function(event) {
     });
 
     // Botão Back do painel
+    document.addEventListener('click', function(e) {
+        var backBtn = e.target && e.target.closest ? e.target.closest('#panel-back-button') : null;
+        if (!backBtn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        closeProject();
+    });
     document.addEventListener('DOMContentLoaded', function() {
-        var backBtn = document.getElementById('panel-back-button');
-        if (backBtn) {
-            backBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                closeProject();
-            });
-        }
         var prevBtn = document.getElementById('panel-prev-button');
         if (prevBtn) prevBtn.addEventListener('click', panelPrevSlide);
         var nextBtn = document.getElementById('panel-next-button');
@@ -2924,6 +4804,42 @@ document.addEventListener('keydown', function(event) {
     });
 
     // ---------- CARROSSEL DO PAINEL ----------
+    function _panelUnloadInactiveVideos(activeIndex) {
+        if (!_panelSlides || !_panelSlides.length) return;
+        _panelSlides.forEach(function(s, i) {
+            var v = s.querySelector('video');
+            if (!v) return;
+            if (i === activeIndex) return;
+            v.pause();
+            v.style.opacity = '1';
+            var currentSrc = v.getAttribute('src');
+            if (currentSrc) {
+                if (!v.getAttribute('data-src')) v.setAttribute('data-src', currentSrc);
+                v.removeAttribute('src');
+                try { v.load(); } catch (e) {}
+            }
+        });
+    }
+
+    function _panelPrefetchNeighborCovers(index) {
+        if (!_panelSlides || !_panelSlides.length) return;
+        [index - 1, index + 1].forEach(function(i) {
+            if (i < 0 || i >= _panelSlides.length) return;
+            var slide = _panelSlides[i];
+            var img = slide.querySelector('img[data-src]');
+            if (img) {
+                img.src = img.getAttribute('data-src');
+                img.removeAttribute('data-src');
+            }
+            var video = slide.querySelector('video');
+            if (video && video.poster) {
+                var warm = new Image();
+                warm.decoding = 'async';
+                warm.src = video.poster;
+            }
+        });
+    }
+
     function panelShowSlide(index) {
         var slidesEl = document.getElementById('panel-carousel-slides');
         var dotsEl   = document.getElementById('panel-carousel-dots');
@@ -2932,24 +4848,38 @@ document.addEventListener('keydown', function(event) {
 
         if (!_panelSlides.length || index < 0 || index >= _panelSlides.length) return;
 
+        _panelUnloadInactiveVideos(index);
         _panelSlides.forEach(function(s) {
             s.classList.remove('active');
-            var v = s.querySelector('video');
-            if (v) { v.pause(); v.style.opacity = '1'; }
         });
         _panelDots.forEach(function(d) { d.classList.remove('active'); });
         _panelSlides[index].classList.add('active');
+
+        var activeImg = _panelSlides[index].querySelector('img[data-src]');
+        if (activeImg) {
+            activeImg.src = activeImg.getAttribute('data-src');
+            activeImg.removeAttribute('data-src');
+        }
+
         var activeVideo = _panelSlides[index].querySelector('video');
         if (activeVideo) {
+            var pendingSrc = activeVideo.getAttribute('data-src');
+            if (pendingSrc && !activeVideo.getAttribute('src')) {
+                activeVideo.preload = 'auto';
+                activeVideo.src = pendingSrc;
+                activeVideo.load();
+            }
             activeVideo.style.opacity = '0.6';
-            activeVideo.currentTime = 0;
-            activeVideo.play();
+            try { activeVideo.currentTime = 0; } catch (e) {}
+            var playPromise = activeVideo.play();
+            if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(function() {});
             requestAnimationFrame(function() {
                 requestAnimationFrame(function() { activeVideo.style.opacity = '1'; });
             });
         }
         if (_panelDots[index]) _panelDots[index].classList.add('active');
         _panelCurrentSlide = index;
+        _panelPrefetchNeighborCovers(index);
     }
 
     function panelPrevSlide() {
@@ -3021,6 +4951,20 @@ document.addEventListener('keydown', function(event) {
         return _escapeHtml(text).replace(/\n/g, '<br>');
     }
 
+    function _panelUnloadAllCarouselMedia() {
+        var slidesEl = document.getElementById('panel-carousel-slides');
+        if (!slidesEl) return;
+        Array.prototype.forEach.call(slidesEl.querySelectorAll('video'), function(v) {
+            v.pause();
+            var currentSrc = v.getAttribute('src');
+            if (currentSrc) {
+                if (!v.getAttribute('data-src')) v.setAttribute('data-src', currentSrc);
+                v.removeAttribute('src');
+                try { v.load(); } catch (e) {}
+            }
+        });
+    }
+
     // ---------- CARROSSEL (IMAGENS E VÍDEOS) ----------
     function _panelRenderCarousel(items, projectId) {
         var slidesEl = document.getElementById('panel-carousel-slides');
@@ -3048,7 +4992,8 @@ document.addEventListener('keydown', function(event) {
             slide.className = 'carousel-slide' + (idx === 0 ? ' active' : '');
             if (type === 'video') {
                 var video = document.createElement('video');
-                video.preload = 'auto';
+                var resolvedUrl = mediaUrl(url);
+                var posterUrl = item && item.poster ? mediaUrl(item.poster) : '';
                 video.playsInline = true;
                 video.setAttribute('playsinline', '');
                 video.muted = true;
@@ -3059,9 +5004,14 @@ document.addEventListener('keydown', function(event) {
                 video.style.objectFit = videoFit;
                 video.style.borderRadius = '8px';
                 video.style.display = 'block';
-                video.src = mediaUrl(url);
-                if (idx !== 0) video.pause();
-                else video.autoplay = true;
+                video.preload = 'none';
+                video.setAttribute('data-src', resolvedUrl);
+                if (posterUrl) video.poster = posterUrl;
+                if (idx === 0) {
+                    video.preload = 'auto';
+                    video.src = resolvedUrl;
+                    video.autoplay = true;
+                }
                 video.addEventListener('timeupdate', function() {
                     var d = this.duration;
                     if (!isFinite(d) || d <= 0) return;
@@ -3081,14 +5031,21 @@ document.addEventListener('keydown', function(event) {
                 slide.appendChild(video);
             } else {
                 var img = document.createElement('img');
+                var resolvedImg = mediaUrl(url);
                 img.alt = 'Imagem ' + (idx + 1);
+                img.decoding = 'async';
                 img.style.width = '100%';
                 img.style.height = '100%';
                 img.style.objectFit = 'cover';
                 img.style.borderRadius = '8px';
                 img.style.display = 'block';
                 img.onerror = function() { slide.innerHTML = '<p style="color:white;text-align:center;padding:20px;">' + i18nT('immersive.imageError') + '</p>'; };
-                img.src = mediaUrl(url);
+                if (idx === 0) {
+                    img.src = resolvedImg;
+                } else {
+                    img.setAttribute('data-src', resolvedImg);
+                    img.loading = 'lazy';
+                }
                 slide.appendChild(img);
             }
             slidesEl.appendChild(slide);
@@ -3108,8 +5065,10 @@ document.addEventListener('keydown', function(event) {
         if (navEl) navEl.style.display = items.length > 1 ? 'flex' : 'none';
         _panelCurrentSlide = 0;
         setTimeout(function() { panelShowSlide(0); }, 50);
-
-        if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) _panelUpdateCarouselList(items);
+        if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) {
+            _panelUpdateCarouselList(items);
+            _panelSchedulePosterBackfill(projectId, items);
+        }
     }
 
     function _panelLoadProjectImages(projectId, forceServer) {
@@ -3144,7 +5103,10 @@ document.addEventListener('keydown', function(event) {
             var url = typeof item === 'string' ? item : (item && item.url) ? item.url : '';
             var type = (item && item.type) ? item.type : 'image';
             var label = type === 'video' ? ('Vídeo ' + (idx + 1)) : ('Imagem ' + (idx + 1));
-            var thumb = type === 'image' ? ('<img src="' + url + '" alt="Preview" onerror="this.style.display=\'none\'">') : '<span style="font-size:20px;">🎬</span>';
+            var poster = (item && item.poster) ? item.poster : '';
+            var thumb = type === 'image'
+                ? ('<img src="' + url + '" alt="Preview" onerror="this.style.display=\'none\'">')
+                : (poster ? ('<img src="' + poster + '" alt="Preview" onerror="this.style.display=\'none\'">') : '<span style="font-size:20px;">🎬</span>');
             var div = document.createElement('div');
             div.className = 'image-item';
             div.setAttribute('draggable', 'true');
@@ -3207,6 +5169,16 @@ document.addEventListener('keydown', function(event) {
                         await storage.ref(decodedPath).delete();
                     }
                 } catch(e) { console.warn('Falha ao deletar do Storage:', e); }
+            }
+            var posterToDelete = removed && removed.poster ? removed.poster : null;
+            if (posterToDelete && typeof storage !== 'undefined' && storage) {
+                try {
+                    var posterParts = posterToDelete.split('/o/');
+                    if (posterParts.length > 1) {
+                        var posterPath = decodeURIComponent(posterParts[1].split('?')[0]);
+                        await storage.ref(posterPath).delete();
+                    }
+                } catch(e) { console.warn('Falha ao deletar poster do Storage:', e); }
             }
             items.splice(itemIndex, 1);
             if (removed && removed.type === 'image' && urlToDelete) {
@@ -3316,9 +5288,9 @@ document.addEventListener('keydown', function(event) {
                 }
                 if (videoFiles.length) {
                     _panelUpdateCarouselLoadingMessage('A guardar vídeo(s) no projeto...');
-                    var vidUrls = await Promise.all(videoFiles.map(function(f) { return _panelUploadImage(projectId, f); }));
+                    var vidEntries = await Promise.all(videoFiles.map(function(f) { return _panelUploadVideoWithPoster(projectId, f); }));
                     _panelUpdateCarouselLoadingMessage('A gravar no carrossel...');
-                    await _panelSaveCarouselVideos(projectId, vidUrls);
+                    await _panelSaveCarouselVideos(projectId, vidEntries);
                 }
                 _panelUpdateCarouselLoadingMessage('A atualizar carrossel...');
                 await new Promise(function(r) { setTimeout(r, 300); });
@@ -3343,7 +5315,7 @@ document.addEventListener('keydown', function(event) {
             if (typeof storage === 'undefined' || !storage) { reject(new Error('Storage não inicializado.')); return; }
             var fileName  = Date.now() + '_' + file.name;
             var ref       = storage.ref('projects/' + projectId + '/' + fileName);
-            var task      = ref.put(file);
+            var task      = ref.put(file, { cacheControl: 'public, max-age=31536000' });
             task.on('state_changed', null,
                 function(err) { reject(err); },
                 function() { task.snapshot.ref.getDownloadURL().then(resolve).catch(reject); }
@@ -3367,13 +5339,183 @@ document.addEventListener('keydown', function(event) {
         }, { merge: true });
     }
 
-    async function _panelSaveCarouselVideos(projectId, newUrls) {
+    function _panelCapturePosterFromUrl(videoUrl) {
+        return new Promise(function(resolve) {
+            if (!videoUrl) { resolve(null); return; }
+            var probe = document.createElement('video');
+            var done = false;
+            probe.crossOrigin = 'anonymous';
+            probe.muted = true;
+            probe.playsInline = true;
+            probe.preload = 'metadata';
+            function finish(blob) {
+                if (done) return;
+                done = true;
+                probe.removeAttribute('src');
+                try { probe.load(); } catch (e) {}
+                resolve(blob || null);
+            }
+            probe.onloadedmetadata = function() {
+                try {
+                    var d = Number(probe.duration || 0);
+                    probe.currentTime = isFinite(d) && d > 0.2 ? 0.12 : 0;
+                } catch (e) {}
+            };
+            probe.onseeked = function() {
+                try {
+                    var w = probe.videoWidth || 640;
+                    var h = probe.videoHeight || 360;
+                    var longest = Math.max(w, h);
+                    var scale = longest > 720 ? 720 / longest : 1;
+                    var canvas = document.createElement('canvas');
+                    canvas.width = Math.max(1, Math.round(w * scale));
+                    canvas.height = Math.max(1, Math.round(h * scale));
+                    var ctx = canvas.getContext('2d');
+                    if (!ctx) { finish(null); return; }
+                    ctx.drawImage(probe, 0, 0, canvas.width, canvas.height);
+                    if (canvas.toBlob) canvas.toBlob(function(blob) { finish(blob); }, 'image/jpeg', 0.82);
+                    else finish(null);
+                } catch (e) { finish(null); }
+            };
+            probe.onerror = function() { finish(null); };
+            probe.src = mediaUrl(videoUrl);
+            probe.load();
+        });
+    }
+
+    var _panelPosterBackfillBusy = false;
+    function _panelSchedulePosterBackfill(projectId, items) {
+        if (typeof isAdminLoggedIn === 'undefined' || !isAdminLoggedIn) return;
+        if (!projectId || !items || !items.length || _panelPosterBackfillBusy) return;
+        var missing = items
+            .map(function(item, idx) { return { item: item, idx: idx }; })
+            .filter(function(row) {
+                return row.item && row.item.type === 'video' && row.item.url && !row.item.poster;
+            });
+        if (!missing.length) return;
+
+        var run = function() {
+            if (_panelPosterBackfillBusy) return;
+            _panelPosterBackfillBusy = true;
+            var chain = Promise.resolve();
+            var changed = false;
+            var nextItems = items.slice();
+
+            missing.forEach(function(row) {
+                chain = chain.then(function() {
+                    if (_panelCurrentProjectId !== projectId) return;
+                    return _panelCapturePosterFromUrl(row.item.url).then(function(blob) {
+                        if (!blob || _panelCurrentProjectId !== projectId) return;
+                        var posterFile = new File([blob], Date.now() + '_poster.jpg', { type: 'image/jpeg' });
+                        return _panelUploadImage(projectId, posterFile).then(function(posterUrl) {
+                            if (!posterUrl) return;
+                            nextItems[row.idx] = Object.assign({}, nextItems[row.idx], { poster: posterUrl });
+                            changed = true;
+                        }).catch(function() {});
+                    });
+                });
+            });
+
+            chain
+                .then(function() {
+                    if (!changed || _panelCurrentProjectId !== projectId || typeof db === 'undefined' || !db) return;
+                    return db.collection('projetos').doc(projectId).set({ carouselItems: nextItems }, { merge: true })
+                        .then(function() {
+                            _panelCarouselItems = nextItems;
+                            if (_panelSlides && _panelSlides.length) {
+                                nextItems.forEach(function(item, idx) {
+                                    if (!item || item.type !== 'video' || !item.poster || !_panelSlides[idx]) return;
+                                    var v = _panelSlides[idx].querySelector('video');
+                                    if (v) v.poster = mediaUrl(item.poster);
+                                });
+                            }
+                            _panelUpdateCarouselList(nextItems);
+                            showNotification('Capas de vídeo geradas.', 'success', true);
+                        });
+                })
+                .catch(function(err) {
+                    console.warn('Backfill posters painel:', err);
+                })
+                .finally(function() {
+                    _panelPosterBackfillBusy = false;
+                });
+        };
+
+        if (typeof window.requestIdleCallback === 'function') {
+            window.requestIdleCallback(run, { timeout: 4000 });
+        } else {
+            setTimeout(run, 1200);
+        }
+    }
+
+    function _panelCapturePosterFromFile(file) {
+        return new Promise(function(resolve) {
+            if (!file) { resolve(null); return; }
+            var objectUrl = URL.createObjectURL(file);
+            var probe = document.createElement('video');
+            var done = false;
+            probe.muted = true;
+            probe.playsInline = true;
+            probe.preload = 'metadata';
+            function finish(blob) {
+                if (done) return;
+                done = true;
+                try { URL.revokeObjectURL(objectUrl); } catch (e) {}
+                probe.removeAttribute('src');
+                try { probe.load(); } catch (err) {}
+                resolve(blob || null);
+            }
+            probe.onloadedmetadata = function() {
+                try {
+                    var d = Number(probe.duration || 0);
+                    probe.currentTime = isFinite(d) && d > 0.2 ? 0.12 : 0;
+                } catch (e) {}
+            };
+            probe.onseeked = function() {
+                try {
+                    var w = probe.videoWidth || 640;
+                    var h = probe.videoHeight || 360;
+                    var longest = Math.max(w, h);
+                    var scale = longest > 720 ? 720 / longest : 1;
+                    var canvas = document.createElement('canvas');
+                    canvas.width = Math.max(1, Math.round(w * scale));
+                    canvas.height = Math.max(1, Math.round(h * scale));
+                    var ctx = canvas.getContext('2d');
+                    if (!ctx) { finish(null); return; }
+                    ctx.drawImage(probe, 0, 0, canvas.width, canvas.height);
+                    if (canvas.toBlob) canvas.toBlob(function(blob) { finish(blob); }, 'image/jpeg', 0.82);
+                    else finish(null);
+                } catch (e) { finish(null); }
+            };
+            probe.onerror = function() { finish(null); };
+            probe.src = objectUrl;
+            probe.load();
+        });
+    }
+
+    function _panelUploadVideoWithPoster(projectId, file) {
+        var posterPromise = _panelCapturePosterFromFile(file).then(function(blob) {
+            if (!blob) return '';
+            var posterFile = new File([blob], Date.now() + '_poster.jpg', { type: 'image/jpeg' });
+            return _panelUploadImage(projectId, posterFile).catch(function() { return ''; });
+        });
+        return Promise.all([_panelUploadImage(projectId, file), posterPromise]).then(function(parts) {
+            return { url: parts[0], poster: parts[1] || '' };
+        });
+    }
+
+    async function _panelSaveCarouselVideos(projectId, entries) {
         if (typeof db === 'undefined' || !db) throw new Error('Firestore não inicializado.');
         var ref = db.collection('projetos').doc(projectId);
         var doc = await ref.get();
         var data = doc.data() || {};
         var existingCarousel = (data.carouselItems && Array.isArray(data.carouselItems)) ? data.carouselItems : [];
-        var newVideoEntries = newUrls.map(function(u) { return { type: 'video', url: u }; });
+        var newVideoEntries = (entries || []).map(function(entry) {
+            var url = typeof entry === 'string' ? entry : (entry && entry.url);
+            var row = { type: 'video', url: url };
+            if (entry && entry.poster) row.poster = entry.poster;
+            return row;
+        }).filter(function(row) { return !!row.url; });
         var carouselItems = existingCarousel.concat(newVideoEntries);
         await ref.set({ carouselItems: carouselItems }, { merge: true });
     }
@@ -3487,7 +5629,7 @@ document.addEventListener('keydown', function(event) {
 
     <!-- ===== PAINEL DE PROJETO (SPA) ===== -->
     <div id="project-panel">
-        <button class="panel-back-button" id="panel-back-button" data-i18n="immersive.back">&#8592; Back</button>
+        <button class="panel-back-button" id="panel-back-button" type="button" data-i18n="immersive.back">← Voltar</button>
         <div class="project-container">
             <div class="project-images-container">
                 <div class="carousel-container fade-in" id="panel-carousel-container">
@@ -3609,46 +5751,39 @@ document.addEventListener('keydown', function(event) {
 </script>
 
 <!-- Adicionar a notificação inicial -->
-<div class="initial-notification notification-pulse" style="opacity: 0;">
-    CLIQUE NA CABEÇA<br>
-    <span style="font-size: 12px; opacity: 0.8;">para iniciar</span>
+<div class="initial-notification" style="opacity: 0;" role="status" aria-live="polite">
+    <div class="head-hint">
+        <div class="head-hint-typing" aria-hidden="true">
+            <span></span><span></span><span></span>
+        </div>
+        <p class="head-hint-msg">
+            <span class="head-hint-title" data-i18n="immersive.headHint">Clique na cabeça</span>
+            <span class="head-hint-sub" data-i18n="immersive.headHintSub">para revelar os projetos</span>
+        </p>
+    </div>
 </div>
 
 <script>
-    // Mostrar a notificação inicial quando a página carrega
     window.addEventListener('load', function() {
         var notification = document.querySelector('.initial-notification');
-        if (notification) {
-            // Se já está em modo "cubos visíveis", também não mostrar
-            try {
-                if (typeof headClicked !== 'undefined' && headClicked) return;
-            } catch (e) {}
-            setTimeout(function() {
-                gsap.to(notification, {
-                    opacity: 1,
-                    scale: 1,
-                    duration: 0.2,
-                    ease: "power3.out"
-                });
-                
-                // Opcional: configurar um timeout para remover a notificação após um tempo
-                // setTimeout(function() {
-                //     gsap.to(notification, {
-                //         opacity: 0,
-                //         y: -20,
-                //         duration: 0.2,
-                //         ease: "power3.in"
-                //     });
-                // }, 8000);
-            }, 2000);
+        if (!notification) return;
+        try {
+            if (typeof headClicked !== 'undefined' && headClicked) return;
+        } catch (e) {}
+        if (!document.getElementById('loading-screen') && !document.querySelector('.loading-screen')) {
+            setTimeout(showHeadChatBubble, 400);
         }
     });
 </script>
 
 <!-- Adicione isso logo após a abertura da tag body -->
-<div id="returnNotification" class="return-notification notification-pulse" style="opacity: 0;">
-    CLIQUE FORA DO CUBO<br>
-    <span style="font-size: 12px; opacity: 0.8;">para voltar</span>
+<div id="returnNotification" class="return-notification" style="opacity: 0;">
+    <div class="head-hint is-static-msg">
+        <p class="head-hint-msg">
+            <span class="head-hint-title">Clica fora do cubo</span>
+            <span class="head-hint-sub">pra voltar</span>
+        </p>
+    </div>
 </div>
 
 <script>

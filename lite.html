@@ -6,6 +6,11 @@
   <title>NEZNUNEZ</title>
   <link rel="icon" href="3d_6297747.ico" type="image/x-icon">
   <link rel="preload" href="models/NezmodelF2.glb" as="fetch" crossorigin>
+  <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin>
+  <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap">
   <link rel="stylesheet" href="lite.css">
 </head>
 <body class="lite-page">
@@ -23,8 +28,8 @@
     </h1>
     <div class="header-actions">
       <nav class="header-content-nav" data-i18n-attr="aria-label:ui.contentNav">
-        <button id="showCV" class="header-content-button is-active" type="button" data-i18n="ui.cv">Curriculum</button>
         <button id="showProjects" class="header-content-button" type="button" data-i18n="ui.projects">Projetos</button>
+        <button id="showCV" class="header-content-button is-active" type="button" data-i18n="ui.cv">Curriculum</button>
       </nav>
       <button id="modeToggle" class="mode-toggle" type="button" data-i18n="ui.immersive">Imersivo</button>
     </div>
@@ -44,8 +49,8 @@
           <button id="project-preview-add-btn" class="project-preview-add-btn" type="button" data-i18n-attr="aria-label:ui.addMedia" aria-label="Adicionar imagens ou vídeos ao projeto">+</button>
           <input id="project-preview-media-input" class="project-preview-media-input" type="file" multiple accept="image/*,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov">
         </div>
-        <img id="project-preview-image" class="project-preview-image" data-i18n-attr="alt:ui.previewAlt" alt="Preview do projeto">
-        <video id="project-preview-video" class="project-preview-video" muted playsinline></video>
+        <img id="project-preview-image" class="project-preview-image" decoding="async" data-i18n-attr="alt:ui.previewAlt" alt="Preview do projeto">
+        <video id="project-preview-video" class="project-preview-video" muted playsinline preload="none"></video>
         <button id="project-video-play" class="project-video-play is-hidden" type="button" data-i18n-attr="aria-label:ui.playVideo" aria-label="Reproduzir vídeo">&#9658;</button>
         <div id="project-media-order-wrap" class="project-media-order-wrap" aria-hidden="true">
           <button id="project-media-move-left" class="project-media-order-btn" type="button" data-i18n-attr="aria-label:ui.moveMediaLeft" aria-label="Mover mídia para a esquerda">&#8592;</button>

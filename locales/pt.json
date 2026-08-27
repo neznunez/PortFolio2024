@@ -18,7 +18,7 @@
     "previewAlt": "Preview do projeto",
     "orderChanged": "Ordem alterada — guarde no banco.",
     "saveOrder": "Guardar ordem",
-    "liteMode": "Modo Lite"
+    "liteMode": "Lite"
   },
   "levels": {
     "basic": "Básico",
@@ -170,8 +170,12 @@
     "loadError": "Erro ao carregar projeto",
     "noMedia": "Nenhuma mídia configurada.",
     "imageError": "Erro ao carregar imagem",
-    "cubeHint": "CLIQUE NO CUBO",
-    "cubeHintSub": "para abrir um projeto",
+    "cubeHint": "Clica no cubo",
+    "cubeHintSub": "pra abrir um projeto",
+    "dragHint": "Clica e arrasta",
+    "dragHintSub": "pra olhar em volta",
+    "headHint": "Clica na cabeça",
+    "headHintSub": "pra ver os projetos",
     "back": "← Voltar",
     "createProject": "Criar Novo Projeto",
     "projectNamePlaceholder": "Digite o nome do projeto...",
@@ -183,7 +187,10 @@
     "saveError": "Erro ao salvar:",
     "projectNotIdentified": "Erro: projeto não identificado.",
     "deleteMediaConfirm": "Deseja excluir {{label}} deste projeto?",
-    "background": "FUNDO"
+    "background": "FUNDO",
+    "uiClassic": "Clássico",
+    "uiMacos": "macOS",
+    "uiAero": "Aero"
   },
   "mobile": {
     "redirecting": "A redirecionar para a versão otimizada para telemóvel…"
