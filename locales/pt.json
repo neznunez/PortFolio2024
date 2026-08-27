@@ -67,7 +67,7 @@
           "topic": "Design",
           "rows": [
             { "name": "Adobe Creative Tools", "levelKey": "advanced", "width": "88%" },
-            { "name": "Figma", "levelKey": "intermediate", "width": "70%" }
+            { "name": "Figma", "levelKey": "basic", "width": "38%" }
           ]
         },
         {
@@ -83,7 +83,7 @@
           "rows": [
             { "name": "Unity", "levelKey": "basic", "width": "38%" },
             { "name": "Blender", "levelKey": "intermediate", "width": "69%" },
-            { "name": "Unreal Engine", "levelKey": "intermediate", "width": "66%" }
+            { "name": "Unreal Engine", "levelKey": "basic", "width": "38%" }
           ]
         },
         {

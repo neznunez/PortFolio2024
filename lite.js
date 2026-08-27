@@ -2679,6 +2679,17 @@
     renderer.render(scene, camera);
   }
 
+  function playLiteAboutType() {
+    var section = document.getElementById('sobre-mim');
+    if (!section) return;
+    var paras = section.querySelectorAll('p');
+    var i;
+    for (i = 0; i < paras.length; i++) paras[i].style.setProperty('--p-i', String(i));
+    section.classList.remove('is-typed');
+    void section.offsetWidth;
+    section.classList.add('is-typed');
+  }
+
   function startLiteApp() {
     setupModeToggle();
     setupContentToggle();
@@ -2689,6 +2700,7 @@
     setupProjectDeleteModal();
     setupAdminLiteTrigger();
     setupSectionIndexTracking();
+    playLiteAboutType();
     dbRef = setupFirebase();
     if (window.firebase && window.firebase.auth) {
       window.firebase.auth().onAuthStateChanged(function (user) {
@@ -2707,6 +2719,7 @@
 
   document.addEventListener('localechange', function () {
     if (window.I18n && typeof I18n.apply === 'function') I18n.apply();
+    playLiteAboutType();
     renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
     if (projectDeleteModalElements && projectDeleteModalElements.modal && !projectDeleteModalElements.modal.classList.contains('is-hidden')) {
       var pending = pendingDeleteProjectKey ? getProjectByKey(pendingDeleteProjectKey) : null;

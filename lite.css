@@ -1023,6 +1023,40 @@ select {
   font-weight: 500;
 }
 
+#sobre-mim p {
+  opacity: 0;
+}
+
+#sobre-mim.is-typed p {
+  animation: about-copy-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) calc(var(--p-i, 0) * 0.16s) both;
+}
+
+@keyframes about-copy-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(4px);
+    letter-spacing: 0.016em;
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    letter-spacing: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #sobre-mim p,
+  #sobre-mim.is-typed p {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+    filter: none;
+    letter-spacing: 0;
+  }
+}
+
 .skills-group {
   margin: 4px 0 20px;
 }

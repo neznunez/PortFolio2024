@@ -128,11 +128,16 @@
       html += '<div class="skill-topic">' + escapeHtml(group.topic || '') + '</div>';
       (group.rows || []).forEach(function (row) {
         var levelLabel = t('levels.' + (row.levelKey || 'basic'));
+        var widthStr = String(row.width || '0%');
+        var pct = parseFloat(widthStr);
+        if (isNaN(pct)) pct = 0;
+        var p = Math.max(0, Math.min(100, pct)) / 100;
+        var levelKey = String(row.levelKey || 'basic').replace(/[^a-z]/gi, '');
         html +=
-          '<div class="skill-row">' +
+          '<div class="skill-row is-level-' + escapeHtml(levelKey) + '">' +
           '<div class="skill-meta"><span class="skill-name">' + escapeHtml(row.name || '') + '</span></div>' +
           '<div class="skill-progress">' +
-          '<div class="skill-track"><div class="skill-fill" style="--skill-width: ' + escapeHtml(row.width || '0%') + ';"></div></div>' +
+          '<div class="skill-track"><div class="skill-fill" style="--skill-width: ' + escapeHtml(widthStr) + '; --skill-p: ' + p + ';"></div></div>' +
           '<span class="skill-level">' + escapeHtml(levelLabel) + '</span>' +
           '</div></div>';
       });

@@ -319,7 +319,7 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22);
         }
 
-        body.ui-macos .immersive-header-handle span {
+        body.ui-macos .immersive-header-handle-icon {
             border-color: #3a3a42;
         }
 
@@ -856,8 +856,12 @@
             left: 0;
             right: 0;
             bottom: 0;
-            height: 36px;
+            height: 56px;
             transform: translateY(100%);
+        }
+
+        .immersive-header.is-collapsed:not(.is-locked) .immersive-header-hotzone {
+            height: 150px;
         }
 
         .immersive-header-handle {
@@ -878,7 +882,7 @@
             justify-content: center;
         }
 
-        .immersive-header-handle span {
+        .immersive-header-handle-icon {
             display: block;
             width: 10px;
             height: 10px;
@@ -886,9 +890,10 @@
             border-bottom: 1.5px solid #fff;
             transform: rotate(45deg) translate(-2px, -2px);
             opacity: 0.9;
+            flex-shrink: 0;
         }
 
-        .immersive-header.is-collapsed .immersive-header-handle span {
+        .immersive-header.is-collapsed .immersive-header-handle-icon {
             transform: rotate(-135deg) translate(-2px, -2px);
         }
 
@@ -1025,20 +1030,69 @@
             font-weight: 500;
         }
 
+        #immersive-sobre-mim p {
+            opacity: 0;
+            transform: translateY(16px);
+            filter: blur(5px);
+            letter-spacing: 0.018em;
+        }
+
+        #immersive-sobre-mim.is-typed p {
+            animation: about-copy-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) calc(var(--p-i, 0) * 0.16s) forwards;
+        }
+
+        @keyframes about-copy-in {
+            to {
+                opacity: 1;
+                transform: none;
+                filter: none;
+                letter-spacing: 0;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #immersive-sobre-mim p,
+            #immersive-sobre-mim.is-typed p {
+                animation: none !important;
+                opacity: 1;
+                transform: none;
+                filter: none;
+                letter-spacing: 0;
+            }
+        }
+
         .immersive-cv-scroll .skill-topic {
-            margin: 16px 0 8px;
+            margin: 18px 0 10px;
             font-family: "EB Garamond", Georgia, serif;
             font-size: clamp(18px, 1.2vw, 22px);
             font-weight: 400;
         }
 
         .immersive-cv-scroll .skill-row {
-            margin-bottom: 12px;
+            margin-bottom: 14px;
+            opacity: 0.55;
+            transform: translateY(6px);
+            transition: opacity 0.45s ease, transform 0.45s ease;
+        }
+
+        .immersive-cv-scroll .skill-row.is-grown {
+            opacity: 1;
+            transform: none;
         }
 
         .immersive-cv-scroll .skill-name,
         .immersive-cv-scroll .skill-level {
             font-size: clamp(14px, 1vw, 16px);
+        }
+
+        .immersive-cv-scroll .skill-level {
+            opacity: 0.55;
+            min-width: 4.5em;
+            transition: opacity 0.4s ease;
+        }
+
+        .immersive-cv-scroll .skill-row.is-grown .skill-level {
+            opacity: 0.92;
         }
 
         .immersive-cv-scroll .skill-progress {
@@ -1048,16 +1102,117 @@
         }
 
         .immersive-cv-scroll .skill-track {
-            width: min(280px, 100%);
-            height: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.7);
-            background: transparent;
+            position: relative;
+            width: min(300px, 100%);
+            height: 11px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 999px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
         }
 
         .immersive-cv-scroll .skill-fill {
+            position: relative;
             height: 100%;
-            width: var(--skill-width);
-            background: #fff;
+            width: 100%;
+            border-radius: inherit;
+            transform: scaleX(0);
+            transform-origin: left center;
+            will-change: transform;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(230, 240, 255, 0.88) 100%);
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.32);
+            overflow: hidden;
+        }
+
+        .immersive-cv-scroll .skill-fill::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: repeating-linear-gradient(
+                115deg,
+                rgba(255, 255, 255, 0.0) 0 8px,
+                rgba(255, 255, 255, 0.28) 8px 10px
+            );
+            background-size: 22px 100%;
+            opacity: 0.45;
+            animation: skill-stripes 1.1s linear infinite;
+            pointer-events: none;
+        }
+
+        .immersive-cv-scroll .skill-fill::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 38%;
+            background: linear-gradient(110deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+            transform: translateX(-160%);
+            pointer-events: none;
+        }
+
+        .immersive-cv-scroll .skill-fill.is-grown {
+            animation:
+                skill-grow 1.15s cubic-bezier(0.16, 1, 0.3, 1) var(--skill-delay, 0s) forwards,
+                skill-idle-glow 2.6s ease-in-out calc(var(--skill-delay, 0s) + 1.15s) infinite;
+        }
+
+        .immersive-cv-scroll .skill-fill.is-grown::after {
+            animation: skill-shine 0.9s ease-out calc(var(--skill-delay, 0s) + 0.38s) 1 forwards;
+        }
+
+        .immersive-cv-scroll .skill-row:hover .skill-fill {
+            filter: brightness(1.12);
+        }
+
+        @keyframes skill-grow {
+            from { transform: scaleX(0); }
+            to { transform: scaleX(var(--skill-p, 0.5)); }
+        }
+
+        @keyframes skill-shine {
+            to { transform: translateX(320%); }
+        }
+
+        @keyframes skill-stripes {
+            to { background-position: 22px 0; }
+        }
+
+        @keyframes skill-idle-glow {
+            0%, 100% { box-shadow: 0 0 10px rgba(255, 255, 255, 0.22); }
+            50% { box-shadow: 0 0 16px rgba(255, 255, 255, 0.5); }
+        }
+
+        body.ui-macos .immersive-cv-scroll .skill-track {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(0, 0, 0, 0.18));
+            border-color: rgba(255, 255, 255, 0.28);
+        }
+
+        body.ui-macos .immersive-cv-scroll .skill-fill {
+            background: linear-gradient(180deg, #ffffff 0%, #b7d4f7 22%, #4f97e6 52%, #1a62b4 53%, #3b8ad8 100%);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 0 10px rgba(50, 120, 210, 0.4);
+        }
+
+        body.ui-aero .immersive-cv-scroll .skill-track {
+            background: rgba(0, 50, 80, 0.32);
+            border-color: rgba(255, 255, 255, 0.28);
+        }
+
+        body.ui-aero .immersive-cv-scroll .skill-fill {
+            background: linear-gradient(90deg, #5ec8ff 0%, #3aaee8 42%, #7ff0c4 100%);
+            box-shadow: 0 0 14px rgba(80, 220, 255, 0.5);
+        }
+
+        @keyframes skill-idle-glow-aero {
+            0%, 100% { box-shadow: 0 0 10px rgba(80, 210, 255, 0.3); }
+            50% { box-shadow: 0 0 18px rgba(90, 255, 200, 0.55); }
+        }
+
+        body.ui-aero .immersive-cv-scroll .skill-fill.is-grown {
+            animation:
+                skill-grow 1.15s cubic-bezier(0.16, 1, 0.3, 1) var(--skill-delay, 0s) forwards,
+                skill-idle-glow-aero 2.6s ease-in-out calc(var(--skill-delay, 0s) + 1.15s) infinite;
         }
 
         .immersive-projects-list {
@@ -1865,7 +2020,7 @@
    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
    <script src="firebase-config.js"></script>
 
-   <!-- Controles de ambiente HDR (3x Espaço para mostrar) -->
+   <!-- Controles de ambiente HDR (7x Espaço para mostrar) -->
    <div id="envControls" class="env-controls">
        <button id="skyboxButton" class="skybox-button" type="button" data-i18n="immersive.background">FUNDO</button>
        <button id="uiStyleButton" class="skybox-button" type="button">macOS</button>
@@ -1891,7 +2046,8 @@
      </div>
      <div class="immersive-header-hotzone" aria-hidden="true"></div>
      <button type="button" class="immersive-header-handle" id="immersiveHeaderToggle" aria-expanded="false" aria-label="Menu">
-       <span></span>
+       <span class="immersive-header-handle-icon" aria-hidden="true"></span>
+     </button>
      </button>
    </header>
    <script>
@@ -2049,6 +2205,12 @@
               if (cvBtn) cvBtn.classList.toggle('is-active', isCv);
               if (projectsBtn) projectsBtn.classList.toggle('is-active', isProjects);
               if (isCv || isProjects) setHeaderCollapsed(false);
+              if (isCv) {
+                requestAnimationFrame(function () {
+                  if (typeof window.playImmersiveAboutType === 'function') window.playImmersiveAboutType();
+                  if (typeof window.watchImmersiveSkillBars === 'function') window.watchImmersiveSkillBars();
+                });
+              }
               if (isProjects && typeof window.renderImmersiveProjectsList === 'function') {
                 window.renderImmersiveProjectsList();
               }
@@ -2058,6 +2220,57 @@
             }
             window.setImmersiveView = setImmersiveView;
             window.collapseImmersiveUi = collapseImmersiveUi;
+            var skillBarObserver;
+            window.playImmersiveAboutType = function () {
+              var section = document.getElementById('immersive-sobre-mim');
+              if (!section) return;
+              section.classList.remove('is-typed');
+              var paras = section.querySelectorAll('p');
+              var i;
+              for (i = 0; i < paras.length; i++) paras[i].style.setProperty('--p-i', String(i));
+              void section.offsetWidth;
+              requestAnimationFrame(function () {
+                section.classList.add('is-typed');
+              });
+            };
+            window.playImmersiveSkillBars = function () {
+              var rows = document.querySelectorAll('#immersive-skills .skill-row');
+              var fills = document.querySelectorAll('#immersive-skills .skill-fill');
+              var i;
+              for (i = 0; i < rows.length; i++) rows[i].classList.remove('is-grown');
+              for (i = 0; i < fills.length; i++) {
+                fills[i].classList.remove('is-grown');
+                fills[i].style.setProperty('--skill-delay', (i * 0.09) + 's');
+              }
+              requestAnimationFrame(function () {
+                requestAnimationFrame(function () {
+                  var j;
+                  for (j = 0; j < fills.length; j++) fills[j].classList.add('is-grown');
+                  for (j = 0; j < rows.length; j++) {
+                    rows[j].style.transitionDelay = (j * 0.09) + 's';
+                    rows[j].classList.add('is-grown');
+                  }
+                });
+              });
+            };
+            window.watchImmersiveSkillBars = function () {
+              var scroller = document.querySelector('#immersive-cv-panel .immersive-cv-scroll');
+              var section = document.getElementById('immersive-skills');
+              if (!scroller || !section) return;
+              if (skillBarObserver) skillBarObserver.disconnect();
+              var played = false;
+              skillBarObserver = new IntersectionObserver(function (entries) {
+                var k;
+                for (k = 0; k < entries.length; k++) {
+                  if (entries[k].isIntersecting && !played) {
+                    played = true;
+                    window.playImmersiveSkillBars();
+                    skillBarObserver.disconnect();
+                  }
+                }
+              }, { root: scroller, threshold: 0.12 });
+              skillBarObserver.observe(section);
+            };
             if (cvBtn) {
               cvBtn.addEventListener('click', function () {
                 var isOpen = document.body.classList.contains('immersive-cv-open');
@@ -2148,6 +2361,10 @@
               if (window.I18n && typeof I18n.apply === 'function') I18n.apply();
               refreshImmersiveProjectsLocale();
               if (typeof window.updateUiStyleButton === 'function') window.updateUiStyleButton();
+              if (document.body.classList.contains('immersive-cv-open')) {
+                if (typeof window.playImmersiveAboutType === 'function') window.playImmersiveAboutType();
+                if (typeof window.watchImmersiveSkillBars === 'function') window.watchImmersiveSkillBars();
+              }
             });
 
             if (window.I18n && typeof I18n.init === 'function') {
@@ -4649,10 +4866,10 @@ document.addEventListener('keydown', function(event) {
         // Definir um novo timeout para resetar o contador após 1 segundo
         spacePressTimeout = setTimeout(function() {
             spacePressCount = 0;
-        }, 1000);
+        }, 2000);
         
-        // Verificar se a barra de espaço foi pressionada 3 vezes
-        if (spacePressCount === 3) {
+        // Verificar se a barra de espaço foi pressionada 7 vezes
+        if (spacePressCount === 7) {
             // Mostrar ou ocultar os controles de ambiente (toggle + botão)
             var envControls = document.getElementById('envControls');
             if (envControls && !envControls.classList.contains('visible')) {
