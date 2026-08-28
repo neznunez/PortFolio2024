@@ -4,8 +4,29 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>NEZNUNEZ</title>
+    <script>
+      (function () {
+        var isMobile = false;
+        try {
+          isMobile = window.matchMedia('(max-width: 768px)').matches;
+        } catch (e) {
+          isMobile = (window.innerWidth || 769) <= 768;
+        }
+        if (!isMobile) return;
+        var search = window.location.search || '';
+        var hash = window.location.hash || '';
+        window.location.replace('lite.html' + search + hash);
+      })();
+    </script>
     <link rel="icon" href="3d_6297747.ico" type="image/x-icon">
-    <link rel="preload" href="models/NezmodelF2.glb" as="fetch" crossorigin>
+    <!-- Skybox primeiro: é o que aparece na tela de entrada (~70KB no total) -->
+    <link rel="preload" href="desertdawn/desertdawn_ft.jpg" as="image">
+    <link rel="preload" href="desertdawn/desertdawn_bk.jpg" as="image">
+    <link rel="preload" href="desertdawn/desertdawn_up.jpg" as="image">
+    <link rel="preload" href="desertdawn/desertdawn_dn.jpg" as="image">
+    <link rel="preload" href="desertdawn/desertdawn_rt.jpg" as="image">
+    <link rel="preload" href="desertdawn/desertdawn_lf.jpg" as="image">
+    <link rel="preload" href="models/NezmodelF2.glb" as="fetch" crossorigin fetchpriority="low">
     <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin>
     <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com">
 	 <link rel="stylesheet" href="landing.css">
@@ -25,21 +46,21 @@
         body {
             --ih-top: 0px;
             --ih-side: 0px;
-            --ih-height: 62px;
+            --ih-height: 80px;
             --ih-gap: 0px;
         }
 
         body.ui-macos {
             --ih-top: 10px;
             --ih-side: 12px;
-            --ih-height: 76px;
+            --ih-height: 86px;
             --ih-gap: 8px;
         }
 
         body.ui-aero {
             --ih-top: 12px;
             --ih-side: 16px;
-            --ih-height: 76px;
+            --ih-height: 86px;
             --ih-gap: 8px;
         }
         
@@ -49,7 +70,6 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: #000;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -60,11 +80,14 @@
         
         #loading-screen {
             z-index: 9999;
+            background-color: #000;
         }
         
+        /* Fundo transparente: o skybox já está renderizado atrás da barra. */
         .loading-screen {
             z-index: 2000;
-            transition: opacity 1.5s ease-out;
+            background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.18) 0%, rgba(0, 0, 0, 0.74) 100%);
+            transition: opacity 0.3s ease-out;
         }
         
         canvas {
@@ -77,13 +100,36 @@
         }
         .tooltip {
             position: absolute;
+            max-width: 300px;
             background-color: rgba(0, 0, 0, 0.8);
             color: white;
-            padding: 10px;
+            padding: 10px 12px;
             font-family: 'Courier New', monospace;
             font-size: 16px;
             pointer-events: none;
             visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
+
+        .tooltip-title {
+            font-weight: bold;
+            line-height: 1.2;
+        }
+
+        .tooltip-desc {
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            color: rgba(255, 255, 255, 0.72);
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
         .card {
             position: fixed;
@@ -108,31 +154,64 @@
             border-radius: 10px;
         }
         .loading-text {
-            color: #ffffff;
-            font-size: 24px;
-            margin-bottom: 20px;
-            letter-spacing: 2px;
+            order: 1;
+            color: rgba(255, 255, 255, 0.7);
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 10px;
+            letter-spacing: 0.52em;
+            text-indent: 0.52em;
             text-transform: uppercase;
-            font-weight: bold;
-            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+            font-weight: 400;
+            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.7);
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+        .loading-percentage {
+            order: 2;
+            margin: 12px 0 20px;
+            color: #ffffff;
+            font-family: "EB Garamond", "Times New Roman", Georgia, serif;
+            font-size: clamp(36px, 4vw, 54px);
+            font-weight: 400;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 4px 28px rgba(0, 0, 0, 0.6);
         }
         .loading-bar-container {
-            width: 300px;
-            height: 20px;
-            background-color: #111;
-            border: 2px solid #ffffff;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-            overflow: hidden;
+            order: 3;
+            width: min(340px, 66vw);
+            height: 3px;
+            background-color: rgba(255, 255, 255, 0.14);
+            border-radius: 999px;
             position: relative;
+            box-shadow:
+                inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+                0 2px 22px rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
         }
         .loading-bar {
             height: 100%;
             width: 0%;
-            background-color: #ffffff;
             position: relative;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
-            transition: width 0.3s ease-out;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.82) 100%);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
         }
+        /* Ponta luminosa acompanhando o fim do progresso */
+        .loading-bar::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: 0;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            transform: translate(50%, -50%);
+            background: #ffffff;
+            box-shadow: 0 0 12px 2px rgba(255, 255, 255, 0.55);
+        }
+        /* Brilho que percorre a parte preenchida */
         .loading-bar::after {
             content: "";
             position: absolute;
@@ -140,23 +219,160 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: repeating-linear-gradient(
-                45deg,
-                #ffffff,
-                #ffffff 10px,
-                #e0e0e0 10px,
-                #e0e0e0 20px
+            border-radius: inherit;
+            background: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0) 20%,
+                rgba(255, 255, 255, 0.9) 50%,
+                rgba(255, 255, 255, 0) 80%
             );
-            opacity: 0.3;
+            background-size: 220% 100%;
+            background-repeat: no-repeat;
+            animation: loading-sheen 1.5s ease-in-out infinite;
         }
-        .loading-percentage {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #ffffff;
-            font-weight: bold;
-            mix-blend-mode: difference;
+        @keyframes loading-sheen {
+            from { background-position: -120% 0; }
+            to { background-position: 220% 0; }
+        }
+        .loading-detail {
+            order: 4;
+            margin-top: 14px;
+            min-height: 14px;
+            color: rgba(255, 255, 255, 0.5);
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 10px;
+            letter-spacing: 0.14em;
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 2px 14px rgba(0, 0, 0, 0.7);
+        }
+
+        /* ===== Tela de entrada (start page) ===== */
+        .start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1900;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 52%, rgba(0, 0, 0, 0.34) 100%);
+            pointer-events: none;
+        }
+        .start-screen.is-visible {
+            display: flex;
+            pointer-events: auto;
+        }
+        .start-screen-inner {
+            text-align: center;
+            color: #fff;
+            padding: 0 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+        .start-title {
+            margin: 0;
+            font-family: "EB Garamond", "Times New Roman", Georgia, serif;
+            text-transform: uppercase;
+            line-height: 1;
+            letter-spacing: 0.02em;
+            display: block;
+            text-align: center;
+            text-shadow: 0 6px 40px rgba(0, 0, 0, 0.55);
+            transform-origin: center center;
+        }
+        .start-kicker {
+            display: block;
+            margin-bottom: 14px;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: clamp(10px, 0.85vw, 12px);
+            font-weight: 500;
+            letter-spacing: 0.44em;
+            text-indent: 0.44em;
+            opacity: 0.68;
+        }
+        .start-title-name,
+        .start-title-last {
+            display: inline;
+            font-size: clamp(22px, 3vw, 44px);
+            font-weight: 500;
+        }
+        .start-title-last {
+            margin-left: 0.06em;
+            opacity: 0.92;
+        }
+        .start-title-role {
+            display: block;
+            margin-top: 16px;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: clamp(11px, 1vw, 14px);
+            letter-spacing: 0.24em;
+            text-transform: none;
+            opacity: 0.82;
+        }
+        .start-enter {
+            appearance: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 0.42em;
+            text-indent: 0.42em;
+            text-transform: uppercase;
+            color: #fff;
+            padding: 14px 34px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.55);
+            border-radius: 999px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 6px 30px rgba(0, 0, 0, 0.35);
+            transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+        }
+        .start-enter:hover,
+        .start-enter:focus-visible {
+            background: rgba(255, 255, 255, 0.95);
+            border-color: rgba(255, 255, 255, 0.95);
+            color: #0b0b0d;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 38px rgba(0, 0, 0, 0.45);
+            outline: none;
+        }
+        .start-enter:active {
+            transform: translateY(0);
+        }
+        .start-enter:disabled {
+            cursor: default;
+            opacity: 0.42;
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .start-enter:disabled:hover {
+            color: #fff;
+            transform: none;
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 6px 30px rgba(0, 0, 0, 0.35);
+        }
+        .start-status {
+            margin: -14px 0 0;
+            min-height: 15px;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 11px;
+            letter-spacing: 0.14em;
+            color: rgba(255, 255, 255, 0.62);
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 2px 14px rgba(0, 0, 0, 0.7);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .loading-bar::after { animation: none; opacity: 0; }
+            .loading-text { transition: none; }
+            .start-enter { transition: none; }
         }
         /* Estilo para o botão de skybox */
         .skybox-button {
@@ -263,7 +479,6 @@
             padding: 12px 22px;
             border-radius: 10px;
             border: 1px solid rgba(255, 255, 255, 0.75);
-            border-bottom: 1px solid rgba(70, 70, 80, 0.4);
             background:
                 repeating-linear-gradient(
                     180deg,
@@ -343,6 +558,8 @@
             font-size: 15px;
             font-weight: 600;
             letter-spacing: 0;
+            text-indent: 0;
+            opacity: 1;
             text-transform: none;
             color: #1c1c22;
             border: none;
@@ -557,6 +774,8 @@
             font-size: 15px;
             font-weight: 700;
             letter-spacing: 0;
+            text-indent: 0;
+            opacity: 1;
             text-transform: none;
             border-radius: 999px;
             border: 1px solid rgba(255, 255, 255, 0.9);
@@ -699,7 +918,7 @@
         }
 
         .immersive-header.is-collapsed {
-            transform: translateY(-100%);
+            transform: none;
         }
 
         .immersive-header.is-locked {
@@ -731,17 +950,26 @@
         }
 
         .immersive-header-inner {
+            position: relative;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
             min-height: var(--ih-height);
-            padding: 8px 18px;
+            padding: 12px 26px;
             box-sizing: border-box;
             background: transparent;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+            border-bottom: none;
             color: #fff;
             font-family: "IBM Plex Mono", ui-monospace, monospace;
+        }
+
+        /* Contraste vem da própria tipografia: sombra curta define a borda da letra
+           em fundo claro, a difusa cria o halo em fundo escuro. */
+        body:not(.ui-macos):not(.ui-aero) .immersive-header-inner {
+            text-shadow:
+                0 1px 1px rgba(0, 0, 0, 0.55),
+                0 0 14px rgba(0, 0, 0, 0.45);
         }
 
         .immersive-header .lite-title {
@@ -758,24 +986,25 @@
 
         .immersive-header .lite-title-top,
         .immersive-header .lite-title-right {
-            font-size: clamp(21px, 1.65vw, 27px);
-            font-weight: 400;
+            font-size: clamp(26px, 2.1vw, 34px);
+            font-weight: 500;
             white-space: nowrap;
         }
 
         .immersive-header .lite-title-role {
             font-family: "IBM Plex Mono", ui-monospace, monospace;
-            font-size: clamp(12px, 0.8vw, 14px);
+            font-size: clamp(13px, 0.95vw, 16px);
+            font-weight: 500;
             text-transform: none;
-            opacity: 0.88;
+            opacity: 1;
         }
 
         .immersive-header .lang-switch {
             display: inline-flex;
             gap: 4px;
-            border: 1px solid rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.85);
             padding: 2px;
-            margin-left: 12px;
+            margin-left: 14px;
         }
 
         .immersive-header .lang-switch-btn {
@@ -783,7 +1012,9 @@
             background: transparent;
             color: #fff;
             font-size: 11px;
-            padding: 4px 8px;
+            font-weight: 400;
+            letter-spacing: 0.08em;
+            padding: 5px 10px;
             cursor: pointer;
             text-transform: uppercase;
         }
@@ -802,7 +1033,7 @@
 
         .immersive-header .header-content-nav {
             display: flex;
-            gap: 16px;
+            gap: 24px;
         }
 
         .immersive-header .header-content-button {
@@ -810,17 +1041,23 @@
             border-bottom: 1px solid transparent;
             background: transparent;
             color: #fff;
-            font-size: 13px;
-            letter-spacing: 0.04em;
+            font-size: 12px;
+            font-weight: 400;
+            letter-spacing: 0.2em;
+            /* tracking sobra à direita da última letra; o recuo devolve o alinhamento óptico */
+            text-indent: 0.2em;
             text-transform: uppercase;
-            padding: 0 2px 4px;
+            padding: 0 0 6px;
+            opacity: 0.82;
             cursor: pointer;
+            transition: opacity 0.2s ease;
         }
 
         .immersive-header .header-content-button:hover,
         .immersive-header .header-content-button.is-active {
-            border-bottom-color: #fff;
-            border-bottom-width: 2px;
+            border-bottom-color: rgba(255, 255, 255, 0.85);
+            border-bottom-width: 1px;
+            opacity: 1;
         }
 
         body.ui-macos .immersive-header .header-content-button,
@@ -837,12 +1074,13 @@
         }
 
         .immersive-header .mode-toggle {
-            border: 1px solid rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.85);
             background: transparent;
             color: #fff;
-            padding: 6px 12px;
+            padding: 8px 15px;
             font-size: 12px;
-            letter-spacing: 0.06em;
+            font-weight: 400;
+            letter-spacing: 0.14em;
             text-transform: uppercase;
             cursor: pointer;
         }
@@ -851,17 +1089,9 @@
             background: rgba(255, 255, 255, 0.12);
         }
 
+        .immersive-header-handle,
         .immersive-header-hotzone {
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            height: 56px;
-            transform: translateY(100%);
-        }
-
-        .immersive-header.is-collapsed:not(.is-locked) .immersive-header-hotzone {
-            height: 150px;
+            display: none;
         }
 
         .immersive-header-handle {
@@ -877,7 +1107,7 @@
             color: #fff;
             cursor: pointer;
             padding: 0;
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
         }
@@ -1332,30 +1562,51 @@
             text-shadow: none;
         }
 
-        .imsg-toast--drag,
-        .imsg-toast--cube,
         .return-notification {
             left: auto;
             right: max(18px, env(safe-area-inset-right, 0px));
             top: auto;
             transform: none;
-        }
-
-        .imsg-toast--drag {
-            bottom: max(108px, calc(env(safe-area-inset-bottom, 0px) + 102px));
-        }
-
-        .imsg-toast--cube,
-        .return-notification {
             bottom: max(54px, calc(env(safe-area-inset-bottom, 0px) + 50px));
+        }
+
+        /* Pilha de avisos: a fala nova entra embaixo e empurra as anteriores para cima. */
+        .imsg-stack {
+            position: fixed;
+            z-index: 1200;
+            left: auto;
+            top: auto;
+            right: max(18px, env(safe-area-inset-right, 0px));
+            bottom: max(54px, calc(env(safe-area-inset-bottom, 0px) + 50px));
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .imsg-stack .navigation-notification {
+            position: static;
+            right: auto;
+            bottom: auto;
         }
 
         .head-hint.is-static-msg .head-hint-msg {
             display: block;
         }
 
+        /* Avisos de navegação também "digitam" antes de virar texto. */
+        .head-hint.is-said .head-hint-typing {
+            display: none;
+        }
+
+        .head-hint.is-said .head-hint-msg {
+            display: block;
+        }
+
         .imsg-toast--drag .head-hint,
         .imsg-toast--cube .head-hint,
+        .imsg-toast--details .head-hint,
         .return-notification .head-hint {
             transform: none;
             animation: head-hint-bob 3.4s ease-in-out infinite;
@@ -1391,13 +1642,13 @@
             flex-direction: column;
             align-items: flex-start;
             gap: 0;
-            min-width: 58px;
-            max-width: min(72vw, 248px);
-            padding: 10px 15px 11px;
+            min-width: 64px;
+            max-width: min(76vw, 278px);
+            padding: 11px 17px 12px;
             background: linear-gradient(165deg, #4da3ff 0%, #0a84ff 42%, #0071e3 100%);
             color: #fff;
             border-radius: 999px;
-            filter: drop-shadow(0 10px 22px rgba(0, 82, 204, 0.38));
+            filter: drop-shadow(0 12px 28px rgba(0, 82, 204, 0.46));
             text-align: left;
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
             transform: translate(52px, -86%);
@@ -1425,7 +1676,7 @@
             display: flex;
             align-items: center;
             gap: 5px;
-            height: 18px;
+            height: 20px;
             padding: 1px 4px;
         }
 
@@ -1443,7 +1694,7 @@
         .head-hint-msg {
             display: none;
             margin: 0;
-            font-size: 17px;
+            font-size: 18px;
             font-weight: 400;
             letter-spacing: -0.024em;
             line-height: 1.27;
@@ -1475,6 +1726,10 @@
             content: " ";
         }
 
+        .head-hint-sub[hidden] {
+            display: none;
+        }
+
         @keyframes head-hint-pop {
             0% { opacity: 0; transform: translate(52px, -86%) scale(0.72); }
             100% { opacity: 1; transform: translate(52px, -86%) scale(1); }
@@ -1497,6 +1752,60 @@
         @keyframes head-hint-dot {
             0%, 80%, 100% { transform: translateY(0); opacity: 0.45; }
             40% { transform: translateY(-4px); opacity: 1; }
+        }
+
+        /* Conversa da cabeça: duas mensagens em sequência, estilo iMessage.
+           O deslocamento em relação à cabeça sai das bolhas e vai para a pilha. */
+        .initial-notification .head-hint-stack {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 7px;
+            transform: translate(52px, -86%);
+            animation: head-hint-bob 3.4s ease-in-out infinite;
+        }
+
+        .initial-notification.is-left .head-hint-stack {
+            align-items: flex-end;
+            transform: translate(calc(-100% - 52px), -86%);
+        }
+
+        .initial-notification .head-hint-stack .head-hint {
+            display: none;
+            transform: none;
+            animation: none;
+        }
+
+        .initial-notification .head-hint-stack .head-hint.is-shown {
+            display: flex;
+            transform-origin: left bottom;
+            animation: head-hint-pop-stack 0.44s cubic-bezier(0.2, 1.32, 0.36, 1) both;
+        }
+
+        .initial-notification.is-left .head-hint-stack .head-hint.is-shown {
+            transform-origin: right bottom;
+        }
+
+        .initial-notification .head-hint-stack .head-hint.is-said .head-hint-typing {
+            display: none;
+        }
+
+        .initial-notification .head-hint-stack .head-hint.is-said .head-hint-msg {
+            display: block;
+        }
+
+        @keyframes head-hint-pop-stack {
+            0% { opacity: 0; transform: scale(0.72); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .initial-notification .head-hint-stack .head-hint.is-gone {
+            animation: head-hint-fade-stack 0.42s ease both;
+        }
+
+        @keyframes head-hint-fade-stack {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0.86); }
         }
 
         .notification-pulse {
@@ -2025,16 +2334,12 @@
        <button id="skyboxButton" class="skybox-button" type="button" data-i18n="immersive.background">FUNDO</button>
        <button id="uiStyleButton" class="skybox-button" type="button">macOS</button>
    </div>
-   <header class="immersive-header is-collapsed is-locked" id="immersiveHeader">
+   <header class="immersive-header is-locked" id="immersiveHeader">
      <div class="immersive-header-inner">
        <h1 class="lite-title">
          <span class="lite-title-top">João</span>
          <span class="lite-title-right">Nunez</span>
          <span class="lite-title-role" data-i18n="ui.titleRole">| designer multimídia</span>
-         <div class="lang-switch" role="group" data-i18n-attr="aria-label:ui.langLabel">
-           <button type="button" class="lang-switch-btn is-active" data-lang="pt" aria-pressed="true">PT</button>
-           <button type="button" class="lang-switch-btn" data-lang="en" aria-pressed="false">EN</button>
-         </div>
        </h1>
        <div class="header-actions">
          <nav class="header-content-nav" data-i18n-attr="aria-label:ui.contentNav">
@@ -2044,11 +2349,6 @@
          <button id="goToLiteMode" class="mode-toggle" type="button" data-i18n="ui.liteMode">Lite</button>
        </div>
      </div>
-     <div class="immersive-header-hotzone" aria-hidden="true"></div>
-     <button type="button" class="immersive-header-handle" id="immersiveHeaderToggle" aria-expanded="false" aria-label="Menu">
-       <span class="immersive-header-handle-icon" aria-hidden="true"></span>
-     </button>
-     </button>
    </header>
    <script>
      (function () {
@@ -2161,14 +2461,12 @@
             function isHeaderLocked() {
               return !!(header && header.classList.contains('is-locked'));
             }
-            function setHeaderCollapsed(collapsed) {
+            function setHeaderCollapsed() {
               if (!header) return;
-              header.classList.toggle('is-collapsed', collapsed);
-              if (headerToggle) headerToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+              header.classList.remove('is-collapsed');
             }
             function collapseImmersiveUi() {
               setImmersiveView('scene');
-              setHeaderCollapsed(true);
             }
             function scheduleCollapseImmersiveUi() {
               clearTimeout(headerHideTimer);
@@ -2309,20 +2607,6 @@
                 });
               });
             }
-            bindUiHover(header);
-            bindUiHover(cvPanel);
-            bindUiHover(projectsPanel);
-            if (headerToggle) {
-              headerToggle.addEventListener('click', function (e) {
-                e.stopPropagation();
-                if (isHeaderLocked()) return;
-                if (header.classList.contains('is-collapsed')) {
-                  setHeaderCollapsed(false);
-                } else {
-                  collapseImmersiveUi();
-                }
-              });
-            }
             }
             function refreshImmersiveProjectsLocale() {
               if (typeof cubeArray !== 'undefined') {
@@ -2330,8 +2614,8 @@
                   if (!cube.userData || !cube.userData.projectData) return;
                   var pid = cube.userData.projectId;
                   cube.userData.project.name = projectDisplayTitle(pid, cube.userData.projectData);
-                  if (typeof INTERSECTED !== 'undefined' && INTERSECTED === cube && typeof tooltip !== 'undefined' && tooltip) {
-                    tooltip.textContent = cube.userData.project.name || i18nT('immersive.noTitle');
+                  if (typeof INTERSECTED !== 'undefined' && INTERSECTED === cube && typeof renderCubeTooltip === 'function') {
+                    renderCubeTooltip(cube);
                   }
                 });
               }
@@ -2354,6 +2638,19 @@
                 var dragSub = dragNotification.querySelector('.head-hint-sub');
                 if (dragTitle) dragTitle.textContent = i18nT('immersive.dragHint');
                 if (dragSub) dragSub.textContent = i18nT('immersive.dragHintSub');
+              }
+              var detailsNotification = document.getElementById('cube-focus-notification');
+              if (detailsNotification) {
+                var hintKind = detailsNotification.dataset.hintKind;
+                if (hintKind === 'reaction' && detailsNotification.dataset.reactionKey) {
+                  fillImsgBubble(detailsNotification, i18nT(detailsNotification.dataset.reactionKey), '');
+                } else {
+                  fillImsgBubble(
+                    detailsNotification,
+                    i18nT('immersive.detailsHint'),
+                    i18nT('immersive.detailsHintSub')
+                  );
+                }
               }
             }
 
@@ -2481,6 +2778,8 @@
           cubeFocused = true;
           immersiveSelectedProjectId = cube.userData.projectId;
           highlightImmersiveProjectList();
+          if (typeof clearCubeHoverVisual === 'function') clearCubeHoverVisual(cube);
+          if (typeof showCubeFocusHint === 'function') showCubeFocusHint();
         }
 
         function focusImmersiveProject(projectId) {
@@ -2674,7 +2973,7 @@
                         var d = Number(video.duration || 0);
                         video.currentTime = isFinite(d) && d > 0.2 ? 0.12 : 0;
                     } catch (e) {
-                        video.currentTime = 0;
+                    video.currentTime = 0;
                     }
                 };
                 video.onseeked = function() {
@@ -2731,7 +3030,7 @@
                     markCubeTexturesReady(cube);
                     cubeVideoTextureBusy = false;
                     drainCubeVideoTextureQueue();
-                });
+            });
         }
 
         // Função para carregar texturas nas faces do cubo
@@ -2759,7 +3058,7 @@
                     if (cube) markCubeTexturesReady(cube);
                     resolve();
                 }
-
+                
                 for (let i = 0; i < totalFaces; i++) {
                     if (faceImages[i] && materials[i]) {
                         textureLoader.load(
@@ -2932,14 +3231,14 @@
             if (hasImages && !cube.userData.texturesReady) {
                 startCubeLoadingPulse(cube);
             } else {
-                gsap.to(cube.scale, {
-                    x: 1,
-                    y: 1,
-                    z: 1,
-                    duration: 0.8,
+            gsap.to(cube.scale, {
+                x: 1,
+                y: 1,
+                z: 1,
+                duration: 0.8,
                     ease: "back.out(1.7)",
-                    delay: 0.1
-                });
+                delay: 0.1
+            });
             }
             
             materials.forEach(mat => {
@@ -3004,7 +3303,7 @@
                  
                  // Se este cubo estiver atualmente com INTERSECTED, atualize o tooltip imediatamente
                  if (INTERSECTED === cube) {
-                    tooltip.textContent = cube.userData.project.name;
+                    renderCubeTooltip(cube);
                  }
                  
                  const newImageUrls = projectData.images || [];
@@ -3036,12 +3335,12 @@
             var firstVideoUrl = cube.userData.firstVideoUrl || null;
             var firstVideoPoster = cube.userData.firstVideoPoster || null;
             if (!firstVideoUrl) {
-                for (var c = 0; c < carouselItems.length; c++) {
+            for (var c = 0; c < carouselItems.length; c++) {
                     if (carouselItems[c].type === 'video' && carouselItems[c].url) {
                         firstVideoUrl = carouselItems[c].url;
                         firstVideoPoster = carouselItems[c].poster || null;
                         break;
-                    }
+            }
                 }
             }
             var hasImages = faceImages.some(function(img) { return img !== null; }) || !!firstVideoPoster || !!firstVideoUrl;
@@ -3256,6 +3555,30 @@
         var headHitbox;
         var mixer;
         var headClicked = false;
+
+        // ---- Start page (tela de entrada antes do primeiro estado) ----
+        // Com deep link de projeto (?project=...) a tela de entrada é pulada.
+        var startScreenEnabled = (function () {
+            try {
+                return !(new URLSearchParams(window.location.search).get('project'));
+            } catch (e) {
+                return true;
+            }
+        })();
+        var startScreenActive = false;
+        var startScreenDismissed = false;
+        var startScreenTransitioning = false;
+        var startEntryAllowed = false;
+        var pendingHeadReveal = false;
+        var headModelFailed = false;
+        var startEntryAnimating = false;
+        var headEntryBaseY = null;
+
+        // True enquanto a tela de entrada ainda vai acontecer ou está no ar.
+        function startScreenPending() {
+            return startScreenEnabled && !startScreenDismissed;
+        }
+
         var _hintWorld;
         var _hintRight;
         var _hintFwd;
@@ -3280,17 +3603,52 @@
         var loadingBar = null;
         var loadingPercentage = null;
         var loadingText = null;
+        var loadingDetail = null;
         var blinkInterval = null;
-        
+        // Valor exibido na barra, interpolado para não saltar quando o
+        // modelo vem do cache (progresso chega de uma vez só).
+        var _barDisplay = { value: 0 };
+
+        function renderLoadingBar() {
+            if (!loadingBar || !loadingPercentage) return;
+            loadingBar.style.width = _barDisplay.value.toFixed(2) + '%';
+            loadingPercentage.textContent = Math.round(_barDisplay.value) + '%';
+        }
+
+        function formatMb(bytes) {
+            return (bytes / (1024 * 1024)).toFixed(1);
+        }
+
+        function setLoadingBytes(loaded, total) {
+            if (!loadingDetail) return;
+            // Cache hit reporta loaded/total = 1: não faz sentido mostrar em MB.
+            if (!total || total < 1024 * 1024) {
+                loadingDetail.textContent = '';
+                return;
+            }
+            loadingDetail.textContent = formatMb(loaded) + ' / ' + formatMb(total) + ' MB';
+        }
+
         // Função para atualizar progresso total
         function updateLoadingProgress() {
             // Pesos: Modelo 70%, Skybox 20%, Firestore 10%
             loadingProgress.total = loadingProgress.model;
             
             if (loadingBar && loadingPercentage) {
-                var displayPercent = Math.min(Math.round(loadingProgress.total), 99); // Máximo 99% até tudo carregar
-                loadingBar.style.width = displayPercent + '%';
-                loadingPercentage.textContent = displayPercent + '%';
+                var displayPercent = Math.min(loadingProgress.total, 99); // Máximo 99% até tudo carregar
+                if (displayPercent <= _barDisplay.value) return; // a barra nunca volta
+                if (typeof gsap !== 'undefined') {
+                    gsap.to(_barDisplay, {
+                        value: displayPercent,
+                        duration: 0.6,
+                        ease: 'power2.out',
+                        overwrite: true,
+                        onUpdate: renderLoadingBar
+                    });
+                } else {
+                    _barDisplay.value = displayPercent;
+                    renderLoadingBar();
+                }
             }
         }
         
@@ -3316,13 +3674,16 @@
             }
             
             // Mostrar 100%
-            loadingBar.style.width = '100%';
-            loadingPercentage.textContent = '100%';
+            if (typeof gsap !== 'undefined') gsap.killTweensOf(_barDisplay);
+            _barDisplay.value = 100;
+            renderLoadingBar();
+            if (loadingDetail) loadingDetail.textContent = '';
             loadingText.textContent = 'Complete!';
             loadingText.style.visibility = 'visible';
+            loadingText.style.opacity = '1';
             
             // Garantir que o modelo está visível antes de esconder o loading
-            if (model) {
+            if (model && !startScreenPending()) {
                 model.visible = true;
             }
             
@@ -3334,9 +3695,13 @@
                         document.body.removeChild(loadingScreen);
                         loadingScreen = null;
                     }
-                    showHeadChatBubble();
+                    if (startScreenPending()) {
+                        showStartScreen();
+                    } else {
+                        showHeadChatBubble();
+                    }
                 }, 300);
-            }, 0); // Sem delay - transição imediata
+            }, 220); // pequena pausa para o 100% ser percebido
         }
         
         // Função helper para parar piscar
@@ -3346,6 +3711,7 @@
                 blinkInterval = null;
                 if (loadingText) {
                     loadingText.style.visibility = 'visible';
+                    loadingText.style.opacity = '1';
                 }
             }
         }
@@ -3356,7 +3722,7 @@
         'desertdawn/desertdawn_ft.jpg', 'desertdawn/desertdawn_bk.jpg',
         'desertdawn/desertdawn_up.jpg', 'desertdawn/desertdawn_dn.jpg',
         'desertdawn/desertdawn_rt.jpg', 'desertdawn/desertdawn_lf.jpg'
-    ],
+    ],		  
 		   [
         'Rainbow/rainbow_ft.png', 'Rainbow/rainbow_bk.png',
         'Rainbow/rainbow_up.png', 'Rainbow/rainbow_dn.png',
@@ -3372,6 +3738,29 @@
         var skyZapBusy = false;
         var skyCycleTimer = null;
         var SKYBOX_CYCLE_MS = 60000;
+        // Na tela de entrada o visitante fica pouco tempo: troca de canal mais rápida.
+        var START_SKYBOX_CYCLE_MS = 3500;
+        // Rotação lenta do fundo, usada só na tela de entrada (rad/s).
+        var START_SKY_SPIN = 0.014;
+        // Crossfade entre canais: mais curto na tela de entrada, original dentro do site.
+        var SKY_ZAP_DURATION = 1.15;
+        var START_SKY_ZAP_DURATION = 0.55;
+
+        function currentSkyCycleMs() {
+            return startScreenActive ? START_SKYBOX_CYCLE_MS : SKYBOX_CYCLE_MS;
+        }
+
+        function currentSkyZapDuration() {
+            return startScreenActive ? START_SKY_ZAP_DURATION : SKY_ZAP_DURATION;
+        }
+
+        function restartSkyboxChannelCycle() {
+            if (skyCycleTimer) {
+                clearInterval(skyCycleTimer);
+                skyCycleTimer = null;
+            }
+            startSkyboxChannelCycle();
+        }
 
         function pickWeightedSkyboxIndex() {
             var totalWeight = skyboxWeights.reduce(function(sum, w) { return sum + w; }, 0);
@@ -3491,8 +3880,8 @@
                     resolve(skyboxTextures[index]);
                     return;
                 }
-                var loader = new THREE.CubeTextureLoader();
-                loader.load(
+            var loader = new THREE.CubeTextureLoader();
+            loader.load(
                     skyboxes[index],
                     function (texture) {
                         if (texture.colorSpace !== undefined) texture.colorSpace = THREE.SRGBColorSpace;
@@ -3511,7 +3900,7 @@
             if (skyCycleTimer || skyboxes.length < 2) return;
             skyCycleTimer = setInterval(function () {
                 cycleSkyboxChannel();
-            }, SKYBOX_CYCLE_MS);
+            }, currentSkyCycleMs());
         }
 
         function cycleSkyboxChannel() {
@@ -3529,7 +3918,7 @@
                 var lookahead = (next + 1) % skyboxes.length;
                 loadSkyboxTexture(lookahead).catch(function () {});
             }).catch(function (error) {
-                console.error('Erro ao carregar skybox:', error);
+                    console.error('Erro ao carregar skybox:', error);
                 if (isFirst) onEnvLoadComplete();
             });
         }
@@ -3657,21 +4046,29 @@
                 loadingPercentage.className = 'loading-percentage';
                 loadingPercentage.textContent = '0%';
                 
+                loadingDetail = document.createElement('div');
+                loadingDetail.className = 'loading-detail';
+                loadingDetail.textContent = '';
+                
                 loadingBarContainer.appendChild(loadingBar);
-                loadingBarContainer.appendChild(loadingPercentage);
                 loadingScreen.appendChild(loadingText);
                 loadingScreen.appendChild(loadingBarContainer);
+                loadingScreen.appendChild(loadingPercentage);
+                loadingScreen.appendChild(loadingDetail);
                 document.body.appendChild(loadingScreen);
                 
-                // Iniciar piscar
+                _barDisplay.value = 0;
+                renderLoadingBar();
+                
+                // Iniciar pulsar (fade suave em vez de piscar seco)
                 blinkInterval = setInterval(function() {
-                    loadingText.style.visibility = loadingText.style.visibility === 'hidden' ? 'visible' : 'hidden';
-                }, 800);
+                    loadingText.style.opacity = loadingText.style.opacity === '0.35' ? '1' : '0.35';
+                }, 900);
             }
             
             var loader = new THREE.GLTFLoader();
             var modelPath = (window.PORTFOLIO_MODEL_URL || 'models/NezmodelF2.glb');
-
+            
             function onHeadModelLoaded(gltf) {
                     // Modelo carregado
                     model = gltf.scene;
@@ -3687,6 +4084,8 @@
                             }
                         }
                     });
+                    // Fora de cena até dispensar a start page ou terminar a pausa de transição.
+                    model.visible = !startScreenPending() && !startScreenTransitioning && !pendingHeadReveal;
                     scene.add(model);
                     
                     // Hitbox invisível para detectar clique na cabeça (SkinnedMesh não suporta raycast nesta versão do Three.js)
@@ -3697,32 +4096,40 @@
                     model.add(headHitbox);
                     
                     // Aplicar envMapIntensity ao modelo (caso HDR já tenha carregado)
-                    model.traverse(function(child) {
-                        if (child.isMesh && child.material) {
-                            var mats = Array.isArray(child.material) ? child.material : [child.material];
-                            mats.forEach(function(mat) {
+                        model.traverse(function(child) {
+                            if (child.isMesh && child.material) {
+                                var mats = Array.isArray(child.material) ? child.material : [child.material];
+                                mats.forEach(function(mat) {
                                 applyLiteHeadMaterial(mat, scene.environment || null);
-                            });
-                        }
-                    });
+                                });
+                            }
+                        });
                     
                     markComponentComplete('model');
                     stopBlinking();
-
+                    
                     mixer = new THREE.AnimationMixer(model);
                     gltf.animations.forEach((clip) => {
                         mixer.clipAction(clip).play();
                     });
 
-                    animateCameraToPosition(0, 0, 5.8);
-                    loadHDREnvironment();
-                    loadSkyboxBackground();
+                    if (startScreenActive) {
+                        setStartScreenReady(true);
+                    } else if (!startScreenPending()) {
+                        if (pendingHeadReveal) {
+                            playSceneEntryAnimation();
+                        } else if (!startScreenTransitioning) {
+                            animateCameraToPosition(0, 0, 5.8);
+                        }
+                    }
             }
 
             function onHeadModelProgress(xhr) {
                     if (xhr.lengthComputable && xhr.total > 0) {
                         loadingProgress.model = (xhr.loaded / xhr.total) * 100;
+                        setLoadingBytes(xhr.loaded, xhr.total);
                         updateLoadingProgress();
+                        updateStartScreenProgress();
                         if (loadingText) loadingText.textContent = 'Loading';
                         stopBlinking();
                     } else {
@@ -3733,6 +4140,9 @@
             function onHeadModelError(error) {
                     console.error(error);
                     stopBlinking();
+                    // Falhou o GLB: libera a entrada mesmo sem cabeça, para não travar o visitante.
+                    headModelFailed = true;
+                    if (startScreenActive) setStartScreenReady(true);
                     if (loadingText) {
                         loadingText.textContent = 'ERRO';
                         loadingText.style.color = '#ff3333';
@@ -3742,7 +4152,7 @@
                         loadingBar.style.backgroundColor = '#ff3333';
                         loadingBar.style.boxShadow = '0 0 15px #ff3333';
                     }
-            }
+                }
 
             if (typeof loadPortfolioHeadGltf === 'function') {
                 loadPortfolioHeadGltf(loader, onHeadModelLoaded, onHeadModelProgress, onHeadModelError);
@@ -3793,6 +4203,11 @@
                 total: 0
             };
             
+            // Ambiente antes do modelo: o cubemap é leve e já dá imagem na tela
+            // enquanto o GLB (pesado) continua baixando em segundo plano.
+            loadSkyboxBackground();
+            loadHDREnvironment();
+
             addModel();
             
             setTimeout(function() {
@@ -3814,6 +4229,10 @@ function updateHeadChatBubble() {
     var el = _hintEl || document.querySelector('.initial-notification');
     _hintEl = el;
     if (!el || headClicked || !headHitbox || !camera) return;
+    if (startScreenActive) {
+        el.style.visibility = 'hidden';
+        return;
+    }
     if (!_hintWorld) {
         _hintWorld = new THREE.Vector3();
         _hintRight = new THREE.Vector3();
@@ -3861,10 +4280,57 @@ function updateHeadChatBubble() {
     el.style.transform = 'scale(' + _hintSc.toFixed(3) + ')';
 }
 
+var _hintTimers = [];
+var _hintSequenceStarted = false;
+var HEAD_CHAT_TYPING_MS = 820;   // tempo com os pontinhos antes de virar texto
+var HEAD_CHAT_GAP_MS = 560;      // respiro entre uma mensagem e a próxima
+var HEAD_CHAT_IDLE_MS = 16000;   // espera antes de insistir com quem não clicou
+var HEAD_CHAT_MAX_VISIBLE = 3;   // acima disso a pilha invadiria o topo da tela
+
+function clearHeadChatTimers() {
+    _hintTimers.forEach(function (id) { window.clearTimeout(id); });
+    _hintTimers = [];
+}
+
+function queueHeadChatStep(delay, fn) {
+    _hintTimers.push(window.setTimeout(function () {
+        if (headClicked) return;
+        fn();
+    }, delay));
+}
+
+// Mantém a conversa rolando: as mensagens mais antigas saem de cena.
+function trimHeadChatStack(el) {
+    var shown = el.querySelectorAll('.head-hint.is-shown:not(.is-gone)');
+    var excess = shown.length - HEAD_CHAT_MAX_VISIBLE;
+    for (var i = 0; i < excess; i++) {
+        (function (bubble) {
+            bubble.classList.add('is-gone');
+            _hintTimers.push(window.setTimeout(function () {
+                bubble.classList.remove('is-shown', 'is-said', 'is-gone');
+            }, 420));
+        })(shown[i]);
+    }
+}
+
+function queueHeadChatBubble(el, bubble, delay) {
+    queueHeadChatStep(delay, function () {
+        bubble.classList.add('is-shown');
+        trimHeadChatStack(el);
+    });
+    queueHeadChatStep(delay + HEAD_CHAT_TYPING_MS, function () {
+        bubble.classList.add('is-said');
+    });
+    return delay + HEAD_CHAT_TYPING_MS + HEAD_CHAT_GAP_MS;
+}
+
 function showHeadChatBubble() {
     if (headClicked) return;
+    // Sem cabeça em cena o balão não teria a que apontar.
+    if (startScreenPending() || !headHitbox) return;
     var el = document.querySelector('.initial-notification');
-    if (!el) return;
+    if (!el || _hintSequenceStarted) return;
+    _hintSequenceStarted = true;
     _hintEl = el;
     _hintReady = false;
     updateHeadChatBubble();
@@ -3874,13 +4340,221 @@ function showHeadChatBubble() {
         duration: 0.35,
         ease: 'power2.out'
     });
-    window.setTimeout(function () {
-        if (headClicked || !el.parentNode) return;
-        el.classList.add('is-ready');
-    }, 1100);
+
+    // Cada bolha entra "digitando" e só depois vira mensagem.
+    clearHeadChatTimers();
+    var delay = 0;
+    Array.prototype.forEach.call(el.querySelectorAll('.head-hint:not([data-hint-followup])'), function (bubble) {
+        delay = queueHeadChatBubble(el, bubble, delay);
+    });
+    // As demais só entram se a pessoa continuar parada.
+    Array.prototype.forEach.call(el.querySelectorAll('.head-hint[data-hint-followup]'), function (bubble) {
+        delay += HEAD_CHAT_IDLE_MS;
+        delay = queueHeadChatBubble(el, bubble, delay);
+    });
+}
+
+// ---------- TELA DE ENTRADA (antes do primeiro estado) ----------
+// O ENTER só libera com o GLB em memória: sem ele não haveria cabeça para revelar.
+function setStartScreenReady(ready) {
+    startEntryAllowed = !!ready;
+    var btn = document.getElementById('startEnterButton');
+    if (btn) btn.disabled = !ready;
+    var status = document.getElementById('startStatus');
+    if (status && ready) status.textContent = '';
+    if (ready && startScreenActive && btn) btn.focus({ preventScroll: true });
+}
+
+function updateStartScreenProgress() {
+    if (!startScreenActive || model) return;
+    var status = document.getElementById('startStatus');
+    if (!status) return;
+    var pct = Math.min(Math.round(loadingProgress.model), 99);
+    status.textContent = i18nT('ui.startLoading', { p: pct });
+}
+
+function showStartScreen() {
+    if (!startScreenPending()) return;
+    var el = document.getElementById('start-screen');
+    if (!el) {
+        // Sem o overlay disponível, cai no comportamento original.
+        startScreenDismissed = true;
+        if (model) model.visible = true;
+        showHeadChatBubble();
+        return;
+    }
+    startScreenActive = true;
+    el.classList.add('is-visible');
+    el.setAttribute('aria-hidden', 'false');
+    if (typeof gsap !== 'undefined') {
+        gsap.fromTo(el, { opacity: 0 }, { opacity: 1, duration: 0.6, ease: 'power2.out' });
+    } else {
+        el.style.opacity = '1';
+    }
+    restartSkyboxChannelCycle();
+    setStartScreenReady(!!model || headModelFailed);
+    updateStartScreenProgress();
+}
+
+function hideStartOverlay() {
+    var el = document.getElementById('start-screen');
+    if (!el) return;
+    var inner = el.querySelector('.start-screen-inner');
+    var title = inner && inner.querySelector('.start-title');
+    var btn = document.getElementById('startEnterButton');
+    var status = document.getElementById('startStatus');
+
+    el.setAttribute('aria-hidden', 'true');
+    el.classList.remove('is-visible');
+    if (typeof gsap !== 'undefined') {
+        gsap.set(el, { clearProps: 'opacity,pointerEvents' });
+        if (inner) gsap.set(inner, { clearProps: 'opacity,transform' });
+        if (title) gsap.set(title, { clearProps: 'opacity,transform' });
+        if (btn) gsap.set(btn, { clearProps: 'opacity,transform' });
+        if (status) gsap.set(status, { clearProps: 'opacity' });
+    }
+}
+
+// Entrada da cena: cabeça e câmera no mesmo ritmo — avanço suave em profundidade.
+function playSceneEntryAnimation() {
+    if (!model) return false;
+
+    pendingHeadReveal = false;
+    startScreenTransitioning = false;
+    if (headEntryBaseY === null) headEntryBaseY = model.position.y;
+
+    model.visible = true;
+
+    if (typeof gsap === 'undefined') {
+        model.position.set(0, headEntryBaseY, 0);
+        model.rotation.y = 0;
+        model.scale.set(1.2, 1.2, 1.2);
+        setTimeout(showHeadChatBubble, 500);
+        return true;
+    }
+
+    gsap.killTweensOf(model.scale);
+    gsap.killTweensOf(model.position);
+    gsap.killTweensOf(model.rotation);
+    gsap.killTweensOf(camera.position);
+
+    model.position.set(0, headEntryBaseY, -0.42);
+    model.rotation.y = -0.07;
+    model.scale.set(0.84, 0.84, 0.84);
+
+    if (controls) {
+        controls.enabled = false;
+        controls.minDistance = 4.6;
+    }
+
+    var entryTl = gsap.timeline({
+        onComplete: function () {
+            if (controls) {
+                controls.minDistance = 5.7;
+                controls.enabled = true;
+                controls.update();
+            }
+        }
+    });
+
+    entryTl.to(model.position, {
+        z: 0,
+        duration: 1.05,
+        ease: 'power3.out'
+    }, 0);
+    entryTl.to(model.rotation, {
+        y: 0,
+        duration: 1.05,
+        ease: 'power3.out'
+    }, 0);
+    entryTl.to(model.scale, {
+        x: 1.2,
+        y: 1.2,
+        z: 1.2,
+        duration: 1.05,
+        ease: 'power3.out'
+    }, 0);
+    entryTl.to(camera.position, {
+        x: 0,
+        y: 0,
+        z: 5.8,
+        duration: 1.05,
+        ease: 'power3.out',
+        onUpdate: function () {
+            if (controls) controls.target.set(0, 0, 0);
+        }
+    }, 0);
+    entryTl.add(showHeadChatBubble, 0.78);
+
+    return true;
+}
+
+function beginSceneEntry() {
+    if (!playSceneEntryAnimation()) {
+        pendingHeadReveal = true;
+    }
+    startEntryAnimating = false;
+}
+
+function enterSite() {
+    if (!startScreenActive || !startEntryAllowed || startEntryAnimating) return;
+    startEntryAnimating = true;
+    startScreenActive = false;
+    startScreenDismissed = true;
+    startScreenTransitioning = true;
+
+    var el = document.getElementById('start-screen');
+    var inner = el && el.querySelector('.start-screen-inner');
+    var title = inner && inner.querySelector('.start-title');
+    var btn = document.getElementById('startEnterButton');
+    var status = document.getElementById('startStatus');
+
+    restartSkyboxChannelCycle();
+
+    // Mini respiro entre o nome sumir e a cabeça entrar.
+    var ENTRY_SCENE_DELAY = 0.18;
+
+    if (typeof gsap !== 'undefined' && el) {
+        if (btn) btn.disabled = true;
+        gsap.set(el, { pointerEvents: 'none' });
+
+        var tl = gsap.timeline();
+
+        if (btn) {
+            tl.to(btn, {
+                opacity: 0,
+                y: 8,
+                duration: 0.22,
+                ease: 'power2.in'
+            }, 0);
+        }
+        if (status && status.textContent) {
+            tl.to(status, { opacity: 0, duration: 0.18 }, 0);
+        }
+        if (title) {
+            tl.to(title, {
+                opacity: 0,
+                y: -20,
+                scale: 0.97,
+                duration: 0.48,
+                ease: 'power2.in'
+            }, 0.1);
+        }
+        tl.to(el, {
+            opacity: 0,
+            duration: 0.38,
+            ease: 'power2.inOut'
+        }, 0.42);
+        tl.add(hideStartOverlay, 0.84);
+        tl.add(beginSceneEntry, 0.84 + ENTRY_SCENE_DELAY);
+    } else {
+        hideStartOverlay();
+        setTimeout(beginSceneEntry, ENTRY_SCENE_DELAY * 1000);
+    }
 }
 
 function hideHeadHintNotification() {
+    clearHeadChatTimers();
     var notification = document.querySelector('.initial-notification');
     if (notification) {
         gsap.to(notification, {
@@ -3894,12 +4568,13 @@ function hideHeadHintNotification() {
             }
         });
     }
-}
+    }
 
 function revealCubesIfNeeded() {
     if (headClicked) return;
     hideHeadHintNotification();
     headClicked = true;
+    setCubePointerCursor(false);
     var header = document.getElementById('immersiveHeader');
     if (header) header.classList.remove('is-locked');
     cubeArray.forEach(function (cube) {
@@ -3944,7 +4619,7 @@ function handleHeadClick() {
         duration: 1.6,
         ease: "power3.inOut"
     });
-
+    
     if (controls) {
         gsap.to(controls.target, {
             x: scene.position.x,
@@ -3958,64 +4633,173 @@ function handleHeadClick() {
 
 // Função para mostrar a notificação de navegação
 function buildImsgBubbleHtml() {
-    return '<div class="head-hint is-static-msg"><p class="head-hint-msg"><span class="head-hint-title"></span><span class="head-hint-sub"></span></p></div>';
+    return '<div class="head-hint">' +
+        '<div class="head-hint-typing" aria-hidden="true"><span></span><span></span><span></span></div>' +
+        '<p class="head-hint-msg"><span class="head-hint-title"></span><span class="head-hint-sub"></span></p>' +
+        '</div>';
+}
+
+function sayImsgBubble(toast) {
+    if (!toast || !toast.parentNode) return;
+    var bubble = toast.querySelector('.head-hint');
+    if (bubble) bubble.classList.add('is-said');
+}
+
+function fadeOutImsgToast(toast) {
+    if (!toast || !toast.parentNode || toast.dataset.leaving) return;
+    toast.dataset.leaving = '1';
+    gsap.to(toast, {
+        opacity: 0,
+        duration: 0.35,
+        ease: 'power2.in',
+        onComplete: function () {
+            if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }
+    });
 }
 
 function fillImsgBubble(root, title, sub) {
     var titleEl = root.querySelector('.head-hint-title');
     var subEl = root.querySelector('.head-hint-sub');
     if (titleEl) titleEl.textContent = title;
-    if (subEl) subEl.textContent = sub;
+    if (subEl) {
+        subEl.textContent = sub || '';
+        subEl.hidden = !sub;
+    }
+}
+
+function getImsgStack() {
+    var stack = document.getElementById('imsg-stack');
+    if (!stack) {
+        stack = document.createElement('div');
+        stack.id = 'imsg-stack';
+        stack.className = 'imsg-stack';
+        document.body.appendChild(stack);
+    }
+    return stack;
+}
+
+function createImsgToast(className, title, sub, id) {
+    var toast = document.createElement('div');
+    toast.className = 'navigation-notification ' + className;
+    if (id) toast.id = id;
+    toast.innerHTML = buildImsgBubbleHtml();
+    fillImsgBubble(toast, title, sub);
+    toast.style.opacity = '0';
+    return toast;
+}
+
+// Entra no fim da pilha (embaixo) e empurra as mensagens anteriores para cima.
+function enterImsgToast(toast) {
+    getImsgStack().appendChild(toast);
+    gsap.fromTo(toast,
+        { opacity: 0, y: 12 },
+        { opacity: 1, y: 0, duration: 0.38, ease: 'power2.out' }
+    );
+    setTimeout(function () { sayImsgBubble(toast); }, HEAD_CHAT_TYPING_MS);
+}
+
+var _navToastTimers = [];
+
+function clearNavToastTimers() {
+    _navToastTimers.forEach(function (id) { window.clearTimeout(id); });
+    _navToastTimers = [];
+}
+
+var CUBE_FOCUS_DETAILS_MAX = 2;
+var CUBE_FOCUS_REACTION_CHANCE = 0.16;
+var CUBE_FOCUS_REACTION_KEYS = [
+    'immersive.cubeReaction1',
+    'immersive.cubeReaction2',
+    'immersive.cubeReaction3',
+    'immersive.cubeReaction4',
+    'immersive.cubeReaction5',
+    'immersive.cubeReaction6',
+    'immersive.cubeReaction7'
+];
+
+function getCubeFocusCount() {
+    try {
+        return parseInt(localStorage.getItem('cubeFocusCount') || '0', 10) || 0;
+    } catch (e) {
+        return 0;
+    }
+}
+
+function bumpCubeFocusCount() {
+    var next = getCubeFocusCount() + 1;
+    try {
+        localStorage.setItem('cubeFocusCount', String(next));
+    } catch (e) {}
+    return next;
+}
+
+function pickCubeReactionKey() {
+    return CUBE_FOCUS_REACTION_KEYS[Math.floor(Math.random() * CUBE_FOCUS_REACTION_KEYS.length)];
+}
+
+// Aviso com cubo em foco: instrução nas primeiras vezes; depois reações casuais raras.
+function showCubeFocusHint() {
+    var existing = document.getElementById('cube-focus-notification');
+    if (existing && !existing.dataset.leaving) return;
+    if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+
+    var focusCount = bumpCubeFocusCount();
+    var title = '';
+    var sub = '';
+    var hintKind = '';
+    var reactionKey = '';
+
+    if (focusCount <= CUBE_FOCUS_DETAILS_MAX) {
+        title = i18nT('immersive.detailsHint');
+        sub = i18nT('immersive.detailsHintSub');
+        hintKind = 'details';
+    } else if (Math.random() < CUBE_FOCUS_REACTION_CHANCE) {
+        reactionKey = pickCubeReactionKey();
+        title = i18nT(reactionKey);
+        hintKind = 'reaction';
+    } else {
+        return;
+    }
+
+    // Os avisos de navegação ocupam a mesma pilha: saem de cena antes,
+    // inclusive os que ainda estavam agendados para entrar.
+    clearNavToastTimers();
+    fadeOutImsgToast(document.querySelector('.imsg-toast--drag'));
+    fadeOutImsgToast(document.getElementById('cube-notification'));
+
+    var toast = createImsgToast(
+        'imsg-toast--details',
+        title,
+        sub,
+        'cube-focus-notification'
+    );
+    toast.dataset.hintKind = hintKind;
+    if (hintKind === 'reaction') toast.dataset.reactionKey = reactionKey;
+    enterImsgToast(toast);
+}
+
+function hideCubeFocusHint() {
+    fadeOutImsgToast(document.getElementById('cube-focus-notification'));
 }
 
 function showNavigationNotification() {
     if (document.querySelector('.imsg-toast--drag') || document.getElementById('cube-notification')) return;
 
-    var notification = document.createElement('div');
-    notification.className = 'navigation-notification imsg-toast--drag';
-    notification.innerHTML = buildImsgBubbleHtml();
-    fillImsgBubble(notification, i18nT('immersive.dragHint'), i18nT('immersive.dragHintSub'));
-    notification.style.opacity = '0';
-    document.body.appendChild(notification);
+    var drag = createImsgToast('imsg-toast--drag', i18nT('immersive.dragHint'), i18nT('immersive.dragHintSub'));
+    var cube = createImsgToast('imsg-toast--cube', i18nT('immersive.cubeHint'), i18nT('immersive.cubeHintSub'), 'cube-notification');
 
-    var cubeNotification = document.createElement('div');
-    cubeNotification.id = 'cube-notification';
-    cubeNotification.className = 'navigation-notification imsg-toast--cube';
-    cubeNotification.innerHTML = buildImsgBubbleHtml();
-    fillImsgBubble(cubeNotification, i18nT('immersive.cubeHint'), i18nT('immersive.cubeHintSub'));
-    cubeNotification.style.opacity = '0';
-    document.body.appendChild(cubeNotification);
+    // Mesmo ritmo da conversa da cabeça: digita, fala, e só então vem a próxima.
+    var secondStart = HEAD_CHAT_TYPING_MS + HEAD_CHAT_GAP_MS;
+    var lastSaid = secondStart + HEAD_CHAT_TYPING_MS;
 
-    gsap.to(notification, {
-        opacity: 1,
-        duration: 0.35,
-        ease: 'power2.out'
-    });
-    gsap.to(cubeNotification, {
-        opacity: 1,
-        duration: 0.35,
-        delay: 0.15,
-        ease: 'power2.out'
-    });
-
-    setTimeout(function() {
-        gsap.to(notification, {
-            opacity: 0,
-            duration: 0.35,
-            ease: 'power2.in',
-            onComplete: function() {
-                if (notification.parentNode) notification.parentNode.removeChild(notification);
-            }
-        });
-        gsap.to(cubeNotification, {
-            opacity: 0,
-            duration: 0.35,
-            ease: 'power2.in',
-            onComplete: function() {
-                if (cubeNotification.parentNode) cubeNotification.parentNode.removeChild(cubeNotification);
-            }
-        });
-    }, 4500);
+    clearNavToastTimers();
+    enterImsgToast(drag);
+    _navToastTimers.push(setTimeout(function () { enterImsgToast(cube); }, secondStart));
+    _navToastTimers.push(setTimeout(function() {
+        fadeOutImsgToast(drag);
+        fadeOutImsgToast(cube);
+    }, lastSaid + 4500));
 }
 
         function addLighting() {
@@ -4038,6 +4822,7 @@ function showNavigationNotification() {
         function resetCamera() {
             immersiveSelectedProjectId = null;
             if (typeof highlightImmersiveProjectList === 'function') highlightImmersiveProjectList();
+            if (typeof hideCubeFocusHint === 'function') hideCubeFocusHint();
             gsap.to(camera.position, {
                 x: initialCameraPosition.x,
                 y: initialCameraPosition.y,
@@ -4623,82 +5408,197 @@ function isCanvasPointerEvent(event) {
     return !!(renderer && renderer.domElement && event && event.target === renderer.domElement);
 }
 
-function clearCubeHoverTooltip() {
-    if (typeof INTERSECTED !== 'undefined' && INTERSECTED) {
-        var mats = Array.isArray(INTERSECTED.material) ? INTERSECTED.material : [INTERSECTED.material];
-        mats.forEach(function(m) { m.color.setHex(INTERSECTED.currentHex); });
-        INTERSECTED = null;
+function cubeMaterialList(cube) {
+    if (!cube) return [];
+    return Array.isArray(cube.material) ? cube.material : [cube.material];
+}
+
+function setCubePointerCursor(on) {
+    if (renderer && renderer.domElement) {
+        renderer.domElement.style.cursor = on ? 'pointer' : '';
     }
-    if (typeof tooltip !== 'undefined' && tooltip) tooltip.style.visibility = 'hidden';
+}
+
+function clearCubeHoverVisual(cube) {
+    if (!cube) return;
+    if (cube.userData && cube.userData.hoverTween) {
+        cube.userData.hoverTween.kill();
+        cube.userData.hoverTween = null;
+    }
+    var stored = cube.userData && cube.userData.hoverRestore;
+    if (stored) {
+        cubeMaterialList(cube).forEach(function (mat, i) {
+            var s = stored[i] || stored[0];
+            if (!mat || !s) return;
+            if (mat.emissive) mat.emissive.setHex(s.emissive);
+            if (mat.emissiveIntensity !== undefined) mat.emissiveIntensity = s.emissiveIntensity;
+            if (mat.envMapIntensity !== undefined) mat.envMapIntensity = s.envMapIntensity;
+            if (mat.clearcoat !== undefined) mat.clearcoat = s.clearcoat;
+            if (mat.clearcoatRoughness !== undefined) mat.clearcoatRoughness = s.clearcoatRoughness;
+        });
+        cube.userData.hoverRestore = null;
+    }
+    if (cube.userData && cube.userData.hoverLight) {
+        if (typeof gsap !== 'undefined') {
+            gsap.to(cube.userData.hoverLight, { intensity: 0, duration: 0.22 });
+        } else {
+            cube.userData.hoverLight.intensity = 0;
+        }
+    }
+    if (cube.userData) cube.userData.hovered = false;
+    if (cube.userData && !cube.userData.loadingPulse && typeof gsap !== 'undefined') {
+        gsap.to(cube.scale, { x: 1, y: 1, z: 1, duration: 0.22, ease: 'power2.out' });
+    }
+}
+
+function applyCubeHoverVisual(cube) {
+    if (!cube || (cube.userData && cube.userData.hovered)) return;
+    if (typeof cubeFocused !== 'undefined' && cubeFocused) return;
+    cube.userData = cube.userData || {};
+    cube.userData.hovered = true;
+    var mats = cubeMaterialList(cube);
+    cube.userData.hoverRestore = mats.map(function (mat) {
+        return {
+            emissive: mat && mat.emissive ? mat.emissive.getHex() : 0,
+            emissiveIntensity: mat && mat.emissiveIntensity !== undefined ? mat.emissiveIntensity : 0,
+            envMapIntensity: mat && mat.envMapIntensity !== undefined ? mat.envMapIntensity : 1.7,
+            clearcoat: mat && mat.clearcoat !== undefined ? mat.clearcoat : 0,
+            clearcoatRoughness: mat && mat.clearcoatRoughness !== undefined ? mat.clearcoatRoughness : 0
+        };
+    });
+    mats.forEach(function (mat) {
+        if (!mat) return;
+        if (mat.emissive) mat.emissive.setHex(0x1a5fa8);
+        if (mat.emissiveIntensity !== undefined) mat.emissiveIntensity = 0.1;
+        if (mat.envMapIntensity !== undefined) mat.envMapIntensity = (mat.envMapIntensity || 1.7) * 1.22;
+        if (mat.clearcoat !== undefined) mat.clearcoat = 0.55;
+        if (mat.clearcoatRoughness !== undefined) mat.clearcoatRoughness = 0.18;
+    });
+    if (!cube.userData.hoverLight) {
+        cube.userData.hoverLight = new THREE.PointLight(0x2f78c8, 0, 3.4);
+        cube.userData.hoverLight.position.set(0.35, 0.45, 0.7);
+        cube.add(cube.userData.hoverLight);
+    }
+    if (typeof gsap !== 'undefined') {
+        gsap.to(cube.userData.hoverLight, { intensity: 1.35, duration: 0.22 });
+    } else {
+        cube.userData.hoverLight.intensity = 1.35;
+    }
+    if (!cube.userData.loadingPulse && typeof gsap !== 'undefined' && cube.scale.x > 0.7) {
+        gsap.killTweensOf(cube.scale);
+        cube.userData.hoverTween = gsap.to(cube.scale, {
+            x: 1.1,
+            y: 1.1,
+            z: 1.1,
+            duration: 0.24,
+            ease: 'power2.out'
+        });
+    }
+}
+
+function clearCubeHoverTooltip() {
+        if (typeof INTERSECTED !== 'undefined' && INTERSECTED) {
+        clearCubeHoverVisual(INTERSECTED);
+            INTERSECTED = null;
+        }
+    setCubePointerCursor(false);
+        if (typeof tooltip !== 'undefined' && tooltip) tooltip.style.visibility = 'hidden';
+}
+
+function cubeTooltipDescription(cube) {
+    if (!cube || !cube.userData) return '';
+    var data = cube.userData.projectData || {};
+    var id = cube.userData.projectId;
+    var row = Object.assign({ docId: id, id: id }, data);
+    return String(i18nProject(row, 'description') || '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function renderCubeTooltip(cube) {
+    if (typeof tooltip === 'undefined' || !tooltip) return;
+    var hasProject = !!(cube && cube.userData && cube.userData.project);
+    var title = hasProject
+        ? (cube.userData.project.name || i18nT('immersive.noTitle'))
+        : i18nT('immersive.unknownProject');
+    var html = '<span class="tooltip-title">' + immersiveEscapeHtml(title) + '</span>';
+    var desc = hasProject ? cubeTooltipDescription(cube) : '';
+    if (desc) html += '<span class="tooltip-desc">' + immersiveEscapeHtml(desc) + '</span>';
+    tooltip.innerHTML = html;
+}
+
+// Posiciona ao lado do cursor sem deixar o tooltip sair da janela.
+function positionCubeTooltip(event) {
+    var offset = 16;
+    var margin = 12;
+    var x = event.clientX + offset;
+    var y = event.clientY + offset;
+    if (x + tooltip.offsetWidth > window.innerWidth - margin) {
+        x = event.clientX - tooltip.offsetWidth - offset;
+    }
+    if (y + tooltip.offsetHeight > window.innerHeight - margin) {
+        y = event.clientY - tooltip.offsetHeight - offset;
+    }
+    tooltip.style.left = Math.max(margin, x) + 'px';
+    tooltip.style.top = Math.max(margin, y) + 'px';
 }
 
 function onDocumentMouseMove(event) {
+    if (startScreenActive) {
+        clearCubeHoverTooltip();
+        return;
+    }
     if (!isCanvasPointerEvent(event)) {
         clearCubeHoverTooltip();
         return;
     }
     var panel = document.getElementById('project-panel');
     if (panel && panel.classList.contains('visible')) {
-        if (typeof INTERSECTED !== 'undefined' && INTERSECTED) {
-            var mats = Array.isArray(INTERSECTED.material) ? INTERSECTED.material : [INTERSECTED.material];
-            mats.forEach(function(m) { m.color.setHex(INTERSECTED.currentHex); });
-            INTERSECTED = null;
-        }
-        if (typeof tooltip !== 'undefined' && tooltip) tooltip.style.visibility = 'hidden';
+        clearCubeHoverTooltip();
         return;
     }
     event.preventDefault();
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-    
     raycaster.setFromCamera(mouse, camera);
     var intersects = raycaster.intersectObjects(cubeArray);
     
     if (intersects.length > 0) {
-        if (INTERSECTED != intersects[0].object) {
-            if (INTERSECTED) {
-                // Restaurar cor anterior (suporta array de materiais)
-                const prevMaterials = Array.isArray(INTERSECTED.material) ? INTERSECTED.material : [INTERSECTED.material];
-                prevMaterials.forEach(mat => mat.color.setHex(INTERSECTED.currentHex));
-            }
-            
-            INTERSECTED = intersects[0].object;
-            const materials = Array.isArray(INTERSECTED.material) ? INTERSECTED.material : [INTERSECTED.material];
-            INTERSECTED.currentHex = materials[0].color.getHex();
-            if (INTERSECTED.userData && INTERSECTED.userData.texturesReady) {
-                materials.forEach(mat => mat.color.setHex(0xff0000));
-            }
-        }
-
-        tooltip.style.left = event.clientX + 'px';
-        tooltip.style.top = event.clientY + 'px';
-        
-        // Garantir que o tooltip exiba o título correto do projeto do Firebase
-        if (INTERSECTED.userData && INTERSECTED.userData.project) {
-            tooltip.textContent = INTERSECTED.userData.project.name || i18nT('immersive.noTitle');
+        var hit = intersects[0].object;
+        if (INTERSECTED && INTERSECTED !== hit) clearCubeHoverVisual(INTERSECTED);
+        INTERSECTED = hit;
+        if (typeof cubeFocused !== 'undefined' && cubeFocused) {
+            if (hit.userData && hit.userData.hovered) clearCubeHoverVisual(hit);
         } else {
-            tooltip.textContent = i18nT('immersive.unknownProject');
+            applyCubeHoverVisual(INTERSECTED);
         }
+        setCubePointerCursor(true);
+
+        // Título e descrição do projeto vindos do Firestore
+        renderCubeTooltip(INTERSECTED);
+        positionCubeTooltip(event);
         
         tooltip.style.visibility = 'visible';
     } else {
-        if (INTERSECTED) {
-            // Restaurar cor (suporta array de materiais)
-            const materials = Array.isArray(INTERSECTED.material) ? INTERSECTED.material : [INTERSECTED.material];
-            materials.forEach(mat => mat.color.setHex(INTERSECTED.currentHex));
-        }
-
+        if (INTERSECTED) clearCubeHoverVisual(INTERSECTED);
         INTERSECTED = null;
         tooltip.style.visibility = 'hidden';
+        var overHead = false;
+        if (!headClicked && headHitbox) {
+            overHead = raycaster.intersectObject(headHitbox, false).length > 0;
+        }
+        setCubePointerCursor(overHead);
     }
 }
 
 
         function onDocumentMouseOut() {
-            tooltip.style.visibility = 'hidden';
+            clearCubeHoverTooltip();
         }
 	  
 	  function onDocumentMouseDown(event) {
+    if (startScreenActive) return;
     if (!isCanvasPointerEvent(event)) return;
     var panel = document.getElementById('project-panel');
     if (panel && panel.classList.contains('visible')) return;
@@ -4723,6 +5623,7 @@ function onDocumentMouseMove(event) {
 var cubeFocused = false;
 
 function onDocumentMouseUp(event) {
+    if (startScreenActive) { mouseDown = false; return; }
     if (!isCanvasPointerEvent(event)) { mouseDown = false; return; }
     var panel = document.getElementById('project-panel');
     if (panel && panel.classList.contains('visible')) { mouseDown = false; return; }
@@ -4737,6 +5638,7 @@ function onDocumentMouseUp(event) {
         } else {
             const projectId = selectedCube.userData.projectId;
             if (projectId) {
+                hideCubeFocusHint();
                 openProject(projectId);
             }
         }
@@ -4791,7 +5693,7 @@ function onDocumentMouseUp(event) {
     camera.rotateY(Math.sin(t * 1.21 + 0.45) * rot * 0.75);
     camera.rotateZ(Math.sin(t * 0.86) * rot * 1.15 + Math.sin(t * 2.88) * rot * 0.38);
     handheldActive = true;
-  }
+        }
 
   function animate() {
     requestAnimationFrame(animate);
@@ -4810,6 +5712,9 @@ function onDocumentMouseUp(event) {
     }
     if (worldSkyMesh && camera) {
         worldSkyMesh.position.copy(camera.position);
+        if (startScreenActive || startScreenTransitioning) {
+            worldSkyMesh.rotation.y += START_SKY_SPIN * deltaTime;
+        }
     }
 
     renderer.render(scene, camera);
@@ -4933,9 +5838,9 @@ document.addEventListener('keydown', function(event) {
 
         if (typeof controls !== 'undefined' && controls) controls.enabled = false;
         if (typeof INTERSECTED !== 'undefined' && INTERSECTED) {
-            var mats = Array.isArray(INTERSECTED.material) ? INTERSECTED.material : [INTERSECTED.material];
-            mats.forEach(function(m) { m.color.setHex(INTERSECTED.currentHex); });
+            clearCubeHoverVisual(INTERSECTED);
             INTERSECTED = null;
+            setCubePointerCursor(false);
         }
         if (typeof tooltip !== 'undefined' && tooltip) tooltip.style.visibility = 'hidden';
 
@@ -5009,10 +5914,10 @@ document.addEventListener('keydown', function(event) {
     document.addEventListener('click', function(e) {
         var backBtn = e.target && e.target.closest ? e.target.closest('#panel-back-button') : null;
         if (!backBtn) return;
-        e.preventDefault();
+                e.preventDefault();
         e.stopPropagation();
-        closeProject();
-    });
+                closeProject();
+            });
     document.addEventListener('DOMContentLoaded', function() {
         var prevBtn = document.getElementById('panel-prev-button');
         if (prevBtn) prevBtn.addEventListener('click', panelPrevSlide);
@@ -5967,16 +6872,73 @@ document.addEventListener('keydown', function(event) {
   });
 </script>
 
+<!-- Tela de entrada: skybox girando ao fundo, sem cabeça e sem cubos -->
+<div id="start-screen" class="start-screen" aria-hidden="true">
+    <div class="start-screen-inner">
+        <h1 class="start-title">
+            <span class="start-kicker" data-i18n="ui.startKicker">Portfólio</span>
+            <span class="start-title-name">João</span>
+            <span class="start-title-last">Nunez</span>
+            <span class="start-title-role" data-i18n="ui.titleRole">| designer multimídia</span>
+        </h1>
+        <button type="button" id="startEnterButton" class="start-enter" data-i18n="ui.startEnter">ENTER</button>
+        <p class="start-status" id="startStatus" aria-live="polite"></p>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var startBtn = document.getElementById('startEnterButton');
+        if (startBtn) {
+            startBtn.addEventListener('click', function () {
+                if (typeof enterSite === 'function') enterSite();
+            });
+        }
+        document.addEventListener('keydown', function (event) {
+            if (event.key !== 'Enter') return;
+            if (typeof startScreenActive === 'undefined' || !startScreenActive) return;
+            event.preventDefault();
+            if (typeof enterSite === 'function') enterSite();
+        });
+    })();
+</script>
+
 <!-- Adicionar a notificação inicial -->
 <div class="initial-notification" style="opacity: 0;" role="status" aria-live="polite">
-    <div class="head-hint">
-        <div class="head-hint-typing" aria-hidden="true">
-            <span></span><span></span><span></span>
+    <div class="head-hint-stack">
+        <div class="head-hint">
+            <div class="head-hint-typing" aria-hidden="true">
+                <span></span><span></span><span></span>
+            </div>
+            <p class="head-hint-msg">
+                <span class="head-hint-title" data-i18n="immersive.headGreeting">Oi!</span>
+            </p>
         </div>
-        <p class="head-hint-msg">
-            <span class="head-hint-title" data-i18n="immersive.headHint">Clique na cabeça</span>
-            <span class="head-hint-sub" data-i18n="immersive.headHintSub">para revelar os projetos</span>
-        </p>
+        <div class="head-hint">
+            <div class="head-hint-typing" aria-hidden="true">
+                <span></span><span></span><span></span>
+            </div>
+            <p class="head-hint-msg">
+                <span class="head-hint-title" data-i18n="immersive.headIntro">Sou o João!</span>
+            </p>
+        </div>
+        <div class="head-hint">
+            <div class="head-hint-typing" aria-hidden="true">
+                <span></span><span></span><span></span>
+            </div>
+            <p class="head-hint-msg">
+                <span class="head-hint-title" data-i18n="immersive.headHint">Clique na cabeça</span>
+                <span class="head-hint-sub" data-i18n="immersive.headHintSub">para revelar os projetos</span>
+            </p>
+        </div>
+        <div class="head-hint" data-hint-followup="1">
+            <div class="head-hint-typing" aria-hidden="true">
+                <span></span><span></span><span></span>
+            </div>
+            <p class="head-hint-msg">
+                <span class="head-hint-title" data-i18n="immersive.headNudge1">Ainda por aí?</span>
+            </p>
+        </div>
     </div>
 </div>
 
@@ -5984,9 +6946,9 @@ document.addEventListener('keydown', function(event) {
     window.addEventListener('load', function() {
         var notification = document.querySelector('.initial-notification');
         if (!notification) return;
-        try {
-            if (typeof headClicked !== 'undefined' && headClicked) return;
-        } catch (e) {}
+            try {
+                if (typeof headClicked !== 'undefined' && headClicked) return;
+            } catch (e) {}
         if (!document.getElementById('loading-screen') && !document.querySelector('.loading-screen')) {
             setTimeout(showHeadChatBubble, 400);
         }

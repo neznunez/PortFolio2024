@@ -154,13 +154,17 @@
     Array.prototype.forEach.call(document.querySelectorAll('[data-i18n]'), function (el) {
       var key = el.getAttribute('data-i18n');
       if (!key) return;
-      el.textContent = t(key);
+      var value = t(key);
+      // Chave ausente (pacote antigo em cache): preserva o texto escrito no HTML.
+      if (value === key) return;
+      el.textContent = value;
     });
 
     Array.prototype.forEach.call(document.querySelectorAll('[data-i18n-html]'), function (el) {
       var key = el.getAttribute('data-i18n-html');
       if (!key) return;
       var html = t(key);
+      if (html === key) return;
       if (typeof html === 'string') el.innerHTML = html;
     });
 
