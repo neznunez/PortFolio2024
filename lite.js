@@ -2424,14 +2424,36 @@
       });
     }
 
+    function scrollSectionIntoView(target) {
+      var navBottom = nav.getBoundingClientRect().bottom;
+      var delta = target.getBoundingClientRect().top - navBottom;
+      var paneStyle = window.getComputedStyle(scrollRoot);
+      var usesPaneScroll = paneStyle.overflowY === 'auto' || paneStyle.overflowY === 'scroll';
+      if (usesPaneScroll) {
+        scrollRoot.scrollTo({
+          top: Math.max(0, scrollRoot.scrollTop + delta),
+          behavior: 'smooth'
+        });
+        return;
+      }
+      var pageRoot = document.scrollingElement || document.documentElement;
+      pageRoot.scrollTo({
+        top: Math.max(0, pageRoot.scrollTop + delta),
+        behavior: 'smooth'
+      });
+    }
+
     // Estado inicial
     setActiveById(sections[0].id);
 
-    // Mantém destaque no clique
+    // Mantém destaque no clique e alinha a seção abaixo do menu
     links.forEach(function (link) {
-      link.addEventListener('click', function () {
-        var id = link.getAttribute('href').slice(1);
+      link.addEventListener('click', function (event) {
+        event.preventDefault();
+        var id = (link.getAttribute('href') || '').slice(1);
+        var target = id ? document.getElementById(id) : null;
         setActiveById(id);
+        if (target) scrollSectionIntoView(target);
       });
     });
 

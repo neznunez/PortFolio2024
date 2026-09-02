@@ -1194,18 +1194,36 @@
 
         .immersive-cv-panel {
             position: fixed;
-            top: calc(var(--ih-top) + var(--ih-height) + var(--ih-gap));
-            right: var(--ih-side);
-            bottom: 0;
+            top: calc(var(--ih-top) + var(--ih-height) + var(--ih-gap) + 10px);
+            right: 16px;
+            bottom: 16px;
             left: auto;
             width: min(44vw, 540px);
             z-index: 1090;
-            display: none;
+            display: flex;
             box-sizing: border-box;
+            overflow: hidden;
+            border-radius: 18px;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            transform: translate3d(calc(100% + 24px), 8px, 0);
+            transition:
+                opacity 0.38s ease,
+                transform 0.52s cubic-bezier(0.16, 1, 0.3, 1),
+                visibility 0s linear 0.45s;
         }
 
         .immersive-cv-panel.is-open {
-            display: flex;
+            pointer-events: auto;
+            opacity: 1;
+            visibility: visible;
+            z-index: 1092;
+            transform: translate3d(0, 0, 0);
+            transition:
+                opacity 0.36s ease,
+                transform 0.52s cubic-bezier(0.16, 1, 0.3, 1),
+                visibility 0s linear 0s;
         }
 
         .immersive-projects-panel {
@@ -1218,19 +1236,23 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            background: rgba(0, 0, 0, 0.38);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
-            border: none;
-            border-left: 1px solid rgba(255, 255, 255, 0.22);
+            background: rgba(0, 0, 0, 0.52);
+            backdrop-filter: blur(20px) saturate(125%);
+            -webkit-backdrop-filter: blur(20px) saturate(125%);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-left: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 18px;
             color: #fff;
             font-family: "IBM Plex Mono", ui-monospace, monospace;
+            box-shadow:
+                0 22px 60px rgba(0, 0, 0, 0.28),
+                inset 0 1px 0 rgba(255, 255, 255, 0.14);
         }
 
         #immersive-cv-panel .immersive-cv-frame {
-            background: rgba(0, 0, 0, 0.82);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
+            background: rgba(0, 0, 0, 0.56);
+            backdrop-filter: blur(22px) saturate(125%);
+            -webkit-backdrop-filter: blur(22px) saturate(125%);
         }
 
         .immersive-cv-nav {
@@ -1240,9 +1262,9 @@
             display: flex;
             flex-wrap: wrap;
             gap: 14px 18px;
-            justify-content: flex-start;
+            justify-content: center;
             flex-shrink: 0;
-            background: transparent;
+            background: rgba(0, 0, 0, 0.18);
         }
 
         .immersive-cv-nav a {
@@ -1264,9 +1286,10 @@
         .immersive-cv-scroll {
             flex: 1;
             overflow-y: auto;
-            padding: 8px 18px 32px;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255, 255, 255, 0.38) transparent;
+            overflow-x: hidden;
+            margin: 0 4px 14px 0;
+            padding: 10px 10px 18px 18px;
+            text-shadow: 0 1px 12px rgba(0, 0, 0, 0.55);
         }
 
         .immersive-cv-scroll h2 {
@@ -1278,6 +1301,10 @@
             text-transform: uppercase;
             border-top: 1px solid rgba(255, 255, 255, 0.22);
             padding-top: 12px;
+        }
+
+        .immersive-cv-scroll .lite-section {
+            scroll-margin-top: 0;
         }
 
         .immersive-cv-scroll .lite-section:first-child h2 {
@@ -1336,10 +1363,17 @@
         }
 
         .immersive-cv-scroll .skill-topic {
-            margin: 18px 0 10px;
-            font-family: "EB Garamond", Georgia, serif;
+            margin: 22px 0 12px;
+            font-family: "EB Garamond", "Times New Roman", Georgia, serif;
             font-size: clamp(18px, 1.2vw, 22px);
             font-weight: 400;
+            letter-spacing: 0.04em;
+            line-height: 1.08;
+            text-transform: uppercase;
+        }
+
+        .immersive-cv-scroll .skills-group > .skill-topic:first-child {
+            margin-top: 6px;
         }
 
         .immersive-cv-scroll .skill-row {
@@ -1492,44 +1526,71 @@
         .immersive-projects-list {
             flex: 1;
             overflow-y: auto;
-            padding: 0;
+            overflow-x: hidden;
+            margin: 12px 4px 12px 0;
+            padding: 0 6px 0 0;
+            min-height: 0;
+        }
+
+        .immersive-cv-scroll,
+        .immersive-projects-list {
             scrollbar-width: thin;
-            scrollbar-color: rgba(255, 255, 255, 0.38) transparent;
+            scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
         }
 
-        .immersive-cv-scroll {
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255, 255, 255, 0.38) transparent;
+        .immersive-cv-scroll::-webkit-scrollbar,
+        .immersive-projects-list::-webkit-scrollbar {
+            width: 8px;
         }
 
-        .immersive-projects-list::-webkit-scrollbar,
-        .immersive-cv-scroll::-webkit-scrollbar {
-            width: 5px;
-        }
-
-        .immersive-projects-list::-webkit-scrollbar-track,
-        .immersive-cv-scroll::-webkit-scrollbar-track {
+        .immersive-cv-scroll::-webkit-scrollbar-track,
+        .immersive-projects-list::-webkit-scrollbar-track {
             background: transparent;
-            margin: 8px 0;
+            margin: 0;
         }
 
-        .immersive-projects-list::-webkit-scrollbar-thumb,
-        .immersive-cv-scroll::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.28);
+        .immersive-cv-scroll::-webkit-scrollbar-thumb,
+        .immersive-projects-list::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.28);
+            background-clip: padding-box;
+            border: 2px solid transparent;
             border-radius: 999px;
-            border: 1px solid transparent;
+        }
+
+        .immersive-cv-scroll::-webkit-scrollbar-thumb:hover,
+        .immersive-projects-list::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(255, 255, 255, 0.48);
             background-clip: padding-box;
         }
 
-        .immersive-projects-list::-webkit-scrollbar-thumb:hover,
-        .immersive-cv-scroll::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.55);
+        .immersive-cv-scroll::-webkit-scrollbar-thumb:active,
+        .immersive-projects-list::-webkit-scrollbar-thumb:active {
+            background-color: rgba(255, 255, 255, 0.6);
             background-clip: padding-box;
         }
 
-        .immersive-projects-list::-webkit-scrollbar-corner,
-        .immersive-cv-scroll::-webkit-scrollbar-corner {
+        .immersive-cv-scroll::-webkit-scrollbar-corner,
+        .immersive-projects-list::-webkit-scrollbar-corner {
             background: transparent;
+        }
+
+        .immersive-cv-scroll::-webkit-scrollbar-button,
+        .immersive-cv-scroll::-webkit-scrollbar-button:single-button,
+        .immersive-cv-scroll::-webkit-scrollbar-button:vertical:start:decrement,
+        .immersive-cv-scroll::-webkit-scrollbar-button:vertical:end:increment,
+        .immersive-cv-scroll::-webkit-scrollbar-button:vertical:start:increment,
+        .immersive-cv-scroll::-webkit-scrollbar-button:vertical:end:decrement,
+        .immersive-projects-list::-webkit-scrollbar-button,
+        .immersive-projects-list::-webkit-scrollbar-button:single-button,
+        .immersive-projects-list::-webkit-scrollbar-button:vertical:start:decrement,
+        .immersive-projects-list::-webkit-scrollbar-button:vertical:end:increment,
+        .immersive-projects-list::-webkit-scrollbar-button:vertical:start:increment,
+        .immersive-projects-list::-webkit-scrollbar-button:vertical:end:decrement {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+            background: transparent !important;
+            border: none !important;
         }
 
         .immersive-projects-empty {
@@ -1585,7 +1646,18 @@
 
         @media (max-width: 768px) {
             .immersive-cv-panel {
-                width: 100%;
+                width: auto;
+                left: 12px;
+                right: 12px;
+                bottom: 12px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .immersive-cv-panel,
+            .immersive-cv-panel.is-open {
+                transition: none;
+                transform: none;
             }
         }
 
@@ -2743,7 +2815,10 @@
                   var target = id ? document.getElementById(id) : null;
                   var scroller = cvPanel.querySelector('.immersive-cv-scroll');
                   if (target && scroller) {
-                    scroller.scrollTo({ top: Math.max(0, target.offsetTop - 12), behavior: 'smooth' });
+                    var scrollerRect = scroller.getBoundingClientRect();
+                    var targetRect = target.getBoundingClientRect();
+                    var top = scroller.scrollTop + (targetRect.top - scrollerRect.top);
+                    scroller.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
                   }
                   Array.prototype.forEach.call(cvPanel.querySelectorAll('.immersive-cv-nav a'), function (other) {
                     other.classList.toggle('is-active', other === link);
