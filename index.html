@@ -2439,10 +2439,20 @@
             left: 14px;
             z-index: 40;
             display: none;
+            flex-direction: column;
             pointer-events: auto;
-            max-width: min(360px, calc(100% - 28px));
+            max-width: min(420px, calc(100% - 28px));
+            max-height: calc(100% - 28px);
+            overflow: hidden;
+            padding: 10px;
+            border-radius: 14px;
+            background: rgba(8, 10, 10, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-sizing: border-box;
         }
-        #project-panel .image-upload-container.visible { display: block; }
+        #project-panel .image-upload-container.visible { display: flex; }
         #project-panel .image-upload-input { display: none; }
         #project-panel .upload-limits-hint {
             display: block;
@@ -2454,31 +2464,46 @@
             letter-spacing: 0.1em;
             text-transform: uppercase;
             color: rgba(255, 255, 255, 0.42);
+            flex-shrink: 0;
         }
         #project-panel .image-list {
             margin-top: 8px;
-            max-height: 140px;
+            flex: 1 1 auto;
+            min-height: 72px;
+            max-height: min(180px, 32vh);
+            overflow-x: hidden;
             overflow-y: auto;
             background: rgba(0, 0, 0, 0.4);
             border: 1px solid rgba(255, 255, 255, 0.14);
             border-radius: 12px;
             padding: 6px;
         }
+        #project-panel .image-list-hint {
+            margin: 0 0 6px;
+            padding: 0 2px;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 9px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.42);
+        }
         #project-panel .image-item {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 6px;
-            padding: 4px 6px;
-            margin: 3px 0;
+            padding: 6px 6px;
+            margin: 4px 0;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
+            border-radius: 10px;
             color: rgba(255, 255, 255, 0.88);
             font-family: "IBM Plex Mono", ui-monospace, monospace;
             font-size: 10px;
             letter-spacing: 0.03em;
             cursor: grab;
+            position: relative;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
         }
         #project-panel .image-item img {
             width: 28px;
@@ -2488,23 +2513,80 @@
             margin-right: 2px;
             flex-shrink: 0;
         }
+        #project-panel .image-item-index {
+            flex-shrink: 0;
+            width: 18px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 9px;
+        }
+        #project-panel .image-item-label {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        #project-panel .image-item-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        #project-panel .image-order-btn {
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 10px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0;
+        }
+        #project-panel .image-order-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.9);
+            color: #0b0b0d;
+        }
+        #project-panel .image-order-btn:disabled {
+            opacity: 0.28;
+            cursor: default;
+        }
         #project-panel .image-item:active {
             cursor: grabbing;
         }
         #project-panel .image-item.carousel-item-dragging {
-            opacity: 0.5;
+            opacity: 0.45;
             cursor: grabbing;
+            transform: scale(0.98);
         }
-        #project-panel .image-item.carousel-item-drag-over {
-            outline: 1px solid rgba(255, 255, 255, 0.75);
-            outline-offset: 2px;
+        #project-panel .image-item.carousel-item-drag-over,
+        #project-panel .image-item.drop-before,
+        #project-panel .image-item.drop-after {
+            border-color: rgba(255, 255, 255, 0.55);
         }
+        #project-panel .image-item.drop-before::before,
+        #project-panel .image-item.drop-after::after {
+            content: "";
+            position: absolute;
+            left: 8px;
+            right: 8px;
+            height: 2px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.85);
+            pointer-events: none;
+        }
+        #project-panel .image-item.drop-before::before { top: -3px; }
+        #project-panel .image-item.drop-after::after { bottom: -3px; }
         #project-panel .carousel-drag-handle {
-            margin-right: 4px;
+            margin-right: 2px;
             color: rgba(255, 255, 255, 0.45);
             font-size: 14px;
             cursor: grab;
             user-select: none;
+            padding: 4px 2px;
         }
         #project-panel .carousel-drag-handle:active {
             cursor: grabbing;
@@ -2571,97 +2653,287 @@
         }
         /* ===== FIM PAINEL DE PROJETO ===== */
 
+        /* ===== Diálogos admin (senha / criar / confirmar) — identidade verde ===== */
+        .admin-dialog-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background:
+                radial-gradient(ellipse at 30% 20%, rgba(74, 155, 106, 0.18), transparent 55%),
+                radial-gradient(ellipse at 70% 80%, rgba(30, 61, 44, 0.45), transparent 50%),
+                rgba(8, 12, 10, 0.78);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .admin-dialog-backdrop.is-open { display: flex; }
+        .admin-dialog {
+            position: relative;
+            width: min(420px, 100%);
+            padding: 28px 26px 22px;
+            border-radius: 4px 18px 4px 18px;
+            border: 1px solid rgba(74, 155, 106, 0.55);
+            background: linear-gradient(165deg, rgba(26, 42, 32, 0.96) 0%, rgba(12, 18, 14, 0.98) 100%);
+            box-shadow:
+                0 0 0 1px rgba(243, 234, 216, 0.06) inset,
+                0 18px 48px rgba(0, 0, 0, 0.45),
+                0 0 40px rgba(47, 107, 74, 0.22);
+            color: #f3ead8;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+        }
+        .admin-dialog::before {
+            content: "";
+            position: absolute;
+            inset: 8px;
+            border: 1px dashed rgba(74, 155, 106, 0.28);
+            border-radius: 2px 12px 2px 12px;
+            pointer-events: none;
+        }
+        .admin-dialog-kicker {
+            margin: 0 0 6px;
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: rgba(74, 155, 106, 0.9);
+        }
+        .admin-dialog-title {
+            margin: 0 0 14px;
+            font-family: "EB Garamond", "Times New Roman", Georgia, serif;
+            font-size: clamp(22px, 3vw, 28px);
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            line-height: 1.15;
+            color: #f3ead8;
+        }
+        .admin-dialog-copy {
+            margin: 0 0 16px;
+            font-size: 12px;
+            line-height: 1.5;
+            color: rgba(243, 234, 216, 0.72);
+        }
+        .admin-dialog-label {
+            display: block;
+            margin: 0 0 8px;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: rgba(74, 155, 106, 0.95);
+        }
+        .admin-dialog-input {
+            width: 100%;
+            box-sizing: border-box;
+            margin: 0 0 18px;
+            padding: 11px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(74, 155, 106, 0.45);
+            background: rgba(0, 0, 0, 0.35);
+            color: #f3ead8;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .admin-dialog-input::placeholder { color: rgba(243, 234, 216, 0.35); }
+        .admin-dialog-input:focus {
+            border-color: rgba(74, 155, 106, 0.9);
+            box-shadow: 0 0 0 3px rgba(74, 155, 106, 0.18);
+        }
+        .admin-dialog-input.is-error { border-color: rgba(220, 120, 100, 0.85); }
+        .admin-dialog-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+        .admin-dialog-btn {
+            appearance: none;
+            -webkit-appearance: none;
+            min-height: 32px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(243, 234, 216, 0.35);
+            background: rgba(255, 255, 255, 0.04);
+            color: #f3ead8;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+        }
+        .admin-dialog-btn:hover,
+        .admin-dialog-btn:focus-visible {
+            background: rgba(243, 234, 216, 0.92);
+            border-color: rgba(243, 234, 216, 0.92);
+            color: #1a1a16;
+            outline: none;
+            transform: translateY(-1px);
+        }
+        .admin-dialog-btn--primary {
+            border-color: rgba(74, 155, 106, 0.75);
+            background: rgba(47, 107, 74, 0.45);
+            color: #e8f6ec;
+        }
+        .admin-dialog-btn--primary:hover,
+        .admin-dialog-btn--primary:focus-visible {
+            background: rgba(74, 155, 106, 0.95);
+            border-color: rgba(74, 155, 106, 0.95);
+            color: #0d1a12;
+        }
+        .admin-dialog-btn--danger {
+            border-color: rgba(200, 110, 90, 0.65);
+            background: rgba(90, 32, 28, 0.45);
+        }
+        .admin-dialog-btn--danger:hover,
+        .admin-dialog-btn--danger:focus-visible {
+            background: rgba(220, 140, 120, 0.92);
+            border-color: rgba(220, 140, 120, 0.92);
+            color: #1a1210;
+        }
+        .admin-dialog-close {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            z-index: 2;
+            width: 28px;
+            height: 28px;
+            border-radius: 999px;
+            border: 1px solid rgba(243, 234, 216, 0.28);
+            background: rgba(255, 255, 255, 0.04);
+            color: #f3ead8;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 12px;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .admin-dialog-close:hover {
+            background: rgba(243, 234, 216, 0.9);
+            color: #1a1a16;
+        }
+
         /* Modal de criação de projeto */
         #create-project-modal {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: none;
-            justify-content: center;
-            align-items: center;
+            inset: 0;
             z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background:
+                radial-gradient(ellipse at 30% 20%, rgba(74, 155, 106, 0.18), transparent 55%),
+                radial-gradient(ellipse at 70% 80%, rgba(30, 61, 44, 0.45), transparent 50%),
+                rgba(8, 12, 10, 0.78);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
         }
-
         #create-project-modal .modal-content {
-            background-color: rgba(20, 20, 20, 0.95);
-            border: 2px solid #ffffff;
-            border-radius: 10px;
-            padding: 30px;
-            max-width: 500px;
-            width: 90%;
-            box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+            position: relative;
+            width: min(420px, 100%);
+            padding: 28px 26px 22px;
+            border-radius: 4px 18px 4px 18px;
+            border: 1px solid rgba(74, 155, 106, 0.55);
+            background: linear-gradient(165deg, rgba(26, 42, 32, 0.96) 0%, rgba(12, 18, 14, 0.98) 100%);
+            box-shadow:
+                0 0 0 1px rgba(243, 234, 216, 0.06) inset,
+                0 18px 48px rgba(0, 0, 0, 0.45),
+                0 0 40px rgba(47, 107, 74, 0.22);
         }
-
+        #create-project-modal .modal-content::before {
+            content: "";
+            position: absolute;
+            inset: 8px;
+            border: 1px dashed rgba(74, 155, 106, 0.28);
+            border-radius: 2px 12px 2px 12px;
+            pointer-events: none;
+        }
+        #create-project-modal .modal-kicker {
+            margin: 0 0 6px;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: rgba(74, 155, 106, 0.9);
+        }
         #create-project-modal .modal-title {
-            color: #ffffff;
-            font-family: 'Courier New', monospace;
-            font-size: 24px;
-            margin-bottom: 20px;
-            text-align: center;
-            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+            margin: 0 0 16px;
+            color: #f3ead8;
+            font-family: "EB Garamond", "Times New Roman", Georgia, serif;
+            font-size: clamp(22px, 3vw, 28px);
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            text-align: left;
+            text-shadow: none;
         }
-
         #create-project-modal .modal-input {
             width: 100%;
-            padding: 12px;
-            background-color: rgba(0, 0, 0, 0.7);
-            border: 2px solid #ffffff;
-            border-radius: 5px;
-            color: #ffffff;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-            margin-bottom: 20px;
+            padding: 11px 14px;
+            background-color: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(74, 155, 106, 0.45);
+            border-radius: 999px;
+            color: #f3ead8;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 13px;
+            margin-bottom: 18px;
             outline: none;
             box-sizing: border-box;
         }
-
+        #create-project-modal .modal-input::placeholder { color: rgba(243, 234, 216, 0.35); }
         #create-project-modal .modal-input:focus {
-            border-color: #ffffff;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            border-color: rgba(74, 155, 106, 0.9);
+            box-shadow: 0 0 0 3px rgba(74, 155, 106, 0.18);
         }
-
         #create-project-modal .modal-buttons {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             justify-content: flex-end;
         }
-
         #create-project-modal .modal-button {
-            padding: 10px 20px;
-            border: 2px solid #ffffff;
-            border-radius: 5px;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-            font-weight: bold;
+            appearance: none;
+            min-height: 32px;
+            padding: 6px 14px;
+            border: 1px solid rgba(243, 234, 216, 0.35);
+            border-radius: 999px;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
         }
-
         #create-project-modal .modal-button-primary {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: #ffffff;
+            background: rgba(47, 107, 74, 0.45);
+            border-color: rgba(74, 155, 106, 0.75);
+            color: #e8f6ec;
         }
-
         #create-project-modal .modal-button-primary:hover:not(:disabled) {
-            background-color: rgba(255, 255, 255, 0.2);
-            transform: scale(1.05);
+            background: rgba(74, 155, 106, 0.95);
+            border-color: rgba(74, 155, 106, 0.95);
+            color: #0d1a12;
+            transform: translateY(-1px);
         }
-
         #create-project-modal .modal-button-primary:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
         }
-
         #create-project-modal .modal-button-secondary {
-            background-color: rgba(0, 0, 0, 0.7);
-            color: #ffffff;
+            background: rgba(255, 255, 255, 0.04);
+            color: #f3ead8;
         }
-
         #create-project-modal .modal-button-secondary:hover {
-            background-color: rgba(255, 255, 255, 0.1);
+            background: rgba(243, 234, 216, 0.92);
+            border-color: rgba(243, 234, 216, 0.92);
+            color: #1a1a16;
+            transform: translateY(-1px);
         }
     </style>
 </head>
@@ -4218,7 +4490,7 @@
         var tooltip;
         var INTERSECTED;
         var lastTooltipCube = null;
-        var rotationSpeed = 0.0028;
+        var rotationSpeed = 0.0020;
         var selectedCube = null;
         var _cubeFocusToken = 0;
         var initialCameraPosition, initialCameraQuaternion;
@@ -5844,93 +6116,105 @@ function showNavigationNotification() {
 
     // --- INÍCIO: Novas Funções de Autenticação e Logout para index.html ---
 
+    // Diálogo de confirmação alinhado à identidade (substitui window.confirm)
+    function showAdminConfirm(opts) {
+        opts = opts || {};
+        return new Promise(function (resolve) {
+            var modal = document.getElementById('admin-confirm-modal');
+            if (!modal) {
+                resolve(window.confirm(opts.message || 'Confirmar?'));
+                return;
+            }
+            var titleEl = document.getElementById('admin-confirm-title');
+            var msgEl = document.getElementById('admin-confirm-message');
+            var okBtn = document.getElementById('admin-confirm-ok');
+            var cancelBtn = document.getElementById('admin-confirm-cancel');
+            if (titleEl) titleEl.textContent = opts.title || 'Tem a certeza?';
+            if (msgEl) msgEl.textContent = opts.message || 'Esta ação não pode ser desfeita.';
+            if (okBtn) {
+                okBtn.textContent = opts.confirmLabel || 'Confirmar';
+                okBtn.className = 'admin-dialog-btn ' + (opts.danger === false ? 'admin-dialog-btn--primary' : 'admin-dialog-btn--danger');
+            }
+            if (cancelBtn) cancelBtn.textContent = opts.cancelLabel || 'Cancelar';
+
+            function cleanup(result) {
+                modal.classList.remove('is-open');
+                modal.removeEventListener('click', onBackdrop);
+                document.removeEventListener('keydown', onKey);
+                if (okBtn) okBtn.removeEventListener('click', onOk);
+                if (cancelBtn) cancelBtn.removeEventListener('click', onCancel);
+                resolve(result);
+            }
+            function onOk() { cleanup(true); }
+            function onCancel() { cleanup(false); }
+            function onBackdrop(e) {
+                if (e.target === modal) cleanup(false);
+            }
+            function onKey(e) {
+                if (e.key === 'Escape') cleanup(false);
+                if (e.key === 'Enter') cleanup(true);
+            }
+
+            if (okBtn) okBtn.addEventListener('click', onOk);
+            if (cancelBtn) cancelBtn.addEventListener('click', onCancel);
+            modal.addEventListener('click', onBackdrop);
+            document.addEventListener('keydown', onKey);
+            modal.classList.add('is-open');
+            if (okBtn) okBtn.focus();
+        });
+    }
+
     // Adiciona e mostra o campo de senha do admin
     function showPasswordField() {
-        // Remover campo existente se houver (para evitar duplicação)
         const existingContainer = document.getElementById('admin-password-container-index');
         if (existingContainer) existingContainer.remove();
 
-        const container = document.createElement('div');
-        container.id = 'admin-password-container-index';
-        container.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 20px;
-            background-color: rgba(0, 0, 0, 0.85);
-            border: 2px solid #33ff33;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(51, 255, 51, 0.7);
-            z-index: 10000;
-            text-align: center;
-        `;
+        const backdrop = document.createElement('div');
+        backdrop.id = 'admin-password-container-index';
+        backdrop.className = 'admin-dialog-backdrop is-open';
+        backdrop.setAttribute('role', 'dialog');
+        backdrop.setAttribute('aria-modal', 'true');
 
-        const label = document.createElement('label');
-        label.textContent = 'Senha Admin:';
-        label.style.cssText = `
-            color: #33ff33;
-            display: block;
-            margin-bottom: 10px;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-        `;
+        backdrop.innerHTML =
+            '<div class="admin-dialog">' +
+            '<button type="button" class="admin-dialog-close" aria-label="Fechar">×</button>' +
+            '<p class="admin-dialog-kicker">Acesso</p>' +
+            '<h2 class="admin-dialog-title">Senha admin</h2>' +
+            '<label class="admin-dialog-label" for="admin-password-index">Palavra-passe</label>' +
+            '<input type="password" id="admin-password-index" class="admin-dialog-input" autocomplete="current-password" placeholder="••••••••">' +
+            '<div class="admin-dialog-actions">' +
+            '<button type="button" class="admin-dialog-btn" data-admin-cancel>Cancelar</button>' +
+            '<button type="button" class="admin-dialog-btn admin-dialog-btn--primary" data-admin-submit>Entrar</button>' +
+            '</div></div>';
 
-        const input = document.createElement('input');
-        input.type = 'password';
-        input.id = 'admin-password-index';
-        input.style.cssText = `
-            padding: 8px;
-            background-color: #111;
-            border: 1px solid #33ff33;
-            color: #33ff33;
-            font-family: 'Courier New', monospace;
-            border-radius: 4px;
-            margin-bottom: 10px;
-            width: calc(100% - 20px);
-        `;
+        function closeDialog() {
+            if (backdrop.parentNode) backdrop.remove();
+        }
 
-        // Adicionar listener para pressionar Enter
-        input.addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
-                validateAdminPassword();
-            }
+        backdrop.addEventListener('click', function (e) {
+            if (e.target === backdrop) closeDialog();
+        });
+        backdrop.querySelector('.admin-dialog-close').addEventListener('click', closeDialog);
+        backdrop.querySelector('[data-admin-cancel]').addEventListener('click', closeDialog);
+        backdrop.querySelector('[data-admin-submit]').addEventListener('click', validateAdminPassword);
+
+        const input = backdrop.querySelector('#admin-password-index');
+        input.addEventListener('keypress', function (event) {
+            if (event.key === 'Enter') validateAdminPassword();
         });
 
-        // Botão para fechar (opcional)
-        const closeButton = document.createElement('button');
-        closeButton.textContent = 'X';
-        closeButton.style.cssText = `
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background: #ff3333;
-            border: none;
-            color: black;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-weight: bold;
-            line-height: 18px;
-        `;
-        closeButton.onclick = () => container.remove();
-
-        container.appendChild(label);
-        container.appendChild(input);
-        container.appendChild(closeButton);
-        document.body.appendChild(container);
-        input.focus(); // Focar no campo de senha
+        document.body.appendChild(backdrop);
+        input.focus();
     }
 
     // Validar a senha de administrador com Firebase Auth
     function validateAdminPassword() {
         const passwordField = document.getElementById('admin-password-index');
         const passwordContainer = document.getElementById('admin-password-container-index');
-        if (!passwordField || !passwordContainer) return; // Sair se os elementos não existirem
+        if (!passwordField || !passwordContainer) return;
         
         const password = passwordField.value;
-        const adminEmail = "jvnunes066@gmail.com"; // Email do admin
+        const adminEmail = "jvnunes066@gmail.com";
         
         ensureFirebaseAdminSdk()
             .then(function () {
@@ -5945,13 +6229,13 @@ function showNavigationNotification() {
                     })
                     .catch(function (error) {
                         console.error("Erro no login do admin em index.html:", error);
-                        passwordField.style.borderColor = 'red';
+                        passwordField.classList.add('is-error');
                         passwordField.placeholder = 'Senha inválida';
                         passwordField.value = '';
                         setTimeout(function () {
                             if (passwordField) {
-                                passwordField.style.borderColor = '#33ff33';
-                                passwordField.placeholder = '';
+                                passwordField.classList.remove('is-error');
+                                passwordField.placeholder = '••••••••';
                             }
                         }, 2000);
                         showNotification('Falha no login: ' + error.code, 'error', true);
@@ -7243,12 +7527,21 @@ document.addEventListener('keydown', function(event) {
                     items = [];
                 }
                 _panelCarouselItems = items;
+                _panelCarouselSignature = _panelItemsSignature(items);
                 _panelRenderCarousel(items, projectId);
             })
             .catch(function(err) {
                 console.error('Erro ao carregar mídia do painel:', err);
                 _panelRenderCarousel([], projectId);
             });
+    }
+
+    function _panelClearCarouselDropHints() {
+        var imageList = document.getElementById('panel-image-list');
+        if (!imageList) return;
+        imageList.querySelectorAll('.image-item').forEach(function(el) {
+            el.classList.remove('carousel-item-drag-over', 'drop-before', 'drop-after');
+        });
     }
 
     function _panelUpdateCarouselList(items) {
@@ -7259,6 +7552,7 @@ document.addEventListener('keydown', function(event) {
             imageList.innerHTML = '<p style="color:rgba(255,255,255,0.6);font-size:11px;text-align:center;margin:0;">Nenhuma mídia</p>';
             return;
         }
+        var total = items.length;
         items.forEach(function(item, idx) {
             var url = typeof item === 'string' ? item : (item && item.url) ? item.url : '';
             var type = (item && item.type) ? item.type : 'image';
@@ -7266,41 +7560,81 @@ document.addEventListener('keydown', function(event) {
             var poster = (item && item.poster) ? item.poster : '';
             var thumb = type === 'image'
                 ? ('<img src="' + url + '" alt="Preview" onerror="this.style.display=\'none\'">')
-                : (poster ? ('<img src="' + poster + '" alt="Preview" onerror="this.style.display=\'none\'">') : '<span style="font-size:20px;">🎬</span>');
+                : (poster ? ('<img src="' + poster + '" alt="Preview" onerror="this.style.display=\'none\'">') : '<span style="font-size:20px;">▶</span>');
             var div = document.createElement('div');
             div.className = 'image-item';
             div.setAttribute('draggable', 'true');
             div.setAttribute('data-index', String(idx));
-            div.innerHTML = '<span class="carousel-drag-handle" title="Arrastar para reordenar">⋮⋮</span>' + thumb + '<span style="flex:1;margin-left:5px;">' + label + '</span><button class="delete-image-btn" data-index="' + idx + '">Deletar</button>';
+            div.innerHTML =
+                '<span class="carousel-drag-handle" title="Arrastar para reordenar" aria-hidden="true">⋮⋮</span>' +
+                '<span class="image-item-index">' + (idx + 1) + '</span>' +
+                thumb +
+                '<span class="image-item-label">' + label + '</span>' +
+                '<div class="image-item-actions">' +
+                '<button type="button" class="image-order-btn" data-move="up" title="Mover para cima" aria-label="Mover para cima"' + (idx === 0 ? ' disabled' : '') + '>▲</button>' +
+                '<button type="button" class="image-order-btn" data-move="down" title="Mover para baixo" aria-label="Mover para baixo"' + (idx === total - 1 ? ' disabled' : '') + '>▼</button>' +
+                '<button type="button" class="delete-image-btn" data-index="' + idx + '">Deletar</button>' +
+                '</div>';
             div.addEventListener('dragstart', function(e) {
-                e.dataTransfer.setData('text/plain', idx);
+                if (e.target.closest('button')) {
+                    e.preventDefault();
+                    return;
+                }
+                e.dataTransfer.setData('text/plain', String(idx));
                 e.dataTransfer.effectAllowed = 'move';
                 div.classList.add('carousel-item-dragging');
             });
             div.addEventListener('dragend', function() {
                 div.classList.remove('carousel-item-dragging');
-                imageList.querySelectorAll('.image-item').forEach(function(el) { el.classList.remove('carousel-item-drag-over'); });
+                _panelClearCarouselDropHints();
             });
             div.addEventListener('dragover', function(e) {
                 e.preventDefault();
                 e.dataTransfer.dropEffect = 'move';
-                imageList.querySelectorAll('.image-item').forEach(function(el) { el.classList.remove('carousel-item-drag-over'); });
-                var row = e.target.closest('.image-item');
-                if (row && row.classList.contains('carousel-item-dragging') === false) row.classList.add('carousel-item-drag-over');
+                if (div.classList.contains('carousel-item-dragging')) return;
+                var rect = div.getBoundingClientRect();
+                var before = e.clientY < rect.top + rect.height / 2;
+                _panelClearCarouselDropHints();
+                div.classList.add(before ? 'drop-before' : 'drop-after');
             });
             div.addEventListener('dragleave', function(e) {
-                var row = e.target.closest('.image-item');
-                if (row) row.classList.remove('carousel-item-drag-over');
+                if (!div.contains(e.relatedTarget)) {
+                    div.classList.remove('drop-before', 'drop-after', 'carousel-item-drag-over');
+                }
             });
             div.addEventListener('drop', function(e) {
                 e.preventDefault();
-                div.classList.remove('carousel-item-drag-over');
                 var fromIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
-                var toIndex = parseInt(div.getAttribute('data-index'), 10);
-                if (fromIndex === toIndex) return;
-                _panelReorderCarouselItems(fromIndex, toIndex);
+                var targetIdx = parseInt(div.getAttribute('data-index'), 10);
+                var rect = div.getBoundingClientRect();
+                var dropBefore = e.clientY < rect.top + rect.height / 2;
+                _panelClearCarouselDropHints();
+                if (isNaN(fromIndex) || isNaN(targetIdx)) return;
+                var insertIndex = dropBefore ? targetIdx : targetIdx + 1;
+                if (fromIndex < insertIndex) insertIndex--;
+                if (insertIndex === fromIndex) return;
+                _panelReorderCarouselItems(fromIndex, insertIndex);
             });
-            div.querySelector('.delete-image-btn').addEventListener('click', function(ev) { ev.stopPropagation(); _panelDeleteCarouselItem(idx); });
+            var upBtn = div.querySelector('[data-move="up"]');
+            var downBtn = div.querySelector('[data-move="down"]');
+            if (upBtn) {
+                upBtn.addEventListener('click', function(ev) {
+                    ev.stopPropagation();
+                    if (idx <= 0) return;
+                    _panelReorderCarouselItems(idx, idx - 1);
+                });
+            }
+            if (downBtn) {
+                downBtn.addEventListener('click', function(ev) {
+                    ev.stopPropagation();
+                    if (idx >= total - 1) return;
+                    _panelReorderCarouselItems(idx, idx + 1);
+                });
+            }
+            div.querySelector('.delete-image-btn').addEventListener('click', function(ev) {
+                ev.stopPropagation();
+                _panelDeleteCarouselItem(idx);
+            });
             imageList.appendChild(div);
         });
     }
@@ -7331,7 +7665,14 @@ document.addEventListener('keydown', function(event) {
         if (typeof isAdminLoggedIn === 'undefined' || !isAdminLoggedIn) return;
         var projectId = _panelCurrentProjectId;
         if (!projectId) return;
-        if (!confirm('Tem certeza que deseja deletar este item?')) return;
+        var ok = await showAdminConfirm({
+            title: 'Eliminar mídia?',
+            message: 'Esta imagem ou vídeo será removido do projeto e do armazenamento. Não é possível desfazer.',
+            confirmLabel: 'Eliminar',
+            cancelLabel: 'Cancelar',
+            danger: true
+        });
+        if (!ok) return;
         try {
             var projectRef = db.collection('projetos').doc(projectId);
             var projectDoc = await projectRef.get();
@@ -7346,11 +7687,6 @@ document.addEventListener('keydown', function(event) {
             var thumbToDelete = (removed && removed.thumb) ? removed.thumb : null;
             var posterToDelete = (removed && removed.poster) ? removed.poster : null;
 
-            await ensureFirebaseAdminSdk().catch(function () {});
-            await _panelDeleteStorageUrl(urlToDelete);
-            await _panelDeleteStorageUrl(thumbToDelete);
-            await _panelDeleteStorageUrl(posterToDelete);
-
             items.splice(itemIndex, 1);
 
             // Limpa URLs órfãs do array legado `images` (full, thumb, ou string antiga).
@@ -7363,18 +7699,26 @@ document.addEventListener('keydown', function(event) {
             stripFromImages(urlToDelete);
             stripFromImages(thumbToDelete);
 
+            // Atualiza a UI já (não espera o round-trip do Storage/Firestore).
+            var fresh = Object.assign({}, data, { carouselItems: items, images: images });
+            _panelCarouselItems = items;
+            _panelCarouselSignature = _panelItemsSignature(items);
+            _panelRenderCarousel(items, projectId);
+            if (typeof updateCubeData === 'function') updateCubeData(projectId, fresh);
+
+            await ensureFirebaseAdminSdk().catch(function () {});
+            await _panelDeleteStorageUrl(urlToDelete);
+            await _panelDeleteStorageUrl(thumbToDelete);
+            await _panelDeleteStorageUrl(posterToDelete);
+
             await projectRef.update({
                 carouselItems: items,
                 images: images
             });
             showNotification('Item removido com sucesso!', 'success', true);
-            await _panelLoadProjectImages(projectId, true);
-            if (typeof updateCubeData === 'function') {
-                var fresh = Object.assign({}, data, { carouselItems: items, images: images });
-                updateCubeData(projectId, fresh);
-            }
         } catch(err) {
             showNotification('Erro ao deletar: ' + err.message, 'error', true);
+            try { await _panelLoadProjectImages(projectId, true); } catch (e2) {}
         }
     }
 
@@ -7382,19 +7726,31 @@ document.addEventListener('keydown', function(event) {
         if (typeof isAdminLoggedIn === 'undefined' || !isAdminLoggedIn) return;
         var projectId = _panelCurrentProjectId;
         if (!projectId) return;
-        var projectRef = db.collection('projetos').doc(projectId);
-        var projectDoc = await projectRef.get();
-        var data = projectDoc.data() || {};
-        var items = Array.isArray(data.carouselItems)
-            ? data.carouselItems.slice()
-            : (data.images && Array.isArray(data.images)) ? data.images.map(function(u) { return { type: 'image', url: u }; }) : [];
-        if (fromIndex < 0 || fromIndex >= items.length || toIndex < 0 || toIndex >= items.length) return;
-        var moved = items.splice(fromIndex, 1)[0];
-        var insertAt = fromIndex < toIndex ? toIndex - 1 : toIndex;
-        items.splice(insertAt, 0, moved);
-        await projectRef.update({ carouselItems: items });
-        showNotification('Ordem atualizada.', 'success', true);
-        _panelLoadProjectImages(projectId);
+        try {
+            var projectRef = db.collection('projetos').doc(projectId);
+            var projectDoc = await projectRef.get();
+            var data = projectDoc.data() || {};
+            var items = Array.isArray(data.carouselItems)
+                ? data.carouselItems.slice()
+                : (data.images && Array.isArray(data.images)) ? data.images.map(function(u) { return { type: 'image', url: u }; }) : [];
+            if (fromIndex < 0 || fromIndex >= items.length) return;
+            if (toIndex < 0 || toIndex >= items.length) return;
+            if (fromIndex === toIndex) return;
+            var moved = items.splice(fromIndex, 1)[0];
+            items.splice(toIndex, 0, moved);
+
+            var fresh = Object.assign({}, data, { carouselItems: items });
+            _panelCarouselItems = items;
+            _panelCarouselSignature = _panelItemsSignature(items);
+            _panelRenderCarousel(items, projectId);
+            if (typeof updateCubeData === 'function') updateCubeData(projectId, fresh);
+
+            await projectRef.update({ carouselItems: items });
+            showNotification('Ordem atualizada.', 'success', true);
+        } catch (err) {
+            showNotification('Erro ao reordenar: ' + (err && err.message ? err.message : err), 'error', true);
+            try { await _panelLoadProjectImages(projectId, true); } catch (e2) {}
+        }
     }
 
     var PANEL_MAX_IMAGE_MB = window.PORTFOLIO_MAX_IMAGE_MB || 10;
@@ -7780,6 +8136,10 @@ document.addEventListener('keydown', function(event) {
             if (selExisting) selExisting.value = _panelVideoFit;
         }
         _panelInitImageUpload();
+        // Garante a fila de previews mesmo se o carrossel tiver renderizado antes do login admin.
+        if (typeof _panelUpdateCarouselList === 'function') {
+            _panelUpdateCarouselList(Array.isArray(_panelCarouselItems) ? _panelCarouselItems : []);
+        }
     }
 
     function _panelDisableEditMode() {
@@ -7856,6 +8216,7 @@ document.addEventListener('keydown', function(event) {
                     <label for="panel-media-upload-input" class="image-upload-label">Adicionar mídia</label>
                     <span class="upload-limits-hint" data-i18n="immersive.uploadLimits">(imagens até 10 MB, vídeos até 80 MB — MP4, WebM, MOV)</span>
                     <input type="file" id="panel-media-upload-input" class="image-upload-input" accept="image/*,video/mp4,video/webm,video/quicktime" multiple>
+                    <p class="image-list-hint">Arraste ou use ▲▼ para ordenar</p>
                     <div class="image-list" id="panel-image-list"></div>
                 </div>
             </div>
@@ -7871,21 +8232,37 @@ document.addEventListener('keydown', function(event) {
     <!-- Modal de criação de projeto -->
     <div id="create-project-modal">
         <div class="modal-content">
-            <h2 class="modal-title">Criar Novo Projeto</h2>
-            <input 
-                type="text" 
-                id="project-name-input" 
-                class="modal-input" 
-                placeholder="Digite o nome do projeto..."
+            <p class="modal-kicker">Portfólio</p>
+            <h2 class="modal-title">Novo projeto</h2>
+            <label class="admin-dialog-label" for="project-name-input" style="display:block;margin:0 0 8px;">Nome</label>
+            <input
+                type="text"
+                id="project-name-input"
+                class="modal-input"
+                placeholder="Nome do projeto…"
                 maxlength="50"
+                autocomplete="off"
             />
             <div class="modal-buttons">
-                <button class="modal-button modal-button-secondary" id="cancel-create-button">
+                <button type="button" class="modal-button modal-button-secondary" id="cancel-create-button">
                     Cancelar
                 </button>
-                <button class="modal-button modal-button-primary" id="confirm-create-button">
+                <button type="button" class="modal-button modal-button-primary" id="confirm-create-button">
                     Criar
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de confirmação admin (substitui confirm() do navegador) -->
+    <div id="admin-confirm-modal" class="admin-dialog-backdrop" role="dialog" aria-modal="true" aria-labelledby="admin-confirm-title">
+        <div class="admin-dialog">
+            <p class="admin-dialog-kicker">Confirmar</p>
+            <h2 class="admin-dialog-title" id="admin-confirm-title">Tem a certeza?</h2>
+            <p class="admin-dialog-copy" id="admin-confirm-message">Esta ação não pode ser desfeita.</p>
+            <div class="admin-dialog-actions">
+                <button type="button" class="admin-dialog-btn" id="admin-confirm-cancel">Cancelar</button>
+                <button type="button" class="admin-dialog-btn admin-dialog-btn--danger" id="admin-confirm-ok">Eliminar</button>
             </div>
         </div>
     </div>
