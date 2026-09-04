@@ -1962,6 +1962,13 @@
         #project-panel.visible {
             display: flex;
         }
+        /* Controles admin anexados ao painel (fora do fluxo interno) precisam de hit-test. */
+        #project-panel #panel-save-button,
+        #project-panel #panel-edit-indicator,
+        #project-panel #panel-logout-button {
+            pointer-events: auto;
+            z-index: 1600;
+        }
         #project-panel .project-container {
             position: absolute;
             inset: 0;
@@ -2389,8 +2396,9 @@
             position: absolute;
             bottom: 20px;
             left: 20px;
-            z-index: 10;
+            z-index: 40;
             display: none;
+            pointer-events: auto;
         }
         #project-panel .image-upload-container.visible { display: block; }
         #project-panel .image-upload-label {
@@ -6990,7 +6998,7 @@ document.addEventListener('keydown', function(event) {
             _panelRenderCarousel(items, projectId);
         }
 
-        if (!opts.fromCache && typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) {
+        if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) {
             _panelEnableEditMode();
         }
     }
@@ -7624,22 +7632,28 @@ document.addEventListener('keydown', function(event) {
         if (descEl)  { descEl.contentEditable  = 'true'; descEl.style.border  = '1px dashed #33ff33'; descEl.style.padding  = '5px'; }
 
         var panel = document.getElementById('project-panel');
-        if (panel && !document.getElementById('panel-edit-indicator')) {
+        var host = (panel && panel.querySelector('.project-container')) || panel;
+        if (host && !document.getElementById('panel-edit-indicator')) {
             var ind = document.createElement('div');
             ind.id = 'panel-edit-indicator';
             ind.textContent = 'MODO DE EDIÇÃO';
-            ind.style.cssText = 'position:absolute;top:10px;right:200px;background-color:rgba(51,255,51,0.2);color:#33ff33;padding:6px 12px;border-radius:6px;font-family:Courier New,monospace;font-size:13px;font-weight:bold;border:1px solid #33ff33;z-index:600;';
-            panel.appendChild(ind);
+            ind.style.cssText = 'position:absolute;top:10px;right:200px;background-color:rgba(51,255,51,0.2);color:#33ff33;padding:6px 12px;border-radius:6px;font-family:Courier New,monospace;font-size:13px;font-weight:bold;border:1px solid #33ff33;z-index:1600;pointer-events:auto;';
+            host.appendChild(ind);
         }
         if (!document.getElementById('panel-save-button')) {
             var saveBtn = document.createElement('button');
             saveBtn.id = 'panel-save-button';
+            saveBtn.type = 'button';
             saveBtn.textContent = 'Salvar Alterações';
-            saveBtn.style.cssText = 'position:absolute;top:10px;right:20px;background-color:rgba(0,0,0,0.8);color:#33ff33;border:2px solid #33ff33;padding:8px 16px;border-radius:8px;font-family:Courier New,monospace;font-size:14px;font-weight:bold;cursor:pointer;z-index:600;transition:background-color 0.2s;';
+            saveBtn.style.cssText = 'position:absolute;top:10px;right:20px;background-color:rgba(0,0,0,0.8);color:#33ff33;border:2px solid #33ff33;padding:8px 16px;border-radius:8px;font-family:Courier New,monospace;font-size:14px;font-weight:bold;cursor:pointer;z-index:1600;pointer-events:auto;transition:background-color 0.2s;';
             saveBtn.addEventListener('mouseover', function() { this.style.backgroundColor = 'rgba(51,255,51,0.25)'; });
             saveBtn.addEventListener('mouseout',  function() { this.style.backgroundColor = 'rgba(0,0,0,0.8)'; });
-            saveBtn.addEventListener('click', _panelSaveChanges);
-            if (panel) panel.appendChild(saveBtn);
+            saveBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                _panelSaveChanges();
+            });
+            if (host) host.appendChild(saveBtn);
         }
         if (!document.getElementById('panel-video-fit-wrap')) {
             var wrap = document.createElement('div');
@@ -7666,8 +7680,8 @@ document.addEventListener('keydown', function(event) {
             var carouselContainer = document.getElementById('panel-carousel-container');
             if (carouselContainer) carouselContainer.appendChild(wrap);
         } else {
-            var sel = document.getElementById('panel-video-fit-select');
-            if (sel) sel.value = _panelVideoFit;
+            var selExisting = document.getElementById('panel-video-fit-select');
+            if (selExisting) selExisting.value = _panelVideoFit;
         }
         _panelInitImageUpload();
     }
@@ -7703,6 +7717,19 @@ document.addEventListener('keydown', function(event) {
             .then(function() {
                 if (saveBtn) { saveBtn.textContent = i18nT('immersive.saveChanges'); saveBtn.disabled = false; }
                 showNotification(i18nT('immersive.saved'), 'success', true);
+                // Atualiza cache do cubo já em memória (visitante/admin sem esperar snapshot).
+                if (typeof cubeArray !== 'undefined' && cubeArray) {
+                    for (var i = 0; i < cubeArray.length; i++) {
+                        var cube = cubeArray[i];
+                        if (!cube || !cube.userData || String(cube.userData.projectId) !== String(projectId)) continue;
+                        cube.userData.projectData = Object.assign({}, cube.userData.projectData || {}, payload);
+                        if (cube.userData.project) {
+                            cube.userData.project.name = newTitle || cube.userData.project.name;
+                        }
+                        break;
+                    }
+                    if (typeof renderImmersiveProjectsList === 'function') renderImmersiveProjectsList();
+                }
                 _panelLoadProjectData(projectId);
             })
             .catch(function(err) {
