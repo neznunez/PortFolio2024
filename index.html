@@ -6691,14 +6691,17 @@ document.addEventListener('keydown', function(event) {
         // Atualizar URL sem navegar
         try { history.pushState({ projectPanel: projectId }, '', '?project=' + projectId); } catch(e) {}
 
-        // Pintura imediata com dados do cubo (já em memória) enquanto o get() confirma.
+        // Pintura imediata com dados do cubo (já em memória).
         var cached = _panelFindCachedProjectData(projectId);
         if (cached) {
             _panelApplyProjectData(projectId, cached, { fromCache: true });
+            // Visitante: cache basta. Admin: refetch em background para sync de edições.
+            if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) {
+                _panelLoadProjectData(projectId);
+            }
+        } else {
+            _panelLoadProjectData(projectId);
         }
-
-        // Carregar/atualizar dados do Firestore
-        _panelLoadProjectData(projectId);
 
         // Inicializar upload se admin
         _panelInitImageUpload();
@@ -6851,16 +6854,22 @@ document.addEventListener('keydown', function(event) {
         var v = slide.querySelector('video.slide-media');
         if (!v) return;
         var pendingSrc = v.getAttribute('data-src');
+        var justAttached = false;
         if (pendingSrc && !v.getAttribute('src')) {
             v.preload = 'auto';
             v.setAttribute('fetchpriority', 'high');
             v.src = pendingSrc;
             try { v.load(); } catch (e) {}
+            justAttached = true;
         } else if (v.getAttribute('src')) {
             v.preload = 'auto';
         }
         _panelWaitMediaReady(v, slide);
-        try { v.currentTime = 0; } catch (e) {}
+        // Não forçar seek a 0 se já há frame/buffer (evita rebuffer ao voltar ao slide).
+        var hasFrame = v.readyState >= 2;
+        if (justAttached || v.ended || (!hasFrame && (!v.currentTime || v.currentTime < 0.05))) {
+            try { v.currentTime = 0; } catch (e) {}
+        }
         var playPromise = v.play();
         if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(function() {});
     }
@@ -6882,23 +6891,14 @@ document.addEventListener('keydown', function(event) {
             if (!video) return;
             video.pause();
             video.style.opacity = '';
-            var pending = video.getAttribute('data-src') || video.getAttribute('src');
-            var isNeighbor = (i === activeIndex - 1 || i === activeIndex + 1);
-            if (isNeighbor && pending) {
-                // Vizinho: só metadata (poucos bytes), sem competir com o slide ativo.
-                video.preload = 'metadata';
-                if (!video.getAttribute('src')) {
-                    video.src = pending;
-                    try { video.load(); } catch (e) {}
-                }
-                return;
-            }
+            // Vizinhos não recebem src (só poster via _panelPrefetchNeighborCovers).
             var currentSrc = video.getAttribute('src');
             if (currentSrc) {
                 if (!video.getAttribute('data-src')) video.setAttribute('data-src', currentSrc);
                 video.removeAttribute('src');
                 try { video.load(); } catch (e) {}
             }
+            video.preload = 'none';
         });
     }
 
@@ -7094,7 +7094,7 @@ document.addEventListener('keydown', function(event) {
                     video.setAttribute('fetchpriority', 'high');
                     video.src = resolvedUrl;
                     video.autoplay = true;
-                    _panelWarmUrl(resolvedUrl, 'video');
+                    // Sem link preload extra: o próprio <video> já pede o ficheiro.
                 }
                 slide.appendChild(video);
                 _panelEnsureSlideLoadingEl(slide);
