@@ -20,7 +20,7 @@
     </script>
     <link rel="icon" href="3d_6297747.ico" type="image/x-icon">
     <!-- GLB primeiro (maior custo da 1ª visita); skybox é leve e já está em preload secundário -->
-    <link rel="preload" href="models/NezmodelF2.glb" as="fetch" type="model/gltf-binary" crossorigin="anonymous" fetchpriority="high">
+    <link rel="preload" href="models/NezmodelF2.tex.webp.1k.glb" as="fetch" type="model/gltf-binary" crossorigin="anonymous" fetchpriority="high">
     <!-- Skybox da start (~70KB): prioridade menor para não competir com o modelo -->
     <link rel="preload" href="desertdawn/desertdawn_ft.jpg" as="image" fetchpriority="low">
     <link rel="preload" href="desertdawn/desertdawn_bk.jpg" as="image" fetchpriority="low">
@@ -1955,7 +1955,8 @@
             align-items: stretch;
             justify-content: center;
             font-family: "IBM Plex Mono", ui-monospace, monospace;
-            background-color: transparent;
+            /* Fundo opaco: esconde o WebGL e evita blur/compositor caro. */
+            background-color: #050505;
             pointer-events: none;
         }
         #project-panel.visible {
@@ -1967,7 +1968,7 @@
             width: auto;
             height: auto;
             transform: none;
-            background: rgba(0, 0, 0, 0.72);
+            background: #0a0a0a;
             box-shadow: none;
             border-radius: 0;
             display: flex;
@@ -1989,6 +1990,7 @@
             position: relative;
             height: 100%;
             overflow: hidden;
+            background: #0a0a0a;
         }
         #project-panel .carousel-container {
             width: 100%;
@@ -1998,7 +2000,7 @@
             overflow: hidden;
             border-radius: 0;
             box-shadow: none;
-            background: transparent;
+            background: #111;
         }
         #project-panel #panel-carousel-slides {
             position: absolute;
@@ -2008,6 +2010,7 @@
             bottom: 0;
             width: 100%;
             height: 100%;
+            background: #111;
         }
         #project-panel .carousel-slide {
             display: none;
@@ -2018,27 +2021,13 @@
             left: 0;
             opacity: 0;
             transition: opacity 0.3s ease;
-            background: transparent;
+            background: #111;
         }
         #project-panel .carousel-slide.active {
             display: flex;
             align-items: center;
             justify-content: center;
             opacity: 1;
-        }
-        #project-panel .carousel-slide .slide-bleed {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: center center;
-            filter: blur(28px) saturate(1.12);
-            transform: scale(1.14);
-            opacity: 0.5;
-            pointer-events: none;
-            user-select: none;
-            z-index: 0;
         }
         #project-panel .carousel-slide.is-contain .slide-media {
             position: relative;
@@ -2051,10 +2040,8 @@
             border-radius: 0;
             display: block;
             z-index: 1;
-            background: transparent;
-        }
-        #project-panel .carousel-slide.is-cover .slide-bleed {
-            display: none;
+            background: #0a0a0a;
+            opacity: 1;
         }
         #project-panel .carousel-slide.is-cover .slide-media {
             position: relative;
@@ -2065,11 +2052,56 @@
             border-radius: 0;
             display: block;
             z-index: 1;
+            opacity: 1;
+        }
+        #project-panel .carousel-slide .slide-loading {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: #111;
+            color: rgba(255, 255, 255, 0.72);
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 11px;
+            letter-spacing: 0.22em;
+            text-indent: 0.22em;
+            text-transform: uppercase;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+        /* Com poster: mostra a capa já, spinner leve por cima (não esconde o vídeo). */
+        #project-panel .carousel-slide.has-poster.is-loading .slide-loading {
+            background: rgba(10, 10, 10, 0.42);
+        }
+        #project-panel .carousel-slide.is-loading .slide-loading {
+            opacity: 1;
+            visibility: visible;
+        }
+        #project-panel .carousel-slide .slide-loading-spinner {
+            width: 28px;
+            height: 28px;
+            border: 2px solid rgba(255, 255, 255, 0.16);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: panel-loading-spin 0.8s linear infinite;
+        }
+        #project-panel .carousel-slide.is-loading:not(.has-poster) video.slide-media,
+        #project-panel .carousel-slide.is-loading img.slide-media {
+            opacity: 0;
+        }
+        #project-panel .carousel-slide.has-poster.is-loading video.slide-media {
+            opacity: 1;
         }
         #project-panel #panel-carousel-loading-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(10, 10, 10, 0.94);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -2143,15 +2175,14 @@
             background-color: rgba(255, 255, 255, 0.16);
         }
         #project-panel .carousel-slide video.slide-media {
-            --panel-video-opacity: 0.84;
-            opacity: var(--panel-video-opacity);
-            filter: saturate(1.05);
+            opacity: 1;
+            filter: none;
         }
         #project-panel .carousel-slide.is-contain video.slide-media {
-            box-shadow: 0 18px 64px rgba(0, 0, 0, 0.32);
+            box-shadow: 0 18px 64px rgba(0, 0, 0, 0.45);
         }
         #project-panel .carousel-slide video {
-            transition: opacity 0.25s ease;
+            transition: opacity 0.2s ease;
         }
         #project-panel .carousel-nav {
             position: absolute;
@@ -2229,7 +2260,8 @@
             justify-content: flex-start;
             text-align: left;
             padding: 28px 30px 36px;
-            border-left: 1px solid rgba(255, 255, 255, 0.18);
+            border-left: 1px solid rgba(255, 255, 255, 0.12);
+            background: #0c0c0c;
             height: 100%;
             overflow-y: auto;
             scrollbar-width: thin;
@@ -2240,10 +2272,9 @@
         #project-panel .project-text-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.28); border-radius: 999px; }
         #project-panel .project-text-container::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.48); }
         @media (prefers-reduced-motion: reduce) {
-            #project-panel .carousel-slide .slide-bleed {
-                filter: none;
-                transform: none;
-                opacity: 0.28;
+            #project-panel .carousel-slide .slide-loading-spinner {
+                animation: none;
+                border-top-color: rgba(255, 255, 255, 0.55);
             }
         }
         #project-panel .panel-project-meta {
@@ -2701,6 +2732,7 @@
             if (!modeButton) return;
 
             modeButton.addEventListener('click', function () {
+                try { sessionStorage.setItem('immersive_resume_scene', '1'); } catch (e) {}
                 localStorage.setItem('portfolio_mode', 'lite');
                 window.location.href = 'lite.html';
             });
@@ -3182,21 +3214,42 @@
             return { w: Math.max(1, Math.round(w * scale)), h: Math.max(1, Math.round(h * scale)) };
         }
 
-        // Miniatura para as faces do cubo: original no carrossel, 512px no 3D.
+        // Miniatura para as faces do cubo: só a 1ª imagem (thumb se existir), partilhada nas 6 faces.
         function cubeFaceImageUrls(projectData) {
             if (!projectData) return [];
             var items = projectData.carouselItems;
-            var fromCarousel = [];
             if (Array.isArray(items)) {
                 for (var i = 0; i < items.length; i++) {
                     var it = items[i];
                     if (!it || it.type === 'video') continue;
                     var url = (typeof it === 'string') ? it : (it.thumb || it.url);
-                    if (url) fromCarousel.push(url);
+                    if (url) return [url];
                 }
             }
-            if (fromCarousel.length) return fromCarousel;
-            return Array.isArray(projectData.images) ? projectData.images : [];
+            if (Array.isArray(projectData.images) && projectData.images.length) {
+                var first = projectData.images[0];
+                return first ? [first] : [];
+            }
+            return [];
+        }
+
+        function disposeCubeFaceMaps(materials) {
+            var list = Array.isArray(materials) ? materials : (materials ? [materials] : []);
+            var seen = [];
+            for (var i = 0; i < list.length; i++) {
+                var mat = list[i];
+                if (!mat || !mat.map) continue;
+                var map = mat.map;
+                mat.map = null;
+                if (seen.indexOf(map) !== -1) continue;
+                seen.push(map);
+                try { map.dispose(); } catch (e) {}
+            }
+        }
+
+        function asMaterialList(materials) {
+            if (!materials) return [];
+            return Array.isArray(materials) ? materials : [materials];
         }
 
         function downscaleTextureForCube(texture, maxEdge) {
@@ -3264,31 +3317,20 @@
             });
         }
 
-        // Função para preparar array de 6 imagens (repetir se necessário)
+        // Uma única imagem (a primeira) repetida nas 6 faces.
         function prepareFaceImages(imageUrls) {
-            // Validar input
             if (!imageUrls || !Array.isArray(imageUrls)) {
                 return new Array(6).fill(null);
             }
-            
-            // Filtrar URLs válidas
-            const validUrls = imageUrls.filter(url => url && typeof url === 'string');
-            
-            if (validUrls.length === 0) {
-                return new Array(6).fill(null);
-            }
-            
-            if (validUrls.length >= 6) {
-                // Mais de 6: usar as 6 primeiras
-                return validUrls.slice(0, 6);
-            } else {
-                // Menos de 6: repetir para completar
-                const faces = [];
-                for (let i = 0; i < 6; i++) {
-                    faces.push(validUrls[i % validUrls.length]);
+            var first = null;
+            for (var i = 0; i < imageUrls.length; i++) {
+                if (imageUrls[i] && typeof imageUrls[i] === 'string') {
+                    first = imageUrls[i];
+                    break;
                 }
-                return faces;
             }
+            if (!first) return new Array(6).fill(null);
+            return [first, first, first, first, first, first];
         }
 
         // Cubos usam MeshStandardMaterial (sem transmission/clearcoat):
@@ -3332,9 +3374,10 @@
             if (wasOpaque) material.needsUpdate = true;
         }
 
-        function applyCubeFaceTexture(material, texture, fade) {
+        function applyCubeFaceTexture(material, texture, fade, options) {
             if (!material || !texture) return;
-            if (material.map && material.map !== texture) {
+            var shared = !!(options && options.shared);
+            if (material.map && material.map !== texture && !shared) {
                 try { material.map.dispose(); } catch (e) {}
             }
             texture.wrapS = THREE.ClampToEdgeWrapping;
@@ -3442,7 +3485,8 @@
         // Gera textura a partir do primeiro frame de um vídeo (para cubos sem imagens)
         function loadCubeTexturesFromVideoFirstFrame(videoUrl, materials, cube) {
             return new Promise(function(resolve, reject) {
-                if (!materials || !materials.length) { resolve(); return; }
+                var mats = asMaterialList(materials);
+                if (!mats.length) { resolve(); return; }
                 var video = document.createElement('video');
                 video.crossOrigin = 'anonymous';
                 video.preload = 'metadata';
@@ -3470,8 +3514,9 @@
                         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                         var texture = new THREE.CanvasTexture(canvas);
                         var fade = !!(cube && cube.visible);
-                        for (var i = 0; i < materials.length; i++) {
-                            if (materials[i]) applyCubeFaceTexture(materials[i], texture, fade);
+                        disposeCubeFaceMaps(mats);
+                        for (var i = 0; i < mats.length; i++) {
+                            if (mats[i]) applyCubeFaceTexture(mats[i], texture, fade, { shared: true });
                         }
                         resolve();
                     } catch (err) {
@@ -3513,57 +3558,51 @@
             });
         }
 
-        // Função para carregar texturas nas faces do cubo
+        // Uma única textura partilhada no material do cubo (1 download, 1 VRAM).
         function loadCubeTextures(faceImages, materials, cube) {
-            return new Promise((resolve) => {
-                let loadedCount = 0;
-                let errorCount = 0;
-                const totalFaces = 6;
-                const jobs = [];
-                for (let i = 0; i < totalFaces; i++) {
-                    if (faceImages[i] && materials[i]) jobs.push(i);
+            return new Promise(function (resolve) {
+                var mats = asMaterialList(materials);
+                var url = null;
+                if (faceImages && faceImages.length) {
+                    for (var i = 0; i < faceImages.length; i++) {
+                        if (faceImages[i]) { url = faceImages[i]; break; }
+                    }
                 }
-                const validImages = jobs.length;
-                const fade = !!(cube && cube.visible);
-                
-                if (validImages === 0) {
+                var fade = !!(cube && cube.visible);
+
+                if (!url || !mats.length) {
                     if (cube) markCubeTexturesReady(cube);
                     resolve();
                     return;
                 }
-                
+
                 if (!textureLoader) {
                     textureLoader = new THREE.TextureLoader();
                     textureLoader.setCrossOrigin('anonymous');
                 }
-                
-                function settle() {
-                    if (loadedCount + errorCount < validImages) return;
-                    if (cube) markCubeTexturesReady(cube);
-                    resolve();
-                }
-                
-                jobs.forEach(function (i) {
-                    textureLoader.load(
-                        mediaUrl(faceImages[i]),
-                        function (texture) {
-                            try {
-                                applyCubeFaceTexture(materials[i], downscaleTextureForCube(texture, CUBE_FACE_MAX_EDGE), fade);
-                                loadedCount++;
-                            } catch (error) {
-                                console.warn('Erro ao configurar textura da face ' + i + ':', error);
-                                errorCount++;
+
+                textureLoader.load(
+                    mediaUrl(url),
+                    function (texture) {
+                        try {
+                            var shared = downscaleTextureForCube(texture, CUBE_FACE_MAX_EDGE);
+                            disposeCubeFaceMaps(mats);
+                            for (var f = 0; f < mats.length; f++) {
+                                if (mats[f]) applyCubeFaceTexture(mats[f], shared, fade, { shared: true });
                             }
-                            settle();
-                        },
-                        undefined,
-                        function (error) {
-                            console.warn('Erro ao carregar textura da face ' + i + ' (' + faceImages[i] + '):', error);
-                            errorCount++;
-                            settle();
+                        } catch (error) {
+                            console.warn('Erro ao configurar textura partilhada do cubo:', error);
                         }
-                    );
-                });
+                        if (cube) markCubeTexturesReady(cube);
+                        resolve();
+                    },
+                    undefined,
+                    function (error) {
+                        console.warn('Erro ao carregar textura do cubo (' + url + '):', error);
+                        if (cube) markCubeTexturesReady(cube);
+                        resolve();
+                    }
+                );
             });
         }
 
@@ -3618,15 +3657,11 @@
              const firstVideoPoster = firstVideo && firstVideo.poster ? firstVideo.poster : null;
              const hasImages = faceImages.some(img => img !== null) || !!firstVideoPoster || !!firstVideoUrl;
              
-             // Criar array de 6 materiais (um para cada face) — Standard, sem transmission
-            const materials = [];
-            for (let i = 0; i < 6; i++) {
-                 materials.push(createCubeFaceMaterial(hasImages));
-             }
+             // Um único material partilhado nas 6 faces (mesma textura).
+             var material = createCubeFaceMaterial(hasImages);
              
-             // Criar cubo com array de materiais
              var cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-             var cube = new THREE.Mesh(cubeGeometry, materials);
+             var cube = new THREE.Mesh(cubeGeometry, material);
              cube.position.copy(position);
 
              // Store Firestore data in userData
@@ -3644,14 +3679,11 @@
              cube.userData.videoTextureLoaded = false;
              cube.userData.texturesReady = !hasImages;
              
-             // Store original hex color for hover effect reset
-             // Para array de materiais, usar o primeiro
-             cube.currentHex = materials[0].color.getHex();
+             cube.currentHex = material.color.getHex();
 
             // Inicializar com escala 0 e opacidade 0 para animação
             cube.scale.set(0, 0, 0);
-            // Para array de materiais, ajustar opacidade de todos
-            materials.forEach(mat => mat.opacity = 0);
+            material.opacity = 0;
             
             scene.add(cube);
             cubeArray.push(cube);
@@ -3663,12 +3695,12 @@
             
             // Texturas leves já; extração de frame de vídeo fica para quando o cubo aparecer.
             if (faceImages.some(function(img) { return img !== null; })) {
-                loadCubeTextures(faceImages, materials, cube).catch(function(error) {
+                loadCubeTextures(faceImages, material, cube).catch(function(error) {
                     console.warn('Erro ao carregar texturas do cubo ' + projectId + ':', error);
                     markCubeTexturesReady(cube);
                 });
             } else if (firstVideoPoster) {
-                loadCubeTextures(prepareFaceImages([firstVideoPoster]), materials, cube).catch(function() {
+                loadCubeTextures(prepareFaceImages([firstVideoPoster]), material, cube).catch(function() {
                     markCubeTexturesReady(cube);
                 });
             }
@@ -3772,7 +3804,8 @@
                      if (cubeToRemove.geometry) cubeToRemove.geometry.dispose();
                      if (cubeToRemove.material) {
                          var mats = Array.isArray(cubeToRemove.material) ? cubeToRemove.material : [cubeToRemove.material];
-                         mats.forEach(function(m) { if (m.map) m.map.dispose(); m.dispose(); });
+                         disposeCubeFaceMaps(mats);
+                         mats.forEach(function(m) { m.dispose(); });
                      }
                  }});
                  cubeArray.splice(index, 1);
@@ -3836,8 +3869,9 @@
 
         // Função para atualizar texturas do cubo
         async function updateCubeTextures(cube, imageUrls, carouselItems) {
-            if (!cube || !cube.material || !Array.isArray(cube.material)) return;
+            if (!cube || !cube.material) return;
             carouselItems = carouselItems || [];
+            var mats = asMaterialList(cube.material);
             
             var faceImages = prepareFaceImages(imageUrls);
             var firstVideoUrl = cube.userData.firstVideoUrl || null;
@@ -3861,21 +3895,20 @@
                 markCubeTexturesReady(cube);
             }
             
-            cube.material.forEach(function(mat) {
-                if (hasImages) {
-                    if (mat.map) {
-                        try { mat.map.dispose(); } catch (e) {}
-                        mat.map = null;
-                        mat.needsUpdate = true;
-                    }
+            if (hasImages) {
+                disposeCubeFaceMaps(mats);
+                mats.forEach(function(mat) {
+                    mat.needsUpdate = true;
                     applyCubeLoadingGlass(mat);
-                } else {
+                });
+            } else {
+                mats.forEach(function(mat) {
                     applyCubeOpaqueFinish(mat);
                     mat.roughness = 0.22;
                     mat.metalness = 0;
                     mat.color.setHex(0xE8F4FF);
-                }
-            });
+                });
+            }
             
             if (faceImages.some(function(img) { return img !== null; })) {
                 await loadCubeTextures(faceImages, cube.material, cube);
@@ -3898,7 +3931,8 @@
                 if (cube.geometry) cube.geometry.dispose();
                 if (cube.material) {
                     var mats = Array.isArray(cube.material) ? cube.material : [cube.material];
-                    mats.forEach(function(m) { if (m.map) m.map.dispose(); m.dispose(); });
+                    disposeCubeFaceMaps(mats);
+                    mats.forEach(function(m) { m.dispose(); });
                 }
             }
         }
@@ -3939,6 +3973,7 @@
                         ingestProjectDoc(doc.id, doc.data(), false);
                     });
                     if (typeof renderImmersiveProjectsList === 'function') renderImmersiveProjectsList();
+                    if (typeof revealResumedCubesIfNeeded === 'function') revealResumedCubesIfNeeded();
                 }).catch(function (error) {
                     console.error("Erro ao verificar a coleção projetos (db.collection.get):", error);
                     markComponentComplete('firestore');
@@ -3999,7 +4034,8 @@
                 if (cube.geometry) cube.geometry.dispose();
                 if (cube.material) {
                     var mats = Array.isArray(cube.material) ? cube.material : [cube.material];
-                    mats.forEach(function(m) { if (m.map) m.map.dispose(); m.dispose(); });
+                    disposeCubeFaceMaps(mats);
+                    mats.forEach(function(m) { m.dispose(); });
                 }
             }
 
@@ -4017,6 +4053,7 @@
                         createAndAddCube(project.id, project); // Esta função define visible = false
                     });
                     if (typeof renderImmersiveProjectsList === 'function') renderImmersiveProjectsList();
+                    if (typeof revealResumedCubesIfNeeded === 'function') revealResumedCubesIfNeeded();
                 })
                 .catch(error => {
                     console.error("Erro ao carregar projects.json para criação manual:", error);
@@ -4034,7 +4071,8 @@
                 if (cube.geometry) cube.geometry.dispose();
                 if (cube.material) {
                     var mats = Array.isArray(cube.material) ? cube.material : [cube.material];
-                    mats.forEach(function(m) { if (m.map) m.map.dispose(); m.dispose(); });
+                    disposeCubeFaceMaps(mats);
+                    mats.forEach(function(m) { m.dispose(); });
                 }
             }
 
@@ -4049,6 +4087,7 @@
                 createAndAddCube(project.id, project); // Esta função define visible = false
             });
             if (typeof renderImmersiveProjectsList === 'function') renderImmersiveProjectsList();
+            if (typeof revealResumedCubesIfNeeded === 'function') revealResumedCubesIfNeeded();
         }
         // --- Fim Novas Funções Firebase ---
 
@@ -4068,12 +4107,18 @@
         var headClicked = false;
 
         // ---- Start page (tela de entrada antes do primeiro estado) ----
+        // Volta do Lite na mesma sessão: salta o ritual da start e abre a cena já revelada.
+        var resumeImmersiveScene = false;
+        try {
+            resumeImmersiveScene = sessionStorage.getItem('immersive_resume_scene') === '1';
+        } catch (e) {}
         // Com deep link de projeto (?project=...) a tela de entrada é pulada.
         var startScreenEnabled = (function () {
             try {
+                if (resumeImmersiveScene) return false;
                 return !(new URLSearchParams(window.location.search).get('project'));
             } catch (e) {
-                return true;
+                return !resumeImmersiveScene;
             }
         })();
         var startScreenActive = false;
@@ -4084,10 +4129,43 @@
         var headModelFailed = false;
         var startEntryAnimating = false;
         var headEntryBaseY = null;
+        var _startHeadEntryTl = null;
 
         // True enquanto a tela de entrada ainda vai acontecer ou está no ar.
         function startScreenPending() {
             return startScreenEnabled && !startScreenDismissed;
+        }
+
+        function bootResumedImmersiveScene() {
+            startScreenDismissed = true;
+            startScreenActive = false;
+            startScreenTransitioning = false;
+            startEntryAllowed = true;
+            hideStartOverlay();
+            hideHeadHintNotification();
+            var header = document.getElementById('immersiveHeader');
+            if (header) header.classList.remove('is-locked');
+            if (model) {
+                if (typeof settleHeadRestPose === 'function') settleHeadRestPose();
+                else model.visible = true;
+            }
+            if (camera && initialCameraPosition) {
+                camera.position.copy(initialCameraPosition);
+                camera.lookAt(0, 0, 0);
+            }
+            if (controls) {
+                controls.minDistance = 6.5;
+                controls.maxDistance = 8;
+                controls.target.set(0, 0, 0);
+                controls.enabled = true;
+                controls.update();
+            }
+        }
+
+        function revealResumedCubesIfNeeded() {
+            if (!resumeImmersiveScene || headClicked) return;
+            if (!cubeArray || !cubeArray.length) return;
+            revealCubesIfNeeded({ resume: true });
         }
 
         var _hintWorld;
@@ -4223,21 +4301,123 @@
             });
         }
 
+        function prefersReducedMotion() {
+            try {
+                return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function killStartHeadEntrance() {
+            if (_startHeadEntryTl) {
+                _startHeadEntryTl.kill();
+                _startHeadEntryTl = null;
+            }
+            if (typeof gsap !== 'undefined' && model) {
+                gsap.killTweensOf(model.scale);
+                gsap.killTweensOf(model.position);
+                gsap.killTweensOf(model.rotation);
+            }
+        }
+
+        function settleHeadRestPose() {
+            killStartHeadEntrance();
+            if (!model) return;
+            if (headEntryBaseY === null) headEntryBaseY = model.position.y;
+            model.position.set(0, headEntryBaseY, 0);
+            model.rotation.y = 0;
+            model.scale.set(1.2, 1.2, 1.2);
+            model.visible = true;
+        }
+
+        // Entrada da cabeça após o 100%: avanço em profundidade (como a animação antiga).
+        function playStartHeadEntrance() {
+            playStartTitleEntrance();
+
+            if (!model) {
+                scheduleDeferredBootAssets();
+                return;
+            }
+
+            if (headEntryBaseY === null) headEntryBaseY = model.position.y;
+
+            if (typeof gsap === 'undefined' || prefersReducedMotion()) {
+                settleHeadRestPose();
+                camera.position.set(0, 0, 5.8);
+                if (controls) controls.target.set(0, 0, 0);
+                showHeadChatBubble();
+                scheduleDeferredBootAssets();
+                return;
+            }
+
+            killStartHeadEntrance();
+            gsap.killTweensOf(camera.position);
+
+            model.position.set(0, headEntryBaseY, -0.5);
+            model.rotation.y = -0.08;
+            model.scale.set(0.82, 0.82, 0.82);
+            model.visible = true;
+
+            if (controls) {
+                controls.enabled = false;
+                controls.target.set(0, 0, 0);
+            }
+            camera.position.set(0, 0, 7);
+            camera.lookAt(0, 0, 0);
+
+            _startHeadEntryTl = gsap.timeline({
+                onComplete: function () {
+                    _startHeadEntryTl = null;
+                    scheduleDeferredBootAssets();
+                }
+            });
+
+            _startHeadEntryTl.to(model.position, {
+                z: 0,
+                duration: 1.15,
+                ease: 'power3.out'
+            }, 0);
+            _startHeadEntryTl.to(model.rotation, {
+                y: 0,
+                duration: 1.15,
+                ease: 'power3.out'
+            }, 0);
+            _startHeadEntryTl.to(model.scale, {
+                x: 1.2,
+                y: 1.2,
+                z: 1.2,
+                duration: 1.15,
+                ease: 'power3.out'
+            }, 0);
+            _startHeadEntryTl.to(camera.position, {
+                x: 0,
+                y: 0,
+                z: 5.8,
+                duration: 1.15,
+                ease: 'power3.out',
+                onUpdate: function () {
+                    camera.lookAt(0, 0, 0);
+                    if (controls) controls.target.set(0, 0, 0);
+                }
+            }, 0);
+            _startHeadEntryTl.add(showHeadChatBubble, 0.82);
+        }
+
         function finishStartLoadingReveal() {
             if (startScreenPending() || startScreenActive) {
                 setStartScreenReady(!!model || headModelFailed);
-                if (model) {
-                    model.visible = true;
-                    camera.position.set(0, 0, 5.8);
-                    if (controls) controls.target.set(0, 0, 0);
-                }
-                playStartTitleEntrance();
-                showHeadChatBubble();
+                playStartHeadEntrance();
             } else {
-                if (model) model.visible = true;
-                showHeadChatBubble();
+                settleHeadRestPose();
+                if (resumeImmersiveScene) {
+                    bootResumedImmersiveScene();
+                    revealResumedCubesIfNeeded();
+                } else {
+                    showHeadChatBubble();
+                }
+                scheduleDeferredBootAssets();
             }
-            scheduleDeferredBootAssets();
         }
 
         // Assets que competiam com o GLB na 1ª visita: só depois da cabeça pronta.
@@ -4323,7 +4503,7 @@
         var skyCycleTimer = null;
         var SKYBOX_CYCLE_MS = 60000;
         // Na tela de entrada: troca mais frequente que no site, mas sem ficar frenética.
-        var START_SKYBOX_CYCLE_MS = 3800;
+        var START_SKYBOX_CYCLE_MS = 4000;
         // Rotação lenta do fundo, usada só na tela de entrada (rad/s).
         var START_SKY_SPIN = 0.022;
         // Crossfade entre canais: um pouco mais curto na start, mas próximo do original.
@@ -4627,13 +4807,14 @@
             renderLoadingBar();
 
             var loader = new THREE.GLTFLoader();
-            var modelPath = (window.PORTFOLIO_MODEL_URL || 'models/NezmodelF2.glb');
+            var modelPath = (window.PORTFOLIO_MODEL_URL || 'models/NezmodelF2.tex.webp.1k.glb');
             
             function onHeadModelLoaded(gltf) {
                     // Modelo carregado
                     model = gltf.scene;
                     model.position.set(0, -3, 0);
                     model.scale.set(1.2, 1.2, 1.2);
+                    if (headEntryBaseY === null) headEntryBaseY = model.position.y;
                     model.traverse(function(child) {
                         if (child.isMesh) {
                             child.frustumCulled = false;
@@ -4644,11 +4825,11 @@
                             }
                         }
                     });
-                    // Cabeça só aparece com a start revelada (após 100%).
+                    // Cabeça só aparece com a start revelada (após 100%), com dolly-in.
                     var onStartBoot = startScreenPending() || startScreenActive;
                     model.visible = !onStartBoot;
                     if (onStartBoot) {
-                        camera.position.set(0, 0, 5.8);
+                        camera.position.set(0, 0, 7);
                         if (controls) controls.target.set(0, 0, 0);
                     }
                     scene.add(model);
@@ -4680,6 +4861,9 @@
                     if (!(startScreenActive || startScreenPending())) {
                         if (pendingHeadReveal) {
                             dismissStartAndRevealProjects();
+                        } else if (resumeImmersiveScene) {
+                            bootResumedImmersiveScene();
+                            revealResumedCubesIfNeeded();
                         } else if (!startScreenTransitioning) {
                             animateCameraToPosition(0, 0, 5.8);
                         }
@@ -4791,6 +4975,9 @@
 
             if (startScreenPending()) {
                 showStartScreen();
+            } else if (resumeImmersiveScene) {
+                bootResumedImmersiveScene();
+                scheduleDeferredBootAssets();
             }
 
             setTimeout(function() {
@@ -4970,7 +5157,7 @@ function showStartScreen() {
     if (!el) {
         // Sem o overlay disponível, cai no comportamento original.
         startScreenDismissed = true;
-        if (model) model.visible = true;
+        settleHeadRestPose();
         showHeadChatBubble();
         return;
     }
@@ -5021,7 +5208,7 @@ function dismissStartAndRevealProjects() {
     startScreenDismissed = true;
     startEntryAnimating = false;
 
-    if (model) model.visible = true;
+    settleHeadRestPose();
 
     hideStartOverlay();
     restartSkyboxChannelCycle();
@@ -5030,6 +5217,9 @@ function dismissStartAndRevealProjects() {
 
 function playFirstRevealFromEntry() {
     if (headClicked) return;
+
+    settleHeadRestPose();
+    scheduleDeferredBootAssets();
 
     revealCubesIfNeeded();
 
@@ -5153,10 +5343,17 @@ function revealCubesIfNeeded(options) {
     setCubePointerCursor(false);
 
     var immediate = !!(options && options.immediate);
+    var resume = !!(options && options.resume);
     var header = document.getElementById('immersiveHeader');
     var unlockHeader = function () {
         if (header) header.classList.remove('is-locked');
     };
+
+    if (resume) {
+        unlockHeader();
+        startCubeRevealWave(0.04);
+        return;
+    }
 
     if (immediate || typeof gsap === 'undefined') {
         unlockHeader();
@@ -6397,6 +6594,51 @@ document.addEventListener('keydown', function(event) {
     var _panelDots = [];
     var _panelVideoFit = 'contain';
     var _panelCarouselItems = [];
+    var _panelCarouselSignature = '';
+
+    function _panelFindCachedProjectData(projectId) {
+        projectId = String(projectId || '');
+        if (!projectId || typeof cubeArray === 'undefined' || !cubeArray) return null;
+        for (var i = 0; i < cubeArray.length; i++) {
+            var cube = cubeArray[i];
+            if (cube && cube.userData && String(cube.userData.projectId) === projectId) {
+                return cube.userData.projectData || null;
+            }
+        }
+        return null;
+    }
+
+    function _panelItemsSignature(items) {
+        if (!items || !items.length) return '';
+        return items.map(function (item) {
+            if (typeof item === 'string') return 'image:' + item;
+            return String((item && item.type) || 'image') + ':' + String((item && item.url) || '') + ':' + String((item && item.poster) || '');
+        }).join('|');
+    }
+
+    function _panelWarmUrl(url, asType) {
+        if (!url) return;
+        try {
+            if (asType === 'image') {
+                var img = new Image();
+                img.decoding = 'async';
+                img.src = url;
+                return;
+            }
+            // Dica ao browser para priorizar o primeiro vídeo.
+            if (asType === 'video' && document.head) {
+                var existing = document.head.querySelector('link[data-panel-video-preload="' + url.replace(/"/g, '') + '"]');
+                if (existing) return;
+                var link = document.createElement('link');
+                link.rel = 'preload';
+                link.as = 'fetch';
+                link.href = url;
+                link.crossOrigin = 'anonymous';
+                link.setAttribute('data-panel-video-preload', url);
+                document.head.appendChild(link);
+            }
+        } catch (e) {}
+    }
 
     // ---------- ABRIR / FECHAR PAINEL ----------
     function openProject(projectId) {
@@ -6414,6 +6656,7 @@ document.addEventListener('keydown', function(event) {
         _panelCurrentSlide = 0;
         _panelSlides = [];
         _panelDots = [];
+        _panelCarouselSignature = '';
 
         // Resetar conteúdo
         var titleEl = document.getElementById('panel-project-title');
@@ -6448,7 +6691,13 @@ document.addEventListener('keydown', function(event) {
         // Atualizar URL sem navegar
         try { history.pushState({ projectPanel: projectId }, '', '?project=' + projectId); } catch(e) {}
 
-        // Carregar dados do Firestore
+        // Pintura imediata com dados do cubo (já em memória) enquanto o get() confirma.
+        var cached = _panelFindCachedProjectData(projectId);
+        if (cached) {
+            _panelApplyProjectData(projectId, cached, { fromCache: true });
+        }
+
+        // Carregar/atualizar dados do Firestore
         _panelLoadProjectData(projectId);
 
         // Inicializar upload se admin
@@ -6534,42 +6783,121 @@ document.addEventListener('keydown', function(event) {
         }
     }
 
-    function _panelArmSlideVideos(slide, fadeMedia) {
+    function _panelSetSlideLoading(slide, on) {
+        if (!slide) return;
+        if (on) slide.classList.add('is-loading');
+        else slide.classList.remove('is-loading');
+    }
+
+    function _panelEnsureSlideLoadingEl(slide) {
+        if (!slide) return null;
+        var el = slide.querySelector('.slide-loading');
+        if (el) return el;
+        el = document.createElement('div');
+        el.className = 'slide-loading';
+        el.setAttribute('aria-hidden', 'true');
+        var label = 'carregando…';
+        try {
+            if (window.I18n && typeof window.I18n.t === 'function') {
+                label = window.I18n.t('ui.startLoadingLabel') || label;
+            }
+        } catch (e) {}
+        el.innerHTML = '<div class="slide-loading-spinner"></div><span>' + label + '</span>';
+        slide.appendChild(el);
+        return el;
+    }
+
+    function _panelWaitMediaReady(media, slide) {
+        if (!media || !slide) return;
+        _panelEnsureSlideLoadingEl(slide);
+        _panelSetSlideLoading(slide, true);
+
+        var done = false;
+        function finish() {
+            if (done) return;
+            done = true;
+            media.removeEventListener('loadeddata', finish);
+            media.removeEventListener('canplay', finish);
+            media.removeEventListener('playing', finish);
+            media.removeEventListener('load', finish);
+            media.removeEventListener('error', finish);
+            _panelSetSlideLoading(slide, false);
+            media.style.opacity = '';
+        }
+
+        // Já tem frame / buffer mínimo para começar.
+        if (media.tagName === 'VIDEO') {
+            if (media.readyState >= 3) {
+                finish();
+                return;
+            }
+            // canplay = dá para começar sem esperar o ficheiro inteiro.
+            media.addEventListener('canplay', finish);
+            media.addEventListener('playing', finish);
+            media.addEventListener('loadeddata', finish);
+        } else if (media.tagName === 'IMG') {
+            if (media.complete && media.naturalWidth > 0) {
+                finish();
+                return;
+            }
+            media.addEventListener('load', finish);
+        }
+        media.addEventListener('error', finish);
+        setTimeout(finish, 12000);
+    }
+
+    function _panelArmSlideVideos(slide) {
         if (!slide) return;
         var v = slide.querySelector('video.slide-media');
         if (!v) return;
         var pendingSrc = v.getAttribute('data-src');
         if (pendingSrc && !v.getAttribute('src')) {
             v.preload = 'auto';
+            v.setAttribute('fetchpriority', 'high');
             v.src = pendingSrc;
             try { v.load(); } catch (e) {}
+        } else if (v.getAttribute('src')) {
+            v.preload = 'auto';
         }
-        if (fadeMedia) v.style.opacity = '0.45';
+        _panelWaitMediaReady(v, slide);
         try { v.currentTime = 0; } catch (e) {}
         var playPromise = v.play();
         if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(function() {});
-        if (fadeMedia) {
-            requestAnimationFrame(function() {
-                requestAnimationFrame(function() { v.style.opacity = ''; });
-            });
-        }
+    }
+
+    function _panelArmSlideImages(slide) {
+        if (!slide) return;
+        _panelHydrateSlideImages(slide);
+        var img = slide.querySelector('img.slide-media');
+        if (!img) return;
+        _panelWaitMediaReady(img, slide);
     }
 
     function _panelUnloadInactiveVideos(activeIndex) {
         if (!_panelSlides || !_panelSlides.length) return;
         _panelSlides.forEach(function(s, i) {
             if (i === activeIndex) return;
-            var videos = s.querySelectorAll('video');
-            for (var v = 0; v < videos.length; v++) {
-                var el = videos[v];
-                el.pause();
-                el.style.opacity = '';
-                var currentSrc = el.getAttribute('src');
-                if (currentSrc) {
-                    if (!el.getAttribute('data-src')) el.setAttribute('data-src', currentSrc);
-                    el.removeAttribute('src');
-                    try { el.load(); } catch (e) {}
+            _panelSetSlideLoading(s, false);
+            var video = s.querySelector('video.slide-media');
+            if (!video) return;
+            video.pause();
+            video.style.opacity = '';
+            var pending = video.getAttribute('data-src') || video.getAttribute('src');
+            var isNeighbor = (i === activeIndex - 1 || i === activeIndex + 1);
+            if (isNeighbor && pending) {
+                // Vizinho: só metadata (poucos bytes), sem competir com o slide ativo.
+                video.preload = 'metadata';
+                if (!video.getAttribute('src')) {
+                    video.src = pending;
+                    try { video.load(); } catch (e) {}
                 }
+                return;
+            }
+            var currentSrc = video.getAttribute('src');
+            if (currentSrc) {
+                if (!video.getAttribute('data-src')) video.setAttribute('data-src', currentSrc);
+                video.removeAttribute('src');
+                try { video.load(); } catch (e) {}
             }
         });
     }
@@ -6581,11 +6909,8 @@ document.addEventListener('keydown', function(event) {
             var slide = _panelSlides[i];
             _panelHydrateSlideImages(slide);
             var video = slide.querySelector('video.slide-media');
-            if (video && video.poster) {
-                var warm = new Image();
-                warm.decoding = 'async';
-                warm.src = video.poster;
-            }
+            if (!video) return;
+            if (video.poster) _panelWarmUrl(video.poster, 'image');
         });
     }
 
@@ -6604,8 +6929,12 @@ document.addEventListener('keydown', function(event) {
         _panelDots.forEach(function(d) { d.classList.remove('active'); });
         _panelSlides[index].classList.add('active');
 
-        _panelHydrateSlideImages(_panelSlides[index]);
-        _panelArmSlideVideos(_panelSlides[index], true);
+        var activeSlide = _panelSlides[index];
+        if (activeSlide.querySelector('video.slide-media')) {
+            _panelArmSlideVideos(activeSlide);
+        } else {
+            _panelArmSlideImages(activeSlide);
+        }
 
         if (_panelDots[index]) _panelDots[index].classList.add('active');
         _panelCurrentSlide = index;
@@ -6627,6 +6956,45 @@ document.addEventListener('keydown', function(event) {
     }
 
     // ---------- CARREGAR DADOS DO FIRESTORE ----------
+    function _panelApplyProjectData(projectId, data, options) {
+        if (!data) return;
+        var opts = options || {};
+        var row = Object.assign({ docId: projectId, id: projectId }, data);
+        var titleEl = document.getElementById('panel-project-title');
+        var descEl  = document.getElementById('panel-project-description');
+        var metaEl  = document.getElementById('panel-project-meta');
+        if (titleEl) {
+            titleEl.textContent = i18nProject(row, 'title') || i18nT('immersive.noTitle');
+            titleEl.classList.add('visible');
+        }
+        if (metaEl) {
+            var subtitle = i18nProject(row, 'subtitle') || '';
+            var year = data.year ? String(data.year) : '';
+            metaEl.textContent = [subtitle, year].filter(Boolean).join('  ·  ');
+            metaEl.classList.add('visible');
+        }
+        if (descEl) {
+            descEl.innerHTML = _panelFormatDescription(i18nProject(row, 'description'));
+            descEl.classList.add('visible');
+        }
+        _panelVideoFit = _panelResolveMediaFit(data);
+        var items = (data.carouselItems && Array.isArray(data.carouselItems) && data.carouselItems.length > 0)
+            ? data.carouselItems
+            : (data.images && Array.isArray(data.images)) ? data.images.map(function(u) { return { type: 'image', url: u }; }) : [];
+        _panelCarouselItems = items;
+
+        var sig = _panelItemsSignature(items);
+        // Evita reiniciar o download do vídeo se o get() só confirmou os mesmos itens.
+        if (opts.fromCache || sig !== _panelCarouselSignature || !_panelSlides || !_panelSlides.length) {
+            _panelCarouselSignature = sig;
+            _panelRenderCarousel(items, projectId);
+        }
+
+        if (!opts.fromCache && typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) {
+            _panelEnableEditMode();
+        }
+    }
+
     function _panelLoadProjectData(projectId) {
         if (typeof db === 'undefined' || !db) return;
         projectId = String(projectId);
@@ -6637,35 +7005,8 @@ document.addEventListener('keydown', function(event) {
                     if (titleEl) titleEl.textContent = i18nT('immersive.notFound');
                     return;
                 }
-                var data = doc.data();
-                var row = Object.assign({ docId: projectId, id: projectId }, data);
-                var titleEl = document.getElementById('panel-project-title');
-                var descEl  = document.getElementById('panel-project-description');
-                var metaEl  = document.getElementById('panel-project-meta');
-                if (titleEl) {
-                    titleEl.textContent = i18nProject(row, 'title') || i18nT('immersive.noTitle');
-                    titleEl.classList.add('visible');
-                }
-                if (metaEl) {
-                    var subtitle = i18nProject(row, 'subtitle') || '';
-                    var year = data.year ? String(data.year) : '';
-                    metaEl.textContent = [subtitle, year].filter(Boolean).join('  ·  ');
-                    metaEl.classList.add('visible');
-                }
-                if (descEl) {
-                    descEl.innerHTML = _panelFormatDescription(i18nProject(row, 'description'));
-                    descEl.classList.add('visible');
-                }
-                _panelVideoFit = _panelResolveMediaFit(data);
-                var items = (data.carouselItems && Array.isArray(data.carouselItems) && data.carouselItems.length > 0)
-                    ? data.carouselItems
-                    : (data.images && Array.isArray(data.images)) ? data.images.map(function(u) { return { type: 'image', url: u }; }) : [];
-                _panelCarouselItems = items;
-                _panelRenderCarousel(items, projectId);
-                // Ativar edição se admin já estiver logado
-                if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) {
-                    _panelEnableEditMode();
-                }
+                if (_panelCurrentProjectId && String(_panelCurrentProjectId) !== projectId) return;
+                _panelApplyProjectData(projectId, doc.data(), { fromCache: false });
             })
             .catch(function(err) {
                 console.error('Erro ao buscar projeto no painel:', err);
@@ -6743,46 +7084,24 @@ document.addEventListener('keydown', function(event) {
                 video.className = 'slide-media';
                 video.preload = 'none';
                 video.setAttribute('data-src', resolvedUrl);
-                if (posterUrl) video.poster = posterUrl;
+                if (posterUrl) {
+                    video.poster = posterUrl;
+                    slide.classList.add('has-poster');
+                    _panelWarmUrl(posterUrl, 'image');
+                }
                 if (idx === 0) {
                     video.preload = 'auto';
+                    video.setAttribute('fetchpriority', 'high');
                     video.src = resolvedUrl;
                     video.autoplay = true;
+                    _panelWarmUrl(resolvedUrl, 'video');
                 }
-                video.addEventListener('timeupdate', function() {
-                    var d = this.duration;
-                    if (!isFinite(d) || d <= 0) return;
-                    var t = this.currentTime;
-                    if (d - t < 0.25) this.style.opacity = '0.28';
-                    else if (t < 0.2) this.style.opacity = '';
-                });
-                video.addEventListener('ended', function() {
-                    this.style.opacity = '0.28';
-                    var self = this;
-                    requestAnimationFrame(function() {
-                        self.currentTime = 0;
-                        self.play();
-                        requestAnimationFrame(function() { self.style.opacity = ''; });
-                    });
-                });
                 slide.appendChild(video);
+                _panelEnsureSlideLoadingEl(slide);
+                if (idx === 0) _panelSetSlideLoading(slide, true);
             } else {
                 var resolvedImg = mediaUrl(url);
                 var loadNow = idx === 0;
-                if (mediaFit !== 'cover') {
-                    var bleed = document.createElement('img');
-                    bleed.className = 'slide-bleed';
-                    bleed.alt = '';
-                    bleed.setAttribute('aria-hidden', 'true');
-                    bleed.decoding = 'async';
-                    if (loadNow) {
-                        bleed.src = resolvedImg;
-                    } else {
-                        bleed.setAttribute('data-src', resolvedImg);
-                        bleed.loading = 'lazy';
-                    }
-                    slide.appendChild(bleed);
-                }
                 var img = document.createElement('img');
                 img.className = 'slide-media';
                 img.alt = 'Imagem ' + (idx + 1);
@@ -6795,6 +7114,8 @@ document.addEventListener('keydown', function(event) {
                     img.loading = 'lazy';
                 }
                 slide.appendChild(img);
+                _panelEnsureSlideLoadingEl(slide);
+                if (idx === 0) _panelSetSlideLoading(slide, true);
             }
             slidesEl.appendChild(slide);
 
@@ -6812,7 +7133,7 @@ document.addEventListener('keydown', function(event) {
         _panelDots   = Array.from(dotsEl.querySelectorAll('.carousel-dot'));
         if (navEl) navEl.style.display = items.length > 1 ? 'flex' : 'none';
         _panelCurrentSlide = 0;
-        setTimeout(function() { panelShowSlide(0); }, 50);
+        panelShowSlide(0);
         if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) {
             _panelUpdateCarouselList(items);
             _panelSchedulePosterBackfill(projectId, items);
@@ -7580,6 +7901,7 @@ document.addEventListener('keydown', function(event) {
             try {
                 if (typeof headClicked !== 'undefined' && headClicked) return;
             } catch (e) {}
+        if (typeof resumeImmersiveScene !== 'undefined' && resumeImmersiveScene) return;
         if (typeof startScreenPending === 'function' && startScreenPending()) return;
         setTimeout(showHeadChatBubble, 400);
     });

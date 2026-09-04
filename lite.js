@@ -66,7 +66,7 @@
   var adminSaveNoticeByKey = Object.create(null);
   var adminSaveNoticeClearTimer = null;
   var projectListOrderDirty = false;
-  var LITE_MODEL_URL = window.PORTFOLIO_MODEL_URL || 'models/NezmodelF2.glb';
+  var LITE_MODEL_URL = window.PORTFOLIO_MODEL_URL || 'models/NezmodelF2.tex.webp.1k.glb';
 
   var skyboxes = [
     [

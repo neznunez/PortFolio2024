@@ -1,6 +1,7 @@
 (function (global) {
-  var MODEL_URL = 'models/NezmodelF2.glb';
-  var CACHE_NAME = 'portfolio-head-model-cache-v1';
+  // Cópia WebP + máx 1024px (original NezmodelF2.glb intacto).
+  var MODEL_URL = 'models/NezmodelF2.tex.webp.1k.glb';
+  var CACHE_NAME = 'portfolio-head-model-cache-v3-texwebp1k';
 
   global.PORTFOLIO_MODEL_URL = MODEL_URL;
 
