@@ -23,6 +23,24 @@
     ],
     "headers": [
       {
+        "source": "**/*.@(html)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(js|css)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=604800"
+          }
+        ]
+      },
+      {
         "source": "models/**",
         "headers": [
           {
@@ -41,7 +59,7 @@
         ]
       },
       {
-        "source": "**/*.@(jpg|jpeg|png|webp)",
+        "source": "**/*.@(jpg|jpeg|png|webp|ico)",
         "headers": [
           {
             "key": "Cache-Control",

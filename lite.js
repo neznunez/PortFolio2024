@@ -55,6 +55,10 @@
   var projectDeleteModalElements = null;
   var pendingDeleteProjectKey = null;
   var storageRef = null;
+  var _adminSdkPromise = null;
+  var _liteAdminAuthBound = false;
+  var FIREBASE_AUTH_SRC = 'https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js';
+  var FIREBASE_STORAGE_SRC = 'https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js';
   var adminPreviewUploadBusy = false;
   var LITE_MAX_IMAGE_MB = window.PORTFOLIO_MAX_IMAGE_MB || 10;
   var LITE_MAX_VIDEO_MB = window.PORTFOLIO_MAX_VIDEO_MB || 80;
@@ -86,18 +90,80 @@
   var skyboxWeights = [5, 3];
   var firebaseConfig = window.PORTFOLIO_FIREBASE_CONFIG || null;
 
-  function getWeightedSkybox() {
-    var total = skyboxWeights.reduce(function (sum, weight) {
-      return sum + weight;
-    }, 0);
-    var random = Math.random() * total;
-    var acc = 0;
+  function loadExternalScriptOnce(src) {
+    return new Promise(function (resolve, reject) {
+      var existing = document.querySelector('script[data-lazy-src="' + src + '"]');
+      if (existing) {
+        if (existing.getAttribute('data-lazy-ready') === '1') {
+          resolve();
+          return;
+        }
+        existing.addEventListener('load', function () { resolve(); });
+        existing.addEventListener('error', function () { reject(new Error('Falha ao carregar ' + src)); });
+        return;
+      }
+      var s = document.createElement('script');
+      s.src = src;
+      s.async = true;
+      s.setAttribute('data-lazy-src', src);
+      s.onload = function () {
+        s.setAttribute('data-lazy-ready', '1');
+        resolve();
+      };
+      s.onerror = function () { reject(new Error('Falha ao carregar ' + src)); };
+      document.head.appendChild(s);
+    });
+  }
 
-    for (var i = 0; i < skyboxWeights.length; i += 1) {
-      acc += skyboxWeights[i];
-      if (random <= acc) return skyboxes[i];
+  function ensureFirebaseAdminSdk() {
+    if (typeof window.firebase !== 'undefined' &&
+        typeof window.firebase.auth === 'function' &&
+        typeof window.firebase.storage === 'function' &&
+        storageRef) {
+      return Promise.resolve();
     }
+    if (_adminSdkPromise) return _adminSdkPromise;
 
+    _adminSdkPromise = Promise.resolve()
+      .then(function () {
+        if (typeof window.firebase.auth === 'function') return;
+        return loadExternalScriptOnce(FIREBASE_AUTH_SRC);
+      })
+      .then(function () {
+        if (typeof window.firebase.storage === 'function') return;
+        return loadExternalScriptOnce(FIREBASE_STORAGE_SRC);
+      })
+      .then(function () {
+        if (!window.firebase.apps.length && firebaseConfig) {
+          window.firebase.initializeApp(firebaseConfig);
+        }
+        window.firebase.auth();
+        try {
+          storageRef = window.firebase.storage();
+        } catch (storageErr) {
+          console.warn('Firebase Storage indisponivel no lite:', storageErr);
+          storageRef = null;
+        }
+        if (!_liteAdminAuthBound && window.firebase.auth) {
+          _liteAdminAuthBound = true;
+          window.firebase.auth().onAuthStateChanged(function (user) {
+            if (!isLiteAdmin) return;
+            var stillAdmin = typeof window.isPortfolioAdmin === 'function'
+              ? window.isPortfolioAdmin(user)
+              : false;
+            if (!stillAdmin) exitLiteAdmin(false);
+          });
+        }
+      })
+      .catch(function (err) {
+        _adminSdkPromise = null;
+        throw err;
+      });
+
+    return _adminSdkPromise;
+  }
+
+  function getWeightedSkybox() {
     return skyboxes[0];
   }
 
@@ -220,8 +286,66 @@
     });
   }
 
-  function liteSaveNewImageUrlsToProject(docId, newUrls) {
-    if (!dbRef || !newUrls.length) return Promise.resolve();
+  var CUBE_FACE_MAX_EDGE = 512;
+
+  function resizeFileToJpeg(file, maxEdge, quality) {
+    return new Promise(function (resolve) {
+      if (!file || !(file.type || '').startsWith('image/')) {
+        resolve(null);
+        return;
+      }
+      var objectUrl = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        try {
+          var size = fitMediaSize(img.naturalWidth || img.width, img.naturalHeight || img.height, maxEdge || CUBE_FACE_MAX_EDGE);
+          var canvas = document.createElement('canvas');
+          canvas.width = size.w;
+          canvas.height = size.h;
+          var ctx = canvas.getContext('2d');
+          if (!ctx || !canvas.toBlob) {
+            try { URL.revokeObjectURL(objectUrl); } catch (e) {}
+            resolve(null);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, size.w, size.h);
+          canvas.toBlob(function (blob) {
+            try { URL.revokeObjectURL(objectUrl); } catch (e) {}
+            resolve(blob || null);
+          }, 'image/jpeg', quality == null ? 0.82 : quality);
+        } catch (err) {
+          try { URL.revokeObjectURL(objectUrl); } catch (e) {}
+          resolve(null);
+        }
+      };
+      img.onerror = function () {
+        try { URL.revokeObjectURL(objectUrl); } catch (e) {}
+        resolve(null);
+      };
+      img.src = objectUrl;
+    });
+  }
+
+  function liteUploadImageWithCubeThumb(docId, file) {
+    return liteUploadProjectMediaFile(docId, file).then(function (url) {
+      return resizeFileToJpeg(file, CUBE_FACE_MAX_EDGE, 0.82).then(function (blob) {
+        if (!blob) return { url: url, thumb: '' };
+        var thumbFile = new File([blob], Date.now() + '_cube.jpg', { type: 'image/jpeg' });
+        return liteUploadProjectMediaFile(docId, thumbFile).then(function (thumbUrl) {
+          return { url: url, thumb: thumbUrl || '' };
+        }).catch(function () {
+          return { url: url, thumb: '' };
+        });
+      });
+    });
+  }
+
+  function liteSaveNewImageUrlsToProject(docId, newEntries) {
+    if (!dbRef || !newEntries.length) return Promise.resolve();
+    var entries = newEntries.map(function (item) {
+      if (typeof item === 'string') return { url: item, thumb: '' };
+      return { url: item && item.url, thumb: (item && item.thumb) || '' };
+    }).filter(function (item) { return !!item.url; });
     return dbRef
       .collection('projetos')
       .doc(docId)
@@ -235,12 +359,15 @@
             : existingImages.map(function (u) {
                 return { type: 'image', url: u };
               });
-        var newImageEntries = newUrls.map(function (u) {
-          return { type: 'image', url: u };
+        var cubeUrls = entries.map(function (item) { return item.thumb || item.url; });
+        var newImageEntries = entries.map(function (item) {
+          var row = { type: 'image', url: item.url };
+          if (item.thumb) row.thumb = item.thumb;
+          return row;
         });
         return dbRef.collection('projetos').doc(docId).set(
           {
-            images: existingImages.concat(newUrls),
+            images: existingImages.concat(cubeUrls),
             carouselItems: existingCarousel.concat(newImageEntries)
           },
           { merge: true }
@@ -446,7 +573,7 @@
     if (imageFiles.length) {
       chain = chain.then(function () {
         return Promise.all(imageFiles.map(function (f) {
-          return liteUploadProjectMediaFile(docId, f);
+          return liteUploadImageWithCubeThumb(docId, f);
         })).then(function (urls) {
           return liteSaveNewImageUrlsToProject(docId, urls);
         });
@@ -706,12 +833,18 @@
       return;
     }
 
-    if (!window.firebase || !window.firebase.auth) {
-      alert(t('js.authUnavailable'));
-      return;
-    }
-
-    openAdminLiteModal();
+    ensureFirebaseAdminSdk()
+      .then(function () {
+        if (!window.firebase || !window.firebase.auth) {
+          alert(t('js.authUnavailable'));
+          return;
+        }
+        openAdminLiteModal();
+      })
+      .catch(function (err) {
+        console.error(err);
+        alert(t('js.authUnavailable'));
+      });
   }
 
   function setContentMode(mode) {
@@ -768,15 +901,7 @@
       if (!window.firebase.apps.length) {
         window.firebase.initializeApp(firebaseConfig);
       }
-      if (window.firebase.auth) window.firebase.auth();
       storageRef = null;
-      if (window.firebase.storage) {
-        try {
-          storageRef = window.firebase.storage();
-        } catch (storageErr) {
-          console.warn('Firebase Storage indisponivel no lite:', storageErr);
-        }
-      }
       return window.firebase.firestore();
     } catch (error) {
       console.warn('Firebase indisponivel no lite:', error);
@@ -845,10 +970,14 @@
     if (poster && typeof poster === 'string' && typeof window.rewriteStorageUrlForLocal === 'function') {
       poster = window.rewriteStorageUrlForLocal(poster);
     }
+    var thumb = raw.thumb || raw.thumbnail || '';
+    if (thumb && typeof thumb === 'string' && typeof window.rewriteStorageUrlForLocal === 'function') {
+      thumb = window.rewriteStorageUrlForLocal(thumb);
+    }
     if (isVideoTypeHint(explicitType) || isVideoUrl(src)) {
       return { type: 'video', src: src, poster: poster || '' };
     }
-    if (isImageUrl(src)) return { type: 'image', src: src };
+    if (isImageUrl(src)) return { type: 'image', src: src, thumb: thumb || '' };
     return null;
   }
 
@@ -1817,6 +1946,7 @@
       carouselItems: mediaItems.map(function (item) {
         var row = { type: item.type === 'video' ? 'video' : 'image', url: item.src };
         if (item.type === 'video' && item.poster) row.poster = item.poster;
+        if (item.type !== 'video' && item.thumb) row.thumb = item.thumb;
         return row;
       }),
       images: mediaItems
@@ -1824,7 +1954,7 @@
           return item.type !== 'video';
         })
         .map(function (item) {
-          return item.src;
+          return item.thumb || item.src;
         })
     };
     return dbRef.collection('projetos').doc(project.docId).set(payload, { merge: true });
@@ -2490,12 +2620,13 @@
 
     try {
       renderer = new THREE.WebGLRenderer({
-        antialias: true,
+        antialias: false,
         alpha: false,
-        powerPreference: 'high-performance'
+        powerPreference: 'high-performance',
+        stencil: false
       });
     } catch (primaryError) {
-      console.warn('Falha ao criar WebGL com antialias, tentando fallback...', primaryError);
+      console.warn('Falha ao criar WebGL, tentando fallback...', primaryError);
       try {
         renderer = new THREE.WebGLRenderer({
           antialias: false,
@@ -2508,7 +2639,7 @@
         return;
       }
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobileViewport() ? 1 : 1.25));
     renderer.setSize(wrap.clientWidth, wrap.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -2517,6 +2648,7 @@
 
     setupControls();
     addLights();
+    loadSkyboxBackground();
     loadModel();
 
     window.addEventListener('resize', handleResize);
@@ -2659,7 +2791,6 @@
       }
 
       hideLoadingIndicator();
-      loadSkyboxBackground();
     }
 
     function onModelError(error) {
@@ -2693,8 +2824,10 @@
 
   function animate() {
     requestAnimationFrame(animate);
+    if (document.hidden) return;
 
     var delta = clock.getDelta();
+    if (delta > 0.25) delta = 0.033;
     if (mixer) mixer.update(delta);
     if (controls) controls.update();
 
@@ -2724,15 +2857,6 @@
     setupSectionIndexTracking();
     playLiteAboutType();
     dbRef = setupFirebase();
-    if (window.firebase && window.firebase.auth) {
-      window.firebase.auth().onAuthStateChanged(function (user) {
-        if (!isLiteAdmin) return;
-        var stillAdmin = typeof window.isPortfolioAdmin === 'function'
-          ? window.isPortfolioAdmin(user)
-          : false;
-        if (!stillAdmin) exitLiteAdmin(false);
-      });
-    }
     loadProjectsData().then(function (rows) {
       projectsData = rows;
       renderProjectsList();

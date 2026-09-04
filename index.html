@@ -26,7 +26,6 @@
     <link rel="preload" href="desertdawn/desertdawn_dn.jpg" as="image">
     <link rel="preload" href="desertdawn/desertdawn_rt.jpg" as="image">
     <link rel="preload" href="desertdawn/desertdawn_lf.jpg" as="image">
-    <link rel="preload" href="models/NezmodelF2.glb" as="fetch" crossorigin fetchpriority="low">
     <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin>
     <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com">
 	 <link rel="stylesheet" href="landing.css">
@@ -96,7 +95,6 @@
             height: 100%;
             position: relative;
             z-index: 0;
-            filter: saturate(1.08) contrast(1.01);
         }
         .tooltip {
             position: absolute;
@@ -111,8 +109,6 @@
             display: flex;
             flex-direction: column;
             gap: 6px;
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
         }
 
         .tooltip-title {
@@ -187,8 +183,6 @@
             box-shadow:
                 inset 0 0 0 1px rgba(255, 255, 255, 0.08),
                 0 2px 22px rgba(0, 0, 0, 0.45);
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
         }
         .loading-bar {
             height: 100%;
@@ -362,8 +356,6 @@
             background: rgba(255, 255, 255, 0.07);
             border: 1px solid rgba(255, 255, 255, 0.55);
             border-radius: 999px;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
             box-shadow: 0 6px 30px rgba(0, 0, 0, 0.35);
             transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease, opacity 0.25s ease;
         }
@@ -528,8 +520,6 @@
                     transparent 3px
                 ),
                 linear-gradient(180deg, #f6f6f8 0%, #d8d8de 48%, #c0c0c8 49%, #d2d2d8 100%);
-            backdrop-filter: blur(12px) saturate(140%);
-            -webkit-backdrop-filter: blur(12px) saturate(140%);
             box-shadow:
                 0 8px 22px rgba(0, 0, 0, 0.3),
                 inset 0 1px 0 rgba(255, 255, 255, 0.95);
@@ -683,16 +673,14 @@
                     transparent 3px
                 ),
                 linear-gradient(180deg, #f4f4f6 0%, #d5d5db 46%, #b8b8c0 47%, #cfcfd6 100%);
-            backdrop-filter: blur(10px) saturate(140%);
-            -webkit-backdrop-filter: blur(10px) saturate(140%);
         }
 
         body.ui-macos .immersive-cv-frame,
         body.ui-macos #immersive-cv-panel .immersive-cv-frame {
             background:
-                linear-gradient(180deg, rgba(248, 248, 252, 0.22) 0%, rgba(40, 70, 110, 0.42) 100%);
-            backdrop-filter: blur(18px) saturate(150%);
-            -webkit-backdrop-filter: blur(18px) saturate(150%);
+                linear-gradient(180deg, rgba(248, 248, 252, 0.88) 0%, rgba(40, 70, 110, 0.92) 100%);
+            backdrop-filter: blur(10px) saturate(130%);
+            -webkit-backdrop-filter: blur(10px) saturate(130%);
             border: 1px solid rgba(255, 255, 255, 0.55);
             border-left: 1px solid rgba(255, 255, 255, 0.55);
             border-radius: 8px;
@@ -750,9 +738,7 @@
             border: 1px solid rgba(255, 255, 255, 0.72);
             background:
                 linear-gradient(180deg, rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0.06) 42%, transparent 42%),
-                linear-gradient(180deg, rgba(70, 185, 210, 0.42) 0%, rgba(20, 110, 150, 0.5) 100%);
-            backdrop-filter: blur(22px) saturate(190%);
-            -webkit-backdrop-filter: blur(22px) saturate(190%);
+                linear-gradient(180deg, rgba(70, 185, 210, 0.72) 0%, rgba(20, 110, 150, 0.82) 100%);
             box-shadow:
                 0 6px 18px rgba(0, 40, 70, 0.28),
                 inset 0 1px 0 rgba(255, 255, 255, 0.75),
@@ -894,9 +880,7 @@
         body.ui-aero.immersive-projects-open .immersive-header-inner {
             background:
                 linear-gradient(180deg, rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0.06) 42%, transparent 42%),
-                linear-gradient(180deg, rgba(70, 185, 210, 0.42) 0%, rgba(20, 110, 150, 0.5) 100%);
-            backdrop-filter: blur(22px) saturate(190%);
-            -webkit-backdrop-filter: blur(22px) saturate(190%);
+                linear-gradient(180deg, rgba(70, 185, 210, 0.72) 0%, rgba(20, 110, 150, 0.82) 100%);
         }
 
         body.ui-aero .immersive-cv-frame,
@@ -905,9 +889,9 @@
             background:
                 radial-gradient(120% 80% at 100% 0%, rgba(120, 255, 200, 0.16), transparent 42%),
                 radial-gradient(90% 70% at 0% 0%, rgba(255, 255, 255, 0.28), transparent 50%),
-                linear-gradient(180deg, rgba(210, 245, 255, 0.32) 0%, rgba(40, 140, 200, 0.42) 100%);
-            backdrop-filter: blur(34px) saturate(230%);
-            -webkit-backdrop-filter: blur(34px) saturate(230%);
+                linear-gradient(180deg, rgba(210, 245, 255, 0.78) 0%, rgba(40, 140, 200, 0.88) 100%);
+            backdrop-filter: blur(12px) saturate(140%);
+            -webkit-backdrop-filter: blur(12px) saturate(140%);
             border: 1px solid rgba(255, 255, 255, 0.78);
             border-left: 1px solid rgba(255, 255, 255, 0.78);
             border-radius: 22px;
@@ -1236,9 +1220,9 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            background: rgba(0, 0, 0, 0.52);
-            backdrop-filter: blur(20px) saturate(125%);
-            -webkit-backdrop-filter: blur(20px) saturate(125%);
+            background: rgba(0, 0, 0, 0.78);
+            backdrop-filter: blur(12px) saturate(120%);
+            -webkit-backdrop-filter: blur(12px) saturate(120%);
             border: 1px solid rgba(255, 255, 255, 0.16);
             border-left: 1px solid rgba(255, 255, 255, 0.16);
             border-radius: 18px;
@@ -1250,9 +1234,9 @@
         }
 
         #immersive-cv-panel .immersive-cv-frame {
-            background: rgba(0, 0, 0, 0.56);
-            backdrop-filter: blur(22px) saturate(125%);
-            -webkit-backdrop-filter: blur(22px) saturate(125%);
+            background: rgba(0, 0, 0, 0.82);
+            backdrop-filter: blur(12px) saturate(120%);
+            -webkit-backdrop-filter: blur(12px) saturate(120%);
         }
 
         .immersive-cv-nav {
@@ -1978,7 +1962,7 @@
             width: auto;
             height: auto;
             transform: none;
-            background: rgba(0, 0, 0, 0.46);
+            background: rgba(0, 0, 0, 0.72);
             box-shadow: none;
             border-radius: 0;
             display: flex;
@@ -1986,8 +1970,6 @@
             align-items: stretch;
             justify-content: flex-start;
             z-index: 1;
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
             overflow: hidden;
             padding: 0;
             pointer-events: auto;
@@ -2011,7 +1993,7 @@
             overflow: hidden;
             border-radius: 0;
             box-shadow: none;
-            background: rgba(0, 0, 0, 0.28);
+            background: transparent;
         }
         #project-panel #panel-carousel-slides {
             position: absolute;
@@ -2031,18 +2013,53 @@
             left: 0;
             opacity: 0;
             transition: opacity 0.3s ease;
+            background: transparent;
         }
         #project-panel .carousel-slide.active {
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             opacity: 1;
         }
-        #project-panel .carousel-slide img,
-        #project-panel .carousel-slide video {
+        #project-panel .carousel-slide .slide-bleed {
+            position: absolute;
+            inset: 0;
             width: 100%;
             height: 100%;
             object-fit: cover;
+            object-position: center center;
+            filter: blur(28px) saturate(1.12);
+            transform: scale(1.14);
+            opacity: 0.5;
+            pointer-events: none;
+            user-select: none;
+            z-index: 0;
+        }
+        #project-panel .carousel-slide.is-contain .slide-media {
+            position: relative;
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            object-position: center center;
             border-radius: 0;
             display: block;
+            z-index: 1;
+            background: transparent;
+        }
+        #project-panel .carousel-slide.is-cover .slide-bleed {
+            display: none;
+        }
+        #project-panel .carousel-slide.is-cover .slide-media {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center center;
+            border-radius: 0;
+            display: block;
+            z-index: 1;
         }
         #project-panel #panel-carousel-loading-overlay {
             position: absolute;
@@ -2073,26 +2090,60 @@
         @keyframes panel-loading-spin {
             to { transform: rotate(360deg); }
         }
-        #project-panel .carousel-slide video.fit-contain {
-            object-fit: contain;
-        }
         #project-panel #panel-carousel-container #panel-video-fit-wrap {
             position: absolute;
-            bottom: 8px;
-            right: 8px;
+            top: 16px;
+            right: 16px;
             z-index: 50;
             display: flex;
             align-items: center;
+            gap: 10px;
+            padding: 8px 12px 8px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.55);
+            background: rgba(255, 255, 255, 0.14);
+            box-shadow: 0 6px 22px rgba(0, 0, 0, 0.28);
+        }
+        #project-panel #panel-carousel-container #panel-video-fit-wrap label {
+            margin: 0;
+            color: #fff;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            white-space: nowrap;
         }
         #project-panel #panel-carousel-container #panel-video-fit-wrap select {
-            background: rgba(0,0,0,0.75);
-            color: #33ff33;
-            border: 1px solid rgba(51,255,51,0.6);
-            border-radius: 4px;
-            padding: 4px 6px;
-            font-family: 'Courier New', monospace;
+            appearance: none;
+            -webkit-appearance: none;
+            background: rgba(0, 0, 0, 0.28);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            border-radius: 999px;
+            padding: 5px 28px 5px 12px;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
             font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
             cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='white' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 8px 5px;
+        }
+        #project-panel #panel-carousel-container #panel-video-fit-wrap select:focus-visible {
+            outline: none;
+            border-color: #fff;
+            background-color: rgba(255, 255, 255, 0.16);
+        }
+        #project-panel .carousel-slide video.slide-media {
+            --panel-video-opacity: 0.84;
+            opacity: var(--panel-video-opacity);
+            filter: saturate(1.05);
+        }
+        #project-panel .carousel-slide.is-contain video.slide-media {
+            box-shadow: 0 18px 64px rgba(0, 0, 0, 0.32);
         }
         #project-panel .carousel-slide video {
             transition: opacity 0.25s ease;
@@ -2124,8 +2175,6 @@
             line-height: 1;
             transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
             border-radius: 999px;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
             box-shadow: 0 6px 22px rgba(0, 0, 0, 0.28);
             z-index: 20;
             pointer-events: auto;
@@ -2185,13 +2234,12 @@
         #project-panel .project-text-container::-webkit-scrollbar-track { background: transparent; }
         #project-panel .project-text-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.28); border-radius: 999px; }
         #project-panel .project-text-container::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.48); }
-        #project-panel .project-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 0;
-            margin: 0;
-            display: block;
+        @media (prefers-reduced-motion: reduce) {
+            #project-panel .carousel-slide .slide-bleed {
+                filter: none;
+                transform: none;
+                opacity: 0.28;
+            }
         }
         #project-panel .panel-project-meta {
             margin: 0 0 10px;
@@ -2267,8 +2315,6 @@
             text-decoration: none;
             text-shadow: none;
             box-shadow: 0 6px 22px rgba(0, 0, 0, 0.28);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
             cursor: pointer;
             pointer-events: auto;
             transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
@@ -2414,7 +2460,6 @@
             justify-content: center;
             align-items: center;
             z-index: 10000;
-            backdrop-filter: blur(5px);
         }
 
         #create-project-modal .modal-content {
@@ -2525,21 +2570,14 @@
 </div>
 
    <script src="ReLibs/three.min.js"></script>
-   <script type="module">
-        import { RGBELoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/addons/loaders/RGBELoader.js';
-        window.RGBELoader = RGBELoader;
-   </script>
    <script src="ReLibs/OrbitControls.js"></script>
    <script src="ReLibs/gsap.min.js"></script>
    <script src="ReLibs/GLTFLoader.js"></script>
    <script src="load-head-model.js"></script>
-   <script src="https://cdn.jsdelivr.net/npm/vanilla-tilt@1.7.0/dist/vanilla-tilt.min.js"></script>
 
-   <!-- Firebase SDK -->
+   <!-- Firebase: app + firestore no boot; auth/storage só quando digitar "admin" -->
    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
    <script src="firebase-config.js"></script>
 
    <!-- Controles de ambiente HDR (7x Espaço para mostrar) -->
@@ -3028,15 +3066,199 @@
         const firebaseConfig = window.PORTFOLIO_FIREBASE_CONFIG;
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const auth = firebase.auth();
-        const storage = firebase.storage();
+        var auth = null;
+        var storage = null;
+        var _adminSdkPromise = null;
+        var _adminAuthBound = false;
         const ADMIN_UID = window.PORTFOLIO_ADMIN_UID;
+        var FIREBASE_AUTH_SRC = 'https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js';
+        var FIREBASE_STORAGE_SRC = 'https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js';
+
+        function loadExternalScriptOnce(src) {
+            return new Promise(function (resolve, reject) {
+                var existing = document.querySelector('script[data-lazy-src="' + src + '"]');
+                if (existing) {
+                    if (existing.getAttribute('data-lazy-ready') === '1') {
+                        resolve();
+                        return;
+                    }
+                    existing.addEventListener('load', function () { resolve(); });
+                    existing.addEventListener('error', function () { reject(new Error('Falha ao carregar ' + src)); });
+                    return;
+                }
+                var s = document.createElement('script');
+                s.src = src;
+                s.async = true;
+                s.setAttribute('data-lazy-src', src);
+                s.onload = function () {
+                    s.setAttribute('data-lazy-ready', '1');
+                    resolve();
+                };
+                s.onerror = function () { reject(new Error('Falha ao carregar ' + src)); };
+                document.head.appendChild(s);
+            });
+        }
+
+        function bindAdminAuthListeners() {
+            if (_adminAuthBound || !auth) return;
+            _adminAuthBound = true;
+            auth.onAuthStateChanged(function (user) {
+                var logoutButton = document.getElementById('logout-button-index');
+                var createButton = document.getElementById('create-project-button');
+
+                if (user && user.uid === ADMIN_UID) {
+                    isAdminLoggedIn = true;
+                    if (logoutButton) logoutButton.style.display = 'inline-block';
+                    if (createButton) createButton.style.display = 'inline-block';
+                    var passContainer = document.getElementById('admin-password-container-index');
+                    if (passContainer) passContainer.remove();
+                    if (typeof startProjectsRealtimeListener === 'function') startProjectsRealtimeListener();
+                    var panel = document.getElementById('project-panel');
+                    if (panel && panel.classList.contains('visible') && typeof _panelEnableEditMode === 'function') {
+                        _panelEnableEditMode();
+                    }
+                } else {
+                    isAdminLoggedIn = false;
+                    if (typeof stopProjectsRealtimeListener === 'function') stopProjectsRealtimeListener();
+                    if (logoutButton) logoutButton.style.display = 'none';
+                    if (createButton) createButton.style.display = 'none';
+                    var panelOff = document.getElementById('project-panel');
+                    if (panelOff && panelOff.classList.contains('visible') && typeof _panelDisableEditMode === 'function') {
+                        _panelDisableEditMode();
+                    }
+                }
+            });
+        }
+
+        function ensureFirebaseAdminSdk() {
+            if (auth && storage) {
+                bindAdminAuthListeners();
+                return Promise.resolve({ auth: auth, storage: storage });
+            }
+            if (_adminSdkPromise) return _adminSdkPromise;
+
+            _adminSdkPromise = Promise.resolve()
+                .then(function () {
+                    if (typeof firebase.auth === 'function') return;
+                    return loadExternalScriptOnce(FIREBASE_AUTH_SRC);
+                })
+                .then(function () {
+                    if (typeof firebase.storage === 'function') return;
+                    return loadExternalScriptOnce(FIREBASE_STORAGE_SRC);
+                })
+                .then(function () {
+                    auth = firebase.auth();
+                    storage = firebase.storage();
+                    bindAdminAuthListeners();
+                    return { auth: auth, storage: storage };
+                })
+                .catch(function (err) {
+                    _adminSdkPromise = null;
+                    throw err;
+                });
+
+            return _adminSdkPromise;
+        }
 
         function mediaUrl(url) {
             return typeof rewriteStorageUrlForLocal === 'function' ? rewriteStorageUrlForLocal(url) : url;
         }
 
         // --- Firebase Helper Functions ---
+
+        var CUBE_FACE_MAX_EDGE = 512;
+
+        function fitImageSize(width, height, maxEdge) {
+            var w = Number(width) || 1;
+            var h = Number(height) || 1;
+            var longest = Math.max(w, h);
+            var limit = maxEdge || CUBE_FACE_MAX_EDGE;
+            if (longest <= limit) return { w: Math.round(w), h: Math.round(h) };
+            var scale = limit / longest;
+            return { w: Math.max(1, Math.round(w * scale)), h: Math.max(1, Math.round(h * scale)) };
+        }
+
+        // Miniatura para as faces do cubo: original no carrossel, 512px no 3D.
+        function cubeFaceImageUrls(projectData) {
+            if (!projectData) return [];
+            var items = projectData.carouselItems;
+            var fromCarousel = [];
+            if (Array.isArray(items)) {
+                for (var i = 0; i < items.length; i++) {
+                    var it = items[i];
+                    if (!it || it.type === 'video') continue;
+                    var url = (typeof it === 'string') ? it : (it.thumb || it.url);
+                    if (url) fromCarousel.push(url);
+                }
+            }
+            if (fromCarousel.length) return fromCarousel;
+            return Array.isArray(projectData.images) ? projectData.images : [];
+        }
+
+        function downscaleTextureForCube(texture, maxEdge) {
+            if (!texture || !texture.image) return texture;
+            var img = texture.image;
+            var w = img.videoWidth || img.naturalWidth || img.width || 0;
+            var h = img.videoHeight || img.naturalHeight || img.height || 0;
+            if (!w || !h) return texture;
+            var size = fitImageSize(w, h, maxEdge || CUBE_FACE_MAX_EDGE);
+            if (size.w === w && size.h === h) return texture;
+            try {
+                var canvas = document.createElement('canvas');
+                canvas.width = size.w;
+                canvas.height = size.h;
+                var ctx = canvas.getContext('2d');
+                if (!ctx) return texture;
+                ctx.drawImage(img, 0, 0, size.w, size.h);
+                try { texture.dispose(); } catch (e) {}
+                return new THREE.CanvasTexture(canvas);
+            } catch (err) {
+                return texture;
+            }
+        }
+
+        function resizeFileToJpeg(file, maxEdge, quality) {
+            return new Promise(function (resolve) {
+                if (!file || !(file.type || '').startsWith('image/')) {
+                    resolve(null);
+                    return;
+                }
+                var objectUrl = URL.createObjectURL(file);
+                var img = new Image();
+                img.onload = function () {
+                    try {
+                        var size = fitImageSize(img.naturalWidth || img.width, img.naturalHeight || img.height, maxEdge || CUBE_FACE_MAX_EDGE);
+                        var canvas = document.createElement('canvas');
+                        canvas.width = size.w;
+                        canvas.height = size.h;
+                        var ctx = canvas.getContext('2d');
+                        if (!ctx) {
+                            try { URL.revokeObjectURL(objectUrl); } catch (e) {}
+                            resolve(null);
+                            return;
+                        }
+                        ctx.drawImage(img, 0, 0, size.w, size.h);
+                        if (!canvas.toBlob) {
+                            try { URL.revokeObjectURL(objectUrl); } catch (e) {}
+                            resolve(null);
+                            return;
+                        }
+                        canvas.toBlob(function (blob) {
+                            try { URL.revokeObjectURL(objectUrl); } catch (e) {}
+                            resolve(blob || null);
+                        }, 'image/jpeg', quality == null ? 0.82 : quality);
+                    } catch (err) {
+                        try { URL.revokeObjectURL(objectUrl); } catch (e) {}
+                        resolve(null);
+                    }
+                };
+                img.onerror = function () {
+                    try { URL.revokeObjectURL(objectUrl); } catch (e) {}
+                    resolve(null);
+                };
+                img.src = objectUrl;
+            });
+        }
 
         // Função para preparar array de 6 imagens (repetir se necessário)
         function prepareFaceImages(imageUrls) {
@@ -3065,28 +3287,45 @@
             }
         }
 
+        // Cubos usam MeshStandardMaterial (sem transmission/clearcoat):
+        // o vidro de loading é só opacity + envMap, sem segundo render pass.
+        function createCubeFaceMaterial(loadingGlass) {
+            var mat = new THREE.MeshStandardMaterial({
+                color: 0xE8F4FF,
+                roughness: loadingGlass ? 0.08 : 0.22,
+                metalness: loadingGlass ? 0.12 : 0,
+                transparent: true,
+                opacity: 0,
+                depthWrite: !loadingGlass,
+                side: THREE.FrontSide
+            });
+            if (scene.environment) {
+                mat.envMap = scene.environment;
+                mat.envMapIntensity = 1.7;
+            }
+            return mat;
+        }
+
         function applyCubeOpaqueFinish(material) {
             if (!material) return;
+            var wasTransparent = material.transparent;
             material.transparent = false;
             material.opacity = 1;
-            material.transmission = 0;
             material.depthWrite = true;
-            material.needsUpdate = true;
+            if (wasTransparent) material.needsUpdate = true;
         }
 
         function applyCubeLoadingGlass(material) {
             if (!material || material.map) return;
+            var wasOpaque = !material.transparent;
             material.color.setHex(0xE8F4FF);
             material.transparent = true;
-            material.opacity = 0.75;
-            material.transmission = 0.92;
-            material.roughness = 0.05;
-            material.metalness = 0;
-            material.thickness = 0.12;
-            material.ior = 1.45;
-            material.clearcoat = 0;
+            material.opacity = 0.62;
+            material.roughness = 0.08;
+            material.metalness = 0.12;
             material.depthWrite = false;
-            material.needsUpdate = true;
+            if (material.envMapIntensity !== undefined) material.envMapIntensity = 1.9;
+            if (wasOpaque) material.needsUpdate = true;
         }
 
         function applyCubeFaceTexture(material, texture, fade) {
@@ -3103,14 +3342,12 @@
             if (renderer && renderer.capabilities) {
                 texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
             }
+            var hadNoMap = !material.map;
             material.map = texture;
             material.depthWrite = true;
             material.roughness = 0.3;
             material.metalness = 0.02;
-            material.thickness = 0;
-            material.clearcoat = 0.15;
-            material.clearcoatRoughness = 0.2;
-            material.needsUpdate = true;
+            if (hadNoMap) material.needsUpdate = true;
             if (typeof gsap !== 'undefined') {
                 gsap.killTweensOf(material.color);
                 gsap.killTweensOf(material);
@@ -3125,7 +3362,6 @@
                     ease: 'power2.out'
                 });
                 gsap.to(material, {
-                    transmission: 0,
                     opacity: 1,
                     duration: 0.55,
                     ease: 'power2.out',
@@ -3279,7 +3515,11 @@
                 let loadedCount = 0;
                 let errorCount = 0;
                 const totalFaces = 6;
-                const validImages = faceImages.filter(img => img !== null).length;
+                const jobs = [];
+                for (let i = 0; i < totalFaces; i++) {
+                    if (faceImages[i] && materials[i]) jobs.push(i);
+                }
+                const validImages = jobs.length;
                 const fade = !!(cube && cube.visible);
                 
                 if (validImages === 0) {
@@ -3299,29 +3539,27 @@
                     resolve();
                 }
                 
-                for (let i = 0; i < totalFaces; i++) {
-                    if (faceImages[i] && materials[i]) {
-                        textureLoader.load(
-                            mediaUrl(faceImages[i]),
-                            (texture) => {
-                                try {
-                                    applyCubeFaceTexture(materials[i], texture, fade);
-                                    loadedCount++;
-                                } catch (error) {
-                                    console.warn(`Erro ao configurar textura da face ${i}:`, error);
-                                    errorCount++;
-                                }
-                                settle();
-                            },
-                            undefined,
-                            (error) => {
-                                console.warn(`Erro ao carregar textura da face ${i} (${faceImages[i]}):`, error);
+                jobs.forEach(function (i) {
+                    textureLoader.load(
+                        mediaUrl(faceImages[i]),
+                        function (texture) {
+                            try {
+                                applyCubeFaceTexture(materials[i], downscaleTextureForCube(texture, CUBE_FACE_MAX_EDGE), fade);
+                                loadedCount++;
+                            } catch (error) {
+                                console.warn('Erro ao configurar textura da face ' + i + ':', error);
                                 errorCount++;
-                                settle();
                             }
-                        );
-                    }
-                }
+                            settle();
+                        },
+                        undefined,
+                        function (error) {
+                            console.warn('Erro ao carregar textura da face ' + i + ' (' + faceImages[i] + '):', error);
+                            errorCount++;
+                            settle();
+                        }
+                    );
+                });
             });
         }
 
@@ -3360,7 +3598,7 @@
              } while ((isTooClose || position.length() < minDistanceFromSphere) && attempts <= MAX_ATTEMPTS); // Check min distance from sphere center too
 
              // Usar dados já recebidos do listener; evita um get extra por cubo.
-             let imageUrls = (projectData && Array.isArray(projectData.images)) ? projectData.images : [];
+             let imageUrls = cubeFaceImageUrls(projectData);
              let carouselItems = (projectData && Array.isArray(projectData.carouselItems)) ? projectData.carouselItems : [];
              
              const faceImages = prepareFaceImages(imageUrls);
@@ -3376,38 +3614,10 @@
              const firstVideoPoster = firstVideo && firstVideo.poster ? firstVideo.poster : null;
              const hasImages = faceImages.some(img => img !== null) || !!firstVideoPoster || !!firstVideoUrl;
              
-             // Criar array de 6 materiais (um para cada face)
+             // Criar array de 6 materiais (um para cada face) — Standard, sem transmission
             const materials = [];
             for (let i = 0; i < 6; i++) {
-               const matOptions = hasImages ? {
-                    color: 0xE8F4FF,
-                    roughness: 0.05,
-                    metalness: 0,
-                    transparent: true,
-                    opacity: 0,
-                    transmission: 0.92,
-                    thickness: 0.12,
-                    ior: 1.45,
-                    depthWrite: false,
-                    side: THREE.FrontSide
-                } : {
-                    color: 0xE8F4FF,
-                    roughness: 0.22,
-                    metalness: 0,
-                    transparent: true,
-                    opacity: 0,
-                    transmission: 0,
-                    thickness: 0,
-                    ior: 1.5,
-                    depthWrite: true,
-                    side: THREE.FrontSide
-                };
-                 const material = new THREE.MeshPhysicalMaterial(matOptions);
-                 if (scene.environment) {
-                     material.envMap = scene.environment;
-                     material.envMapIntensity = 1.7;
-                 }
-                 materials.push(material);
+                 materials.push(createCubeFaceMaterial(hasImages));
              }
              
              // Criar cubo com array de materiais
@@ -3495,7 +3705,7 @@
             var materials = Array.isArray(cube.material) ? cube.material : [cube.material];
             var hasImages = cube.userData.hasImages || false;
             var stillLoading = hasImages && !cube.userData.texturesReady;
-            var targetOpacity = stillLoading ? 0.75 : 1;
+            var targetOpacity = stillLoading ? 0.62 : 1;
             var fromOpacity = materials[0] ? materials[0].opacity : 0;
 
             if (stillLoading) {
@@ -3600,7 +3810,7 @@
                     renderCubeTooltip(cube);
                  }
                  
-                 const newImageUrls = projectData.images || [];
+                 const newImageUrls = cubeFaceImageUrls(projectData);
                  const newCarouselItems = (projectData.carouselItems && Array.isArray(projectData.carouselItems)) ? projectData.carouselItems : [];
                  cube.userData.videoTextureLoaded = false;
                  cube.userData.texturesReady = false;
@@ -3652,17 +3862,15 @@
                     if (mat.map) {
                         try { mat.map.dispose(); } catch (e) {}
                         mat.map = null;
+                        mat.needsUpdate = true;
                     }
                     applyCubeLoadingGlass(mat);
                 } else {
                     applyCubeOpaqueFinish(mat);
                     mat.roughness = 0.22;
                     mat.metalness = 0;
-                    mat.thickness = 0;
-                    mat.clearcoat = 0;
                     mat.color.setHex(0xE8F4FF);
                 }
-                mat.needsUpdate = true;
             });
             
             if (faceImages.some(function(img) { return img !== null; })) {
@@ -3677,43 +3885,9 @@
         }
 
 
-        // Function to listen for real-time project updates from Firestore
-        function listenToProjects() {
-            // Marcar Firestore como iniciado
-            loadingProgress.firestore = 10;
-            updateLoadingProgress();
-            
-            try {
-                // Verificar se existem projetos no Firestore
-                db.collection("projetos").get().then((snapshot) => {
-                    // Marcar Firestore como completo
-                    markComponentComplete('firestore');
-                    
-                    // Se não houver documentos, usar o fallback manual imediatamente
-                    if (snapshot.size === 0) {
-                        console.warn("Nenhum documento encontrado na coleção projetos. Usando fallback createCubesManually().");
-                        createCubesManually(); 
-                    } else {
-                        setupFirestoreListener(); // Configura o listener onSnapshot
-                    }
-                }).catch((error) => {
-                    // Erro ao tentar LER a coleção inicialmente
-                    console.error("Erro ao verificar a coleção projetos (db.collection.get):", error);
-                    // Marcar como completo mesmo com erro
-                    markComponentComplete('firestore');
-                    createCubesManually();
-                });
-            } catch (error) {
-                console.error("Erro crítico ao configurar o Firestore (try/catch geral):", error);
-                // Marcar como completo mesmo com erro
-                markComponentComplete('firestore');
-                createCubesManually();
-            }
-        }
+        var projectsRealtimeUnsub = null;
 
-        // Nova função para configurar o listener do Firestore
-        function setupFirestoreListener() {
-            // Primeiro remova todos os cubos existentes para evitar duplicatas ao (re)carregar
+        function clearAllProjectCubes() {
             while (cubeArray.length > 0) {
                 const cube = cubeArray.pop();
                 scene.remove(cube);
@@ -3723,54 +3897,93 @@
                     mats.forEach(function(m) { if (m.map) m.map.dispose(); m.dispose(); });
                 }
             }
-            
-            // Configurar o listener para atualizações em tempo real
-            db.collection("projetos").onSnapshot((snapshot) => {
-                // Processar as mudanças detectadas pelo Firestore
-                snapshot.docChanges().forEach((change) => {
-                    const projectId = change.doc.id;
-                    const projectData = change.doc.data();
-                    
-                    if (!projectData && change.type !== "removed") {
-                        console.warn("Recebido change sem dados para o projeto:", projectId, change.type);
-                        return; // Pular se não houver dados para added/modified
-                    }
-                    
-                    // Verificar se projectData tem um título válido
-                    if (projectData && !projectData.title && projectData.name) {
-                        projectData.title = projectData.name;
+        }
+
+        function ingestProjectDoc(projectId, projectData, animateIfRevealed) {
+            if (!projectData) return;
+            if (!projectData.title && projectData.name) {
+                projectData.title = projectData.name;
+            }
+            if (!cubeArray.some(function (cube) { return cube.userData.projectId === projectId; })) {
+                createAndAddCube(projectId, projectData);
+                if (animateIfRevealed && headClicked) {
+                    var newCube = cubeArray.find(function (cube) { return cube.userData.projectId === projectId; });
+                    if (newCube) animateCubeEntry(newCube);
+                }
+            } else {
+                updateCubeData(projectId, projectData);
+            }
+        }
+
+        // Visitantes: uma leitura. Admin: onSnapshot só depois do login.
+        function listenToProjects() {
+            loadingProgress.firestore = 10;
+            updateLoadingProgress();
+
+            try {
+                db.collection("projetos").get().then(function (snapshot) {
+                    markComponentComplete('firestore');
+
+                    if (snapshot.size === 0) {
+                        console.warn("Nenhum documento encontrado na coleção projetos. Usando fallback createCubesManually().");
+                        createCubesManually();
+                        return;
                     }
 
-                    if (change.type === "added") {
-                        // Verificar se o cubo já existe para evitar duplicatas (deveria ser raro com a limpeza acima)
-                        if (!cubeArray.some(cube => cube.userData.projectId === projectId)) {
-                            createAndAddCube(projectId, projectData); // Esta função define visible = false
-                            
-                            // Se já clicou na cabeça, mostrar o novo cubo imediatamente com animação
-                            if (headClicked) {
-                                const newCube = cubeArray.find(cube => cube.userData.projectId === projectId);
-                                if (newCube) {
-                                    animateCubeEntry(newCube);
-                                }
-                            }
-                            // Se não clicou na cabeça, o cubo fica invisível e aparecerá quando clicar
-                        } else {
-                            updateCubeData(projectId, projectData);
-                        }
+                    clearAllProjectCubes();
+                    snapshot.forEach(function (doc) {
+                        ingestProjectDoc(doc.id, doc.data(), false);
+                    });
+                    if (typeof renderImmersiveProjectsList === 'function') renderImmersiveProjectsList();
+                }).catch(function (error) {
+                    console.error("Erro ao verificar a coleção projetos (db.collection.get):", error);
+                    markComponentComplete('firestore');
+                    createCubesManually();
+                });
+            } catch (error) {
+                console.error("Erro crítico ao configurar o Firestore (try/catch geral):", error);
+                markComponentComplete('firestore');
+                createCubesManually();
+            }
+        }
+
+        function stopProjectsRealtimeListener() {
+            if (typeof projectsRealtimeUnsub === 'function') {
+                try { projectsRealtimeUnsub(); } catch (e) {}
+            }
+            projectsRealtimeUnsub = null;
+        }
+
+        function startProjectsRealtimeListener() {
+            if (projectsRealtimeUnsub || typeof db === 'undefined' || !db) return;
+
+            projectsRealtimeUnsub = db.collection("projetos").onSnapshot(function (snapshot) {
+                snapshot.docChanges().forEach(function (change) {
+                    var projectId = change.doc.id;
+                    var projectData = change.doc.data();
+
+                    if (!projectData && change.type !== "removed") {
+                        console.warn("Recebido change sem dados para o projeto:", projectId, change.type);
+                        return;
                     }
-                    if (change.type === "modified") {
-                       updateCubeData(projectId, projectData); // Apenas atualiza dados, não visibilidade
+
+                    if (change.type === "added" || change.type === "modified") {
+                        ingestProjectDoc(projectId, projectData, true);
                     }
                     if (change.type === "removed") {
-                       removeCube(projectId); // Remove o cubo da cena
+                        removeCube(projectId);
                     }
                 });
                 if (typeof renderImmersiveProjectsList === 'function') renderImmersiveProjectsList();
-            }, (error) => {
+            }, function (error) {
                 console.error("Erro ao ouvir mudanças no Firestore:", error);
-                // Se o listener falhar, tentar criar manualmente do JSON
-                 createCubesManually(); // Esta função precisa ser revisada também
+                projectsRealtimeUnsub = null;
             });
+        }
+
+        // Mantido por compatibilidade com chamadas antigas.
+        function setupFirestoreListener() {
+            startProjectsRealtimeListener();
         }
 
         // Função para criar cubos manualmente a partir do projects.json (Fallback)
@@ -3840,6 +4053,7 @@
         var raycaster, mouse;
         var tooltip;
         var INTERSECTED;
+        var lastTooltipCube = null;
         var rotationSpeed = 0.0028;
         var selectedCube = null;
         var _cubeFocusToken = 0;
@@ -3880,8 +4094,16 @@
         var _hintSy;
         var _hintSc;
         var _hintReady;
+        var _hintDomLeft = null;
+        var _hintDomTop = null;
+        var _hintDomScale = null;
+        var _hintDomVisible = null;
         var mouseDown = false;
         var clock = new THREE.Clock();
+        var _lowPowerGpu = false;
+        var pointerRayDirty = false;
+        var pointerClientX = 0;
+        var pointerClientY = 0;
         var isAdminLoggedIn = false;
         
         // Sistema de Progresso Global
@@ -4141,6 +4363,8 @@
 
         function startSkyboxChannelCycle() {
             if (skyCycleTimer || skyboxes.length < 2) return;
+            // Na tela de entrada o segundo cubemap compete com o GLB e o HDR.
+            if (startScreenActive || startScreenPending()) return;
             skyCycleTimer = setInterval(function () {
                 cycleSkyboxChannel();
             }, currentSkyCycleMs());
@@ -4148,7 +4372,7 @@
 
         function cycleSkyboxChannel() {
             if (!skyboxes.length || skyZapBusy) return;
-            var next = currentSkyIndex < 0 ? pickWeightedSkyboxIndex() : (currentSkyIndex + 1) % skyboxes.length;
+            var next = currentSkyIndex < 0 ? 0 : (currentSkyIndex + 1) % skyboxes.length;
             if (next === currentSkyIndex && skyboxes.length > 1) {
                 next = (next + 1) % skyboxes.length;
             }
@@ -4158,8 +4382,10 @@
                 applyWorldSkybox(texture, !isFirst);
                 if (isFirst) onEnvLoadComplete();
                 startSkyboxChannelCycle();
-                var lookahead = (next + 1) % skyboxes.length;
-                loadSkyboxTexture(lookahead).catch(function () {});
+                if (!startScreenPending()) {
+                    var lookahead = (next + 1) % skyboxes.length;
+                    loadSkyboxTexture(lookahead).catch(function () {});
+                }
             }).catch(function (error) {
                     console.error('Erro ao carregar skybox:', error);
                 if (isFirst) onEnvLoadComplete();
@@ -4357,16 +4583,36 @@
 	  
         var composer;
 
+        function detectLowPowerGpu() {
+            try {
+                if (navigator.deviceMemory && navigator.deviceMemory <= 4) return true;
+                if (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) return true;
+                if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return true;
+            } catch (e) {}
+            return false;
+        }
+
+        function getRenderPixelRatio(lowPower) {
+            var dpr = window.devicePixelRatio || 1;
+            if (lowPower) return Math.min(dpr, 1);
+            return Math.min(dpr, 1.25);
+        }
+
         function init() {
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
             camera.position.set(0, 0, 7);
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            _lowPowerGpu = detectLowPowerGpu();
+            var dpr = window.devicePixelRatio || 1;
+            renderer = new THREE.WebGLRenderer({
+                antialias: !_lowPowerGpu && dpr < 1.5,
+                powerPreference: 'high-performance',
+                stencil: false
+            });
+            renderer.setPixelRatio(getRenderPixelRatio(_lowPowerGpu));
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.shadowMap.enabled = false;
             renderer.outputColorSpace = THREE.SRGBColorSpace;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
             renderer.toneMappingExposure = 0.9;
@@ -4400,9 +4646,11 @@
             // Ambiente antes do modelo: o cubemap é leve e já dá imagem na tela
             // enquanto o GLB (pesado) continua baixando em segundo plano.
             loadSkyboxBackground();
-            loadHDREnvironment();
-
             addModel();
+            // HDR gera PMREM na GPU: espera o primeiro fundo para não congelar a entrada.
+            setTimeout(function () {
+                loadHDREnvironment();
+            }, 400);
 
             if (startScreenPending()) {
                 showStartScreen();
@@ -4428,7 +4676,10 @@ function updateHeadChatBubble() {
     _hintEl = el;
     if (!el || headClicked || !headHitbox || !camera) return;
     if (startScreenActive) {
-        el.style.visibility = 'hidden';
+        if (_hintDomVisible !== false) {
+            el.style.visibility = 'hidden';
+            _hintDomVisible = false;
+        }
         return;
     }
     if (!_hintWorld) {
@@ -4441,7 +4692,10 @@ function updateHeadChatBubble() {
     camera.getWorldDirection(_hintFwd);
     _hintRight.copy(_hintWorld).sub(camera.position);
     if (_hintRight.dot(_hintFwd) < 0.25) {
-        el.style.visibility = 'hidden';
+        if (_hintDomVisible !== false) {
+            el.style.visibility = 'hidden';
+            _hintDomVisible = false;
+        }
         _hintReady = false;
         return;
     }
@@ -4450,7 +4704,10 @@ function updateHeadChatBubble() {
     _hintWorld.y -= 0.12;
     _hintWorld.project(camera);
     if (_hintWorld.z > 1) {
-        el.style.visibility = 'hidden';
+        if (_hintDomVisible !== false) {
+            el.style.visibility = 'hidden';
+            _hintDomVisible = false;
+        }
         _hintReady = false;
         return;
     }
@@ -4471,11 +4728,26 @@ function updateHeadChatBubble() {
         _hintSy += (y - _hintSy) * 0.16;
         _hintSc += (scale - _hintSc) * 0.12;
     }
+    var leftPx = Math.round(_hintSx);
+    var topPx = Math.round(_hintSy);
+    var scaleTxt = _hintSc.toFixed(3);
     el.classList.toggle('is-left', placeLeft);
-    el.style.visibility = 'visible';
-    el.style.left = Math.round(_hintSx) + 'px';
-    el.style.top = Math.round(_hintSy) + 'px';
-    el.style.transform = 'scale(' + _hintSc.toFixed(3) + ')';
+    if (_hintDomVisible !== true) {
+        el.style.visibility = 'visible';
+        _hintDomVisible = true;
+    }
+    if (_hintDomLeft !== leftPx) {
+        el.style.left = leftPx + 'px';
+        _hintDomLeft = leftPx;
+    }
+    if (_hintDomTop !== topPx) {
+        el.style.top = topPx + 'px';
+        _hintDomTop = topPx;
+    }
+    if (_hintDomScale !== scaleTxt) {
+        el.style.transform = 'scale(' + scaleTxt + ')';
+        _hintDomScale = scaleTxt;
+    }
 }
 
 var _hintTimers = [];
@@ -5094,8 +5366,13 @@ function showNavigationNotification() {
                  keySequence = ''; // Limpar sequência
                  return; // Não mostrar campo de senha se já logado
             }
-            showPasswordField(); // Chama a função para mostrar campo de senha
             keySequence = ''; // Limpar sequência
+            ensureFirebaseAdminSdk()
+                .then(function () { showPasswordField(); })
+                .catch(function (err) {
+                    console.error(err);
+                    showNotification('Erro ao carregar autenticação. Tente de novo.', 'error', true);
+                });
         }
         // Resetar sequência se digitar algo diferente
         if (targetSequence.indexOf(keySequence) !== 0) {
@@ -5194,29 +5471,34 @@ function showNavigationNotification() {
         const password = passwordField.value;
         const adminEmail = "jvnunes066@gmail.com"; // Email do admin
         
-        if (!auth) { // Verificar se auth foi inicializado
-             console.error("Firebase Auth não está pronto.");
-             showNotification("Erro: Serviço de autenticação não disponível", "error", true); // true para index.html
-             return;
-        }
-
-        auth.signInWithEmailAndPassword(adminEmail, password)
-            .then((userCredential) => {
-                if (passwordContainer) passwordContainer.remove();
-                showNotification('Login de Admin realizado com sucesso!', 'success', true); // true para index.html
+        ensureFirebaseAdminSdk()
+            .then(function () {
+                if (!auth) {
+                    showNotification("Erro: Serviço de autenticação não disponível", "error", true);
+                    return;
+                }
+                return auth.signInWithEmailAndPassword(adminEmail, password)
+                    .then(function () {
+                        if (passwordContainer) passwordContainer.remove();
+                        showNotification('Login de Admin realizado com sucesso!', 'success', true);
+                    })
+                    .catch(function (error) {
+                        console.error("Erro no login do admin em index.html:", error);
+                        passwordField.style.borderColor = 'red';
+                        passwordField.placeholder = 'Senha inválida';
+                        passwordField.value = '';
+                        setTimeout(function () {
+                            if (passwordField) {
+                                passwordField.style.borderColor = '#33ff33';
+                                passwordField.placeholder = '';
+                            }
+                        }, 2000);
+                        showNotification('Falha no login: ' + error.code, 'error', true);
+                    });
             })
-            .catch((error) => {
-                console.error("Erro no login do admin em index.html:", error);
-                passwordField.style.borderColor = 'red';
-                passwordField.placeholder = 'Senha inválida';
-                passwordField.value = '';
-                setTimeout(() => {
-                     if(passwordField) { // Verificar se ainda existe
-                        passwordField.style.borderColor = '#33ff33';
-                        passwordField.placeholder = '';
-                     }
-                }, 2000);
-                showNotification(`Falha no login: ${error.code}`, 'error', true); // true para index.html
+            .catch(function (err) {
+                console.error(err);
+                showNotification('Erro ao carregar autenticação. Tente de novo.', 'error', true);
             });
     }
 
@@ -5264,33 +5546,8 @@ function showNavigationNotification() {
     }
 
 
-    // --- Listener de Autenticação para index.html ---
-    if (typeof auth !== 'undefined') {
-        auth.onAuthStateChanged((user) => {
-            const logoutButton = document.getElementById('logout-button-index');
-            const createButton = document.getElementById('create-project-button'); // Botão que vamos criar depois
-
-            if (user && user.uid === ADMIN_UID) {
-                isAdminLoggedIn = true;
-                if (logoutButton) logoutButton.style.display = 'inline-block';
-                if (createButton) createButton.style.display = 'inline-block';
-                const passContainer = document.getElementById('admin-password-container-index');
-                if (passContainer) passContainer.remove();
-                // Se o painel de projeto já estiver aberto, ativar modo edição imediatamente
-                var panel = document.getElementById('project-panel');
-                if (panel && panel.classList.contains('visible') && typeof _panelEnableEditMode === 'function') {
-                    _panelEnableEditMode();
-                }
-            } else {
-                isAdminLoggedIn = false;
-                if (logoutButton) logoutButton.style.display = 'none';
-                if (createButton) createButton.style.display = 'none';
-            }
-        });
-    } else {
-        console.error("Auth não definido, não é possível adicionar listener de estado.");
-    }
-    // --- Fim Listener de Autenticação ---
+    // Listeners de Auth/Storage ligados sob demanda em ensureFirebaseAdminSdk().
+    // Visitantes não descarregam esses SDKs.
 
     // --- Botão e Função de Logout para index.html ---
     function addLogoutButtonIndex() {
@@ -5629,8 +5886,6 @@ function clearCubeHoverVisual(cube) {
             if (mat.emissive) mat.emissive.setHex(s.emissive);
             if (mat.emissiveIntensity !== undefined) mat.emissiveIntensity = s.emissiveIntensity;
             if (mat.envMapIntensity !== undefined) mat.envMapIntensity = s.envMapIntensity;
-            if (mat.clearcoat !== undefined) mat.clearcoat = s.clearcoat;
-            if (mat.clearcoatRoughness !== undefined) mat.clearcoatRoughness = s.clearcoatRoughness;
         });
         cube.userData.hoverRestore = null;
     }
@@ -5657,18 +5912,14 @@ function applyCubeHoverVisual(cube) {
         return {
             emissive: mat && mat.emissive ? mat.emissive.getHex() : 0,
             emissiveIntensity: mat && mat.emissiveIntensity !== undefined ? mat.emissiveIntensity : 0,
-            envMapIntensity: mat && mat.envMapIntensity !== undefined ? mat.envMapIntensity : 1.7,
-            clearcoat: mat && mat.clearcoat !== undefined ? mat.clearcoat : 0,
-            clearcoatRoughness: mat && mat.clearcoatRoughness !== undefined ? mat.clearcoatRoughness : 0
+            envMapIntensity: mat && mat.envMapIntensity !== undefined ? mat.envMapIntensity : 1.7
         };
     });
     mats.forEach(function (mat) {
         if (!mat) return;
         if (mat.emissive) mat.emissive.setHex(0x1a5fa8);
-        if (mat.emissiveIntensity !== undefined) mat.emissiveIntensity = 0.1;
-        if (mat.envMapIntensity !== undefined) mat.envMapIntensity = (mat.envMapIntensity || 1.7) * 1.22;
-        if (mat.clearcoat !== undefined) mat.clearcoat = 0.55;
-        if (mat.clearcoatRoughness !== undefined) mat.clearcoatRoughness = 0.18;
+        if (mat.emissiveIntensity !== undefined) mat.emissiveIntensity = 0.12;
+        if (mat.envMapIntensity !== undefined) mat.envMapIntensity = (mat.envMapIntensity || 1.7) * 1.28;
     });
     if (!cube.userData.hoverLight) {
         cube.userData.hoverLight = new THREE.PointLight(0x2f78c8, 0, 3.4);
@@ -5697,6 +5948,7 @@ function clearCubeHoverTooltip() {
         clearCubeHoverVisual(INTERSECTED);
             INTERSECTED = null;
         }
+        lastTooltipCube = null;
     setCubePointerCursor(false);
         if (typeof tooltip !== 'undefined' && tooltip) tooltip.style.visibility = 'hidden';
 }
@@ -5740,12 +5992,8 @@ function positionCubeTooltip(event) {
     tooltip.style.top = Math.max(margin, y) + 'px';
 }
 
-function onDocumentMouseMove(event) {
+function processPointerRaycast(eventLike) {
     if (startScreenActive) {
-        clearCubeHoverTooltip();
-        return;
-    }
-    if (!isCanvasPointerEvent(event)) {
         clearCubeHoverTooltip();
         return;
     }
@@ -5754,9 +6002,8 @@ function onDocumentMouseMove(event) {
         clearCubeHoverTooltip();
         return;
     }
-    event.preventDefault();
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    mouse.x = (pointerClientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(pointerClientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, camera);
     var intersects = raycaster.intersectObjects(cubeArray);
     
@@ -5771,14 +6018,18 @@ function onDocumentMouseMove(event) {
         }
         setCubePointerCursor(true);
 
-        // Título e descrição do projeto vindos do Firestore
-        renderCubeTooltip(INTERSECTED);
-        positionCubeTooltip(event);
+        if (lastTooltipCube !== INTERSECTED) {
+            renderCubeTooltip(INTERSECTED);
+            lastTooltipCube = INTERSECTED;
+        }
+        if (eventLike) positionCubeTooltip(eventLike);
+        else positionCubeTooltip({ clientX: pointerClientX, clientY: pointerClientY });
         
         tooltip.style.visibility = 'visible';
     } else {
         if (INTERSECTED) clearCubeHoverVisual(INTERSECTED);
         INTERSECTED = null;
+        lastTooltipCube = null;
         tooltip.style.visibility = 'hidden';
         var overHead = false;
         if (!headClicked && headHitbox) {
@@ -5786,6 +6037,25 @@ function onDocumentMouseMove(event) {
         }
         setCubePointerCursor(overHead);
     }
+}
+
+function onDocumentMouseMove(event) {
+    if (startScreenActive) {
+        clearCubeHoverTooltip();
+        return;
+    }
+    if (!isCanvasPointerEvent(event)) {
+        clearCubeHoverTooltip();
+        return;
+    }
+    var panel = document.getElementById('project-panel');
+    if (panel && panel.classList.contains('visible')) {
+        clearCubeHoverTooltip();
+        return;
+    }
+    pointerClientX = event.clientX;
+    pointerClientY = event.clientY;
+    pointerRayDirty = true;
 }
 
 
@@ -5854,14 +6124,16 @@ function onDocumentMouseUp(event) {
 
   function animate() {
     requestAnimationFrame(animate);
-    
-    const deltaTime = clock.getDelta();
+    if (document.hidden) return;
 
-    if (mixer) {
-        mixer.update(deltaTime); 
+    var deltaTime = clock.getDelta();
+    if (deltaTime > 0.25) deltaTime = 0.033;
+
+    if (mixer && model && model.visible) {
+        mixer.update(deltaTime);
     }
 
-    if (worldSkyMat && worldSkyMat.uniforms && worldSkyMat.uniforms.uTime) {
+    if (worldSkyMat && worldSkyMat.uniforms && worldSkyMat.uniforms.uTime && skyZapBusy) {
         worldSkyMat.uniforms.uTime.value += deltaTime;
     }
     if (worldSkyMesh && camera) {
@@ -5871,16 +6143,27 @@ function onDocumentMouseUp(event) {
         }
     }
 
-    renderer.render(scene, camera);
-    updateHeadChatBubble();
-    
-    cubeArray.forEach(cube => {
-        var radius = Math.sqrt(cube.position.x * cube.position.x + cube.position.z * cube.position.z);
-        var currentAngle = Math.atan2(cube.position.z, cube.position.x) + rotationSpeed;
-        cube.position.x = Math.cos(currentAngle) * radius;
-        cube.position.z = Math.sin(currentAngle) * radius;
-    });
-    
+    var i;
+    var cube;
+    var anyCubeVisible = false;
+    if (!startScreenActive && cubeArray && cubeArray.length) {
+        for (i = 0; i < cubeArray.length; i++) {
+            if (cubeArray[i].visible) {
+                anyCubeVisible = true;
+                break;
+            }
+        }
+        if (anyCubeVisible) {
+            for (i = 0; i < cubeArray.length; i++) {
+                cube = cubeArray[i];
+                var radius = Math.sqrt(cube.position.x * cube.position.x + cube.position.z * cube.position.z);
+                var currentAngle = Math.atan2(cube.position.z, cube.position.x) + rotationSpeed;
+                cube.position.x = Math.cos(currentAngle) * radius;
+                cube.position.z = Math.sin(currentAngle) * radius;
+            }
+        }
+    }
+
     if (selectedCube && cubeFocused) {
         var cubeCenter = new THREE.Vector3();
         selectedCube.geometry.computeBoundingBox();
@@ -5903,6 +6186,13 @@ function onDocumentMouseUp(event) {
         
         controls.target.copy(cubeCenter);
     }
+
+    renderer.render(scene, camera);
+    if (pointerRayDirty) {
+        pointerRayDirty = false;
+        processPointerRaycast();
+    }
+    updateHeadChatBubble();
 }
 
 // Variáveis para controlar o estado dos botões e o contador de pressionamentos
@@ -5961,7 +6251,7 @@ document.addEventListener('keydown', function(event) {
     var _panelCurrentSlide = 0;
     var _panelSlides = [];
     var _panelDots = [];
-    var _panelVideoFit = 'cover';
+    var _panelVideoFit = 'contain';
     var _panelCarouselItems = [];
 
     // ---------- ABRIR / FECHAR PAINEL ----------
@@ -6085,19 +6375,57 @@ document.addEventListener('keydown', function(event) {
     });
 
     // ---------- CARROSSEL DO PAINEL ----------
+    function _panelResolveMediaFit(data) {
+        var raw = data && (data.mediaFit || data.videoFit);
+        if (raw === 'cover' || raw === 'contain') return raw;
+        return 'contain';
+    }
+
+    function _panelHydrateSlideImages(slide) {
+        if (!slide) return;
+        var imgs = slide.querySelectorAll('img[data-src]');
+        for (var i = 0; i < imgs.length; i++) {
+            imgs[i].src = imgs[i].getAttribute('data-src');
+            imgs[i].removeAttribute('data-src');
+        }
+    }
+
+    function _panelArmSlideVideos(slide, fadeMedia) {
+        if (!slide) return;
+        var v = slide.querySelector('video.slide-media');
+        if (!v) return;
+        var pendingSrc = v.getAttribute('data-src');
+        if (pendingSrc && !v.getAttribute('src')) {
+            v.preload = 'auto';
+            v.src = pendingSrc;
+            try { v.load(); } catch (e) {}
+        }
+        if (fadeMedia) v.style.opacity = '0.45';
+        try { v.currentTime = 0; } catch (e) {}
+        var playPromise = v.play();
+        if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(function() {});
+        if (fadeMedia) {
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() { v.style.opacity = ''; });
+            });
+        }
+    }
+
     function _panelUnloadInactiveVideos(activeIndex) {
         if (!_panelSlides || !_panelSlides.length) return;
         _panelSlides.forEach(function(s, i) {
-            var v = s.querySelector('video');
-            if (!v) return;
             if (i === activeIndex) return;
-            v.pause();
-            v.style.opacity = '1';
-            var currentSrc = v.getAttribute('src');
-            if (currentSrc) {
-                if (!v.getAttribute('data-src')) v.setAttribute('data-src', currentSrc);
-                v.removeAttribute('src');
-                try { v.load(); } catch (e) {}
+            var videos = s.querySelectorAll('video');
+            for (var v = 0; v < videos.length; v++) {
+                var el = videos[v];
+                el.pause();
+                el.style.opacity = '';
+                var currentSrc = el.getAttribute('src');
+                if (currentSrc) {
+                    if (!el.getAttribute('data-src')) el.setAttribute('data-src', currentSrc);
+                    el.removeAttribute('src');
+                    try { el.load(); } catch (e) {}
+                }
             }
         });
     }
@@ -6107,12 +6435,8 @@ document.addEventListener('keydown', function(event) {
         [index - 1, index + 1].forEach(function(i) {
             if (i < 0 || i >= _panelSlides.length) return;
             var slide = _panelSlides[i];
-            var img = slide.querySelector('img[data-src]');
-            if (img) {
-                img.src = img.getAttribute('data-src');
-                img.removeAttribute('data-src');
-            }
-            var video = slide.querySelector('video');
+            _panelHydrateSlideImages(slide);
+            var video = slide.querySelector('video.slide-media');
             if (video && video.poster) {
                 var warm = new Image();
                 warm.decoding = 'async';
@@ -6136,28 +6460,9 @@ document.addEventListener('keydown', function(event) {
         _panelDots.forEach(function(d) { d.classList.remove('active'); });
         _panelSlides[index].classList.add('active');
 
-        var activeImg = _panelSlides[index].querySelector('img[data-src]');
-        if (activeImg) {
-            activeImg.src = activeImg.getAttribute('data-src');
-            activeImg.removeAttribute('data-src');
-        }
+        _panelHydrateSlideImages(_panelSlides[index]);
+        _panelArmSlideVideos(_panelSlides[index], true);
 
-        var activeVideo = _panelSlides[index].querySelector('video');
-        if (activeVideo) {
-            var pendingSrc = activeVideo.getAttribute('data-src');
-            if (pendingSrc && !activeVideo.getAttribute('src')) {
-                activeVideo.preload = 'auto';
-                activeVideo.src = pendingSrc;
-                activeVideo.load();
-            }
-            activeVideo.style.opacity = '0.6';
-            try { activeVideo.currentTime = 0; } catch (e) {}
-            var playPromise = activeVideo.play();
-            if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(function() {});
-            requestAnimationFrame(function() {
-                requestAnimationFrame(function() { activeVideo.style.opacity = '1'; });
-            });
-        }
         if (_panelDots[index]) _panelDots[index].classList.add('active');
         _panelCurrentSlide = index;
         _panelPrefetchNeighborCovers(index);
@@ -6207,7 +6512,7 @@ document.addEventListener('keydown', function(event) {
                     descEl.innerHTML = _panelFormatDescription(i18nProject(row, 'description'));
                     descEl.classList.add('visible');
                 }
-                _panelVideoFit = (data.videoFit === 'contain' || data.videoFit === 'cover') ? data.videoFit : 'cover';
+                _panelVideoFit = _panelResolveMediaFit(data);
                 var items = (data.carouselItems && Array.isArray(data.carouselItems) && data.carouselItems.length > 0)
                     ? data.carouselItems
                     : (data.images && Array.isArray(data.images)) ? data.images.map(function(u) { return { type: 'image', url: u }; }) : [];
@@ -6265,7 +6570,9 @@ document.addEventListener('keydown', function(event) {
 
         slidesEl.innerHTML = '';
         dotsEl.innerHTML   = '';
-        var videoFit = typeof _panelVideoFit !== 'undefined' ? _panelVideoFit : 'cover';
+        var mediaFit = (typeof _panelVideoFit !== 'undefined' && (_panelVideoFit === 'cover' || _panelVideoFit === 'contain'))
+            ? _panelVideoFit
+            : 'contain';
 
         if (!items || !items.length) {
             slidesEl.innerHTML = '<p style="color:white;text-align:center;padding:20px;">' + i18nT('immersive.noMedia') + '</p>';
@@ -6280,21 +6587,16 @@ document.addEventListener('keydown', function(event) {
             if (!url) return;
 
             var slide = document.createElement('div');
-            slide.className = 'carousel-slide' + (idx === 0 ? ' active' : '');
+            slide.className = 'carousel-slide ' + (mediaFit === 'cover' ? 'is-cover' : 'is-contain') + (idx === 0 ? ' active' : '');
             if (type === 'video') {
-                var video = document.createElement('video');
                 var resolvedUrl = mediaUrl(url);
                 var posterUrl = item && item.poster ? mediaUrl(item.poster) : '';
+                var video = document.createElement('video');
                 video.playsInline = true;
                 video.setAttribute('playsinline', '');
                 video.muted = true;
                 video.loop = true;
-                video.className = videoFit === 'contain' ? 'fit-contain' : '';
-                video.style.width = '100%';
-                video.style.height = '100%';
-                video.style.objectFit = videoFit;
-                video.style.borderRadius = '0';
-                video.style.display = 'block';
+                video.className = 'slide-media';
                 video.preload = 'none';
                 video.setAttribute('data-src', resolvedUrl);
                 if (posterUrl) video.poster = posterUrl;
@@ -6307,31 +6609,42 @@ document.addEventListener('keydown', function(event) {
                     var d = this.duration;
                     if (!isFinite(d) || d <= 0) return;
                     var t = this.currentTime;
-                    if (d - t < 0.25) this.style.opacity = '0.35';
-                    else if (t < 0.2) this.style.opacity = '1';
+                    if (d - t < 0.25) this.style.opacity = '0.28';
+                    else if (t < 0.2) this.style.opacity = '';
                 });
                 video.addEventListener('ended', function() {
-                    this.style.opacity = '0.35';
+                    this.style.opacity = '0.28';
                     var self = this;
                     requestAnimationFrame(function() {
                         self.currentTime = 0;
                         self.play();
-                        requestAnimationFrame(function() { self.style.opacity = '1'; });
+                        requestAnimationFrame(function() { self.style.opacity = ''; });
                     });
                 });
                 slide.appendChild(video);
             } else {
-                var img = document.createElement('img');
                 var resolvedImg = mediaUrl(url);
+                var loadNow = idx === 0;
+                if (mediaFit !== 'cover') {
+                    var bleed = document.createElement('img');
+                    bleed.className = 'slide-bleed';
+                    bleed.alt = '';
+                    bleed.setAttribute('aria-hidden', 'true');
+                    bleed.decoding = 'async';
+                    if (loadNow) {
+                        bleed.src = resolvedImg;
+                    } else {
+                        bleed.setAttribute('data-src', resolvedImg);
+                        bleed.loading = 'lazy';
+                    }
+                    slide.appendChild(bleed);
+                }
+                var img = document.createElement('img');
+                img.className = 'slide-media';
                 img.alt = 'Imagem ' + (idx + 1);
                 img.decoding = 'async';
-                img.style.width = '100%';
-                img.style.height = '100%';
-                img.style.objectFit = 'cover';
-                img.style.borderRadius = '8px';
-                img.style.display = 'block';
                 img.onerror = function() { slide.innerHTML = '<p style="color:white;text-align:center;padding:20px;">' + i18nT('immersive.imageError') + '</p>'; };
-                if (idx === 0) {
+                if (loadNow) {
                     img.src = resolvedImg;
                 } else {
                     img.setAttribute('data-src', resolvedImg);
@@ -6369,7 +6682,7 @@ document.addEventListener('keydown', function(event) {
         return (getOpts ? ref.get(getOpts) : ref.get())
             .then(function(doc) {
                 var data = doc.data() || {};
-                _panelVideoFit = (data.videoFit === 'contain' || data.videoFit === 'cover') ? data.videoFit : 'cover';
+                _panelVideoFit = _panelResolveMediaFit(data);
                 var items = (data.carouselItems && Array.isArray(data.carouselItems) && data.carouselItems.length > 0)
                     ? data.carouselItems
                     : (data.images && Array.isArray(data.images)) ? data.images.map(function(u) { return { type: 'image', url: u }; }) : [];
@@ -6452,7 +6765,8 @@ document.addEventListener('keydown', function(event) {
             if (itemIndex < 0 || itemIndex >= items.length) return;
             var removed = items[itemIndex];
             var urlToDelete = (removed && removed.url) ? removed.url : (typeof removed === 'string' ? removed : null);
-            if (urlToDelete && typeof storage !== 'undefined' && storage) {
+            await ensureFirebaseAdminSdk().catch(function () {});
+            if (urlToDelete && storage) {
                 try {
                     var urlParts = urlToDelete.split('/o/');
                     if (urlParts.length > 1) {
@@ -6462,7 +6776,7 @@ document.addEventListener('keydown', function(event) {
                 } catch(e) { console.warn('Falha ao deletar do Storage:', e); }
             }
             var posterToDelete = removed && removed.poster ? removed.poster : null;
-            if (posterToDelete && typeof storage !== 'undefined' && storage) {
+            if (posterToDelete && storage) {
                 try {
                     var posterParts = posterToDelete.split('/o/');
                     if (posterParts.length > 1) {
@@ -6573,9 +6887,9 @@ document.addEventListener('keydown', function(event) {
                     _panelShowCarouselLoading(imageFiles.length && videoFiles.length ? 'Enviando imagem(ns) e vídeo(s)...' : (imageFiles.length ? 'Enviando ' + imageFiles.length + ' imagem(ns)...' : 'Enviando ' + videoFiles.length + ' vídeo(s)...'));
                 }
                 if (imageFiles.length) {
-                    var imgUrls = await Promise.all(imageFiles.map(function(f) { return _panelUploadImage(projectId, f); }));
+                    var imgEntries = await Promise.all(imageFiles.map(function(f) { return _panelUploadImageWithCubeThumb(projectId, f); }));
                     _panelUpdateCarouselLoadingMessage('A gravar imagem(ns) no carrossel...');
-                    await _panelSaveImageUrls(projectId, imgUrls);
+                    await _panelSaveImageUrls(projectId, imgEntries);
                 }
                 if (videoFiles.length) {
                     _panelUpdateCarouselLoadingMessage('A guardar vídeo(s) no projeto...');
@@ -6602,20 +6916,40 @@ document.addEventListener('keydown', function(event) {
     }
 
     function _panelUploadImage(projectId, file) {
-        return new Promise(function(resolve, reject) {
-            if (typeof storage === 'undefined' || !storage) { reject(new Error('Storage não inicializado.')); return; }
-            var fileName  = Date.now() + '_' + file.name;
-            var ref       = storage.ref('projects/' + projectId + '/' + fileName);
-            var task      = ref.put(file, { cacheControl: 'public, max-age=31536000' });
-            task.on('state_changed', null,
-                function(err) { reject(err); },
-                function() { task.snapshot.ref.getDownloadURL().then(resolve).catch(reject); }
-            );
+        return ensureFirebaseAdminSdk().then(function () {
+            return new Promise(function(resolve, reject) {
+                if (!storage) { reject(new Error('Storage não inicializado.')); return; }
+                var fileName  = Date.now() + '_' + file.name;
+                var ref       = storage.ref('projects/' + projectId + '/' + fileName);
+                var task      = ref.put(file, { cacheControl: 'public, max-age=31536000' });
+                task.on('state_changed', null,
+                    function(err) { reject(err); },
+                    function() { task.snapshot.ref.getDownloadURL().then(resolve).catch(reject); }
+                );
+            });
         });
     }
 
-    async function _panelSaveImageUrls(projectId, newUrls) {
+    function _panelUploadImageWithCubeThumb(projectId, file) {
+        return _panelUploadImage(projectId, file).then(function (url) {
+            return resizeFileToJpeg(file, CUBE_FACE_MAX_EDGE, 0.82).then(function (blob) {
+                if (!blob) return { url: url, thumb: '' };
+                var thumbFile = new File([blob], Date.now() + '_cube.jpg', { type: 'image/jpeg' });
+                return _panelUploadImage(projectId, thumbFile).then(function (thumbUrl) {
+                    return { url: url, thumb: thumbUrl || '' };
+                }).catch(function () {
+                    return { url: url, thumb: '' };
+                });
+            });
+        });
+    }
+
+    async function _panelSaveImageUrls(projectId, newEntries) {
         if (typeof db === 'undefined' || !db) throw new Error('Firestore não inicializado.');
+        var entries = (newEntries || []).map(function (item) {
+            if (typeof item === 'string') return { url: item, thumb: '' };
+            return { url: item && item.url, thumb: (item && item.thumb) || '' };
+        }).filter(function (item) { return !!item.url; });
         var ref = db.collection('projetos').doc(projectId);
         var doc = await ref.get();
         var data = doc.exists ? (doc.data() || {}) : {};
@@ -6623,9 +6957,14 @@ document.addEventListener('keydown', function(event) {
         var existingCarousel = (data.carouselItems && Array.isArray(data.carouselItems) && data.carouselItems.length > 0)
             ? data.carouselItems
             : existingImages.map(function(u) { return { type: 'image', url: u }; });
-        var newImageEntries = newUrls.map(function(u) { return { type: 'image', url: u }; });
+        var cubeUrls = entries.map(function (item) { return item.thumb || item.url; });
+        var newImageEntries = entries.map(function (item) {
+            var row = { type: 'image', url: item.url };
+            if (item.thumb) row.thumb = item.thumb;
+            return row;
+        });
         await ref.set({
-            images: existingImages.concat(newUrls),
+            images: existingImages.concat(cubeUrls),
             carouselItems: existingCarousel.concat(newImageEntries)
         }, { merge: true });
     }
@@ -6840,9 +7179,12 @@ document.addEventListener('keydown', function(event) {
         if (!document.getElementById('panel-video-fit-wrap')) {
             var wrap = document.createElement('div');
             wrap.id = 'panel-video-fit-wrap';
+            var label = document.createElement('label');
+            label.setAttribute('for', 'panel-video-fit-select');
+            label.textContent = 'Ajuste';
             var sel = document.createElement('select');
             sel.id = 'panel-video-fit-select';
-            sel.innerHTML = '<option value="cover">Preencher</option><option value="contain">Caber</option>';
+            sel.innerHTML = '<option value="contain">Caber</option><option value="cover">Preencher</option>';
             sel.value = _panelVideoFit;
             sel.addEventListener('change', function() {
                 _panelVideoFit = this.value;
@@ -6854,6 +7196,7 @@ document.addEventListener('keydown', function(event) {
                     _panelRenderCarousel(_panelCarouselItems, _panelCurrentProjectId);
                 }
             });
+            wrap.appendChild(label);
             wrap.appendChild(sel);
             var carouselContainer = document.getElementById('panel-carousel-container');
             if (carouselContainer) carouselContainer.appendChild(wrap);
@@ -6903,18 +7246,8 @@ document.addEventListener('keydown', function(event) {
             });
     }
 
-    // Quando admin logar/deslogar enquanto painel estiver aberto
-    if (typeof auth !== 'undefined' && auth) {
-        auth.onAuthStateChanged(function(user) {
-            var panel = document.getElementById('project-panel');
-            if (!panel || !panel.classList.contains('visible')) return;
-            if (user && user.uid === (typeof ADMIN_UID !== 'undefined' ? ADMIN_UID : '')) {
-                _panelEnableEditMode();
-            } else {
-                _panelDisableEditMode();
-            }
-        });
-    }
+    // Quando admin logar/deslogar enquanto painel estiver aberto:
+    // tratado em bindAdminAuthListeners() (carregado sob demanda).
     </script>
     <!-- ===== FIM SCRIPT DO PAINEL DE PROJETO ===== -->
 
@@ -7032,14 +7365,26 @@ document.addEventListener('keydown', function(event) {
 </script>
 
 <script>
-  VanillaTilt.init(document.querySelector("#aboutCard"), {
-    max: 25, // Máximo ângulo de inclinação
-    speed: 400, // Velocidade da transição
-    glare: true, // Ativar brilho
-    "max-glare": 0.5, // Máximo de brilho
-    perspective: 1000, // Profundidade da perspectiva
-    scale: 1.05, // Escala ao passar o mouse
-  });
+  (function () {
+    var card = document.querySelector('#aboutCard');
+    if (!card || card.style.display === 'none') return;
+    var src = 'https://cdn.jsdelivr.net/npm/vanilla-tilt@1.7.0/dist/vanilla-tilt.min.js';
+    var s = document.createElement('script');
+    s.src = src;
+    s.async = true;
+    s.onload = function () {
+      if (typeof VanillaTilt === 'undefined') return;
+      VanillaTilt.init(card, {
+        max: 25,
+        speed: 400,
+        glare: true,
+        'max-glare': 0.5,
+        perspective: 1000,
+        scale: 1.05
+      });
+    };
+    document.head.appendChild(s);
+  })();
 </script>
 
 <script>

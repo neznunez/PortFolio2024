@@ -14,6 +14,11 @@
     }
   }
 
+  function isPtBr(lang) {
+    var s = String(lang || '').toLowerCase().replace('_', '-');
+    return s === 'pt-br' || s.indexOf('pt-br-') === 0;
+  }
+
   function detectLocale() {
     var stored = '';
     try {
@@ -22,10 +27,11 @@
       stored = '';
     }
     if (stored === 'pt' || stored === 'en') return stored;
-    var nav = (global.navigator && global.navigator.language) || '';
-    var navLower = String(nav).toLowerCase();
-    // PT só para português; qualquer outro idioma do browser → EN (es, fr, de, en, etc.)
-    return navLower.indexOf('pt') === 0 ? 'pt' : 'en';
+    var nav = (global.navigator && global.navigator.language) ||
+      (global.navigator && global.navigator.languages && global.navigator.languages[0]) ||
+      '';
+    // PT só para pt-BR; qualquer outro idioma do browser → EN
+    return isPtBr(nav) ? 'pt' : 'en';
   }
 
   function getByPath(obj, path) {
