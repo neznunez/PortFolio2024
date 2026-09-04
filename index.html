@@ -1962,12 +1962,82 @@
         #project-panel.visible {
             display: flex;
         }
-        /* Controles admin anexados ao painel (fora do fluxo interno) precisam de hit-test. */
+        /* Controles UI partilhados: pills mais finos (Back, Save, Upload, Admin dock) */
+        .ui-chrome-btn,
+        #project-panel .panel-back-button,
         #project-panel #panel-save-button,
-        #project-panel #panel-edit-indicator,
-        #project-panel #panel-logout-button {
+        #project-panel .image-upload-label {
+            appearance: none;
+            -webkit-appearance: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 28px;
+            padding: 4px 11px;
+            border: 1px solid rgba(255, 255, 255, 0.38);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            text-indent: 0.02em;
+            text-transform: uppercase;
+            text-decoration: none;
+            text-shadow: none;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
             pointer-events: auto;
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+        }
+        .ui-chrome-btn:hover,
+        .ui-chrome-btn:focus-visible,
+        #project-panel .panel-back-button:hover,
+        #project-panel .panel-back-button:focus-visible,
+        #project-panel #panel-save-button:hover,
+        #project-panel #panel-save-button:focus-visible,
+        #project-panel .image-upload-label:hover,
+        #project-panel .image-upload-label:focus-visible {
+            background: rgba(255, 255, 255, 0.92);
+            border-color: rgba(255, 255, 255, 0.92);
+            color: #0b0b0d;
+            transform: translateY(-1px);
+            outline: none;
+        }
+        #project-panel #panel-save-button,
+        #project-panel #panel-logout-button {
             z-index: 1600;
+        }
+        #project-panel #panel-save-button {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+        }
+        #project-panel #panel-save-button:disabled {
+            opacity: 0.5;
+            cursor: wait;
+            transform: none;
+        }
+        #admin-chrome-dock {
+            position: fixed;
+            right: max(14px, env(safe-area-inset-right, 0px));
+            bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) + 12px));
+            z-index: 999;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            pointer-events: none;
+        }
+        #admin-chrome-dock.is-visible {
+            display: flex;
+        }
+        #admin-chrome-dock .ui-chrome-btn {
+            pointer-events: auto;
+        }
+        body:has(#project-panel.visible) #admin-chrome-dock {
+            display: none !important;
         }
         #project-panel .project-container {
             position: absolute;
@@ -2136,50 +2206,50 @@
         }
         #project-panel #panel-carousel-container #panel-video-fit-wrap {
             position: absolute;
-            top: 16px;
-            right: 16px;
+            top: 14px;
+            right: 14px;
             z-index: 50;
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 8px 12px 8px 14px;
+            gap: 6px;
+            padding: 3px 6px 3px 9px;
             border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.55);
-            background: rgba(255, 255, 255, 0.14);
-            box-shadow: 0 6px 22px rgba(0, 0, 0, 0.28);
+            border: 1px solid rgba(255, 255, 255, 0.38);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
         }
         #project-panel #panel-carousel-container #panel-video-fit-wrap label {
             margin: 0;
-            color: #fff;
+            color: rgba(255, 255, 255, 0.88);
             font-family: "IBM Plex Mono", ui-monospace, monospace;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 500;
-            letter-spacing: 0.18em;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
             white-space: nowrap;
         }
         #project-panel #panel-carousel-container #panel-video-fit-wrap select {
             appearance: none;
             -webkit-appearance: none;
-            background: rgba(0, 0, 0, 0.28);
+            background: rgba(0, 0, 0, 0.22);
             color: #fff;
-            border: 1px solid rgba(255, 255, 255, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.32);
             border-radius: 999px;
-            padding: 5px 28px 5px 12px;
+            padding: 3px 22px 3px 8px;
             font-family: "IBM Plex Mono", ui-monospace, monospace;
-            font-size: 11px;
+            font-size: 10px;
             letter-spacing: 0.08em;
             text-transform: uppercase;
             cursor: pointer;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='white' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
-            background-position: right 10px center;
-            background-size: 8px 5px;
+            background-position: right 8px center;
+            background-size: 7px 4px;
         }
         #project-panel #panel-carousel-container #panel-video-fit-wrap select:focus-visible {
             outline: none;
-            border-color: #fff;
-            background-color: rgba(255, 255, 255, 0.16);
+            border-color: rgba(255, 255, 255, 0.7);
+            background-color: rgba(255, 255, 255, 0.1);
         }
         #project-panel .carousel-slide video.slide-media {
             opacity: 1;
@@ -2205,20 +2275,20 @@
         #project-panel .carousel-button {
             appearance: none;
             -webkit-appearance: none;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.06);
             color: #fff;
-            border: 1px solid rgba(255, 255, 255, 0.55);
-            width: 42px;
-            height: 42px;
+            border: 1px solid rgba(255, 255, 255, 0.38);
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 13px;
             line-height: 1;
-            transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
             border-radius: 999px;
-            box-shadow: 0 6px 22px rgba(0, 0, 0, 0.28);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
             z-index: 20;
             pointer-events: auto;
         }
@@ -2337,38 +2407,9 @@
         }
         #project-panel .panel-back-button {
             position: absolute;
-            top: 16px;
-            left: 16px;
+            top: 14px;
+            left: 14px;
             z-index: 30;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            min-height: 38px;
-            padding: 8px 18px;
-            border: 1px solid rgba(255, 255, 255, 0.55);
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.07);
-            color: #fff;
-            font-family: "IBM Plex Mono", ui-monospace, monospace;
-            font-size: 12px;
-            font-weight: 500;
-            letter-spacing: 0.22em;
-            text-indent: 0.08em;
-            text-transform: uppercase;
-            text-decoration: none;
-            text-shadow: none;
-            box-shadow: 0 6px 22px rgba(0, 0, 0, 0.28);
-            cursor: pointer;
-            pointer-events: auto;
-            transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
-        }
-        #project-panel .panel-back-button:hover,
-        #project-panel .panel-back-button:focus-visible {
-            background: rgba(255, 255, 255, 0.95);
-            border-color: rgba(255, 255, 255, 0.95);
-            color: #0b0b0d;
-            transform: translateY(-1px);
-            outline: none;
         }
         @media (max-width: 900px) {
             #project-panel .project-container {
@@ -2394,69 +2435,58 @@
         }
         #project-panel .image-upload-container {
             position: absolute;
-            bottom: 20px;
-            left: 20px;
+            bottom: 14px;
+            left: 14px;
             z-index: 40;
             display: none;
             pointer-events: auto;
+            max-width: min(360px, calc(100% - 28px));
         }
         #project-panel .image-upload-container.visible { display: block; }
-        #project-panel .image-upload-label {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 18px;
-            background-color: rgba(0, 0, 0, 0.85);
-            color: #33ff33;
-            border: 2px solid #33ff33;
-            border-radius: 8px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            box-shadow: 0 0 12px rgba(51, 255, 51, 0.25);
-        }
-        #project-panel .image-upload-label:hover {
-            background-color: rgba(51, 255, 51, 0.15);
-            transform: scale(1.03);
-            box-shadow: 0 0 18px rgba(51, 255, 51, 0.4);
-        }
         #project-panel .image-upload-input { display: none; }
         #project-panel .upload-limits-hint {
             display: block;
             margin-top: 6px;
-            font-size: 11px;
-            color: rgba(255,255,255,0.5);
+            padding-left: 2px;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 9px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.42);
         }
         #project-panel .image-list {
-            margin-top: 10px;
-            max-height: 150px;
+            margin-top: 8px;
+            max-height: 140px;
             overflow-y: auto;
-            background-color: rgba(0, 0, 0, 0.7);
-            border-radius: 8px;
-            padding: 10px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 12px;
+            padding: 6px;
         }
         #project-panel .image-item {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 5px;
-            margin: 5px 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            border-radius: 4px;
-            color: white;
-            font-size: 12px;
+            gap: 6px;
+            padding: 4px 6px;
+            margin: 3px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.88);
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 10px;
+            letter-spacing: 0.03em;
+            cursor: grab;
         }
         #project-panel .image-item img {
-            width: 40px;
-            height: 40px;
+            width: 28px;
+            height: 28px;
             object-fit: cover;
-            border-radius: 4px;
-            margin-right: 10px;
-        }
-        #project-panel .image-item {
-            cursor: grab;
+            border-radius: 6px;
+            margin-right: 2px;
+            flex-shrink: 0;
         }
         #project-panel .image-item:active {
             cursor: grabbing;
@@ -2466,12 +2496,12 @@
             cursor: grabbing;
         }
         #project-panel .image-item.carousel-item-drag-over {
-            outline: 2px solid #33ff33;
+            outline: 1px solid rgba(255, 255, 255, 0.75);
             outline-offset: 2px;
         }
         #project-panel .carousel-drag-handle {
-            margin-right: 8px;
-            color: rgba(255,255,255,0.5);
+            margin-right: 4px;
+            color: rgba(255, 255, 255, 0.45);
             font-size: 14px;
             cursor: grab;
             user-select: none;
@@ -2480,16 +2510,65 @@
             cursor: grabbing;
         }
         #project-panel .delete-image-btn {
-            background-color: rgba(255, 0, 0, 0.3);
-            color: white;
-            border: 1px solid rgba(255, 0, 0, 0.5);
-            border-radius: 4px;
-            padding: 2px 8px;
+            appearance: none;
+            -webkit-appearance: none;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.04);
+            color: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.32);
+            border-radius: 999px;
+            padding: 3px 8px;
             cursor: pointer;
-            font-size: 10px;
-            font-family: 'Courier New', monospace;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 9px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
         }
-        #project-panel .delete-image-btn:hover { background-color: rgba(255, 0, 0, 0.5); }
+        #project-panel .delete-image-btn:hover {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: rgba(255, 255, 255, 0.9);
+            color: #0b0b0d;
+        }
+        /* Feedback admin / sistema — mesmo idioma dos pills do painel */
+        #index-notification {
+            position: fixed;
+            left: 50%;
+            bottom: max(52px, calc(env(safe-area-inset-bottom, 0px) + 48px));
+            transform: translateX(-50%) translateY(6px);
+            z-index: 10001;
+            max-width: min(420px, calc(100% - 28px));
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.38);
+            background: rgba(12, 12, 12, 0.78);
+            color: #fff;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-align: center;
+            line-height: 1.35;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        #index-notification.is-visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        #index-notification.is-success {
+            border-color: rgba(255, 255, 255, 0.72);
+            background: rgba(255, 255, 255, 0.12);
+        }
+        #index-notification.is-error {
+            border-color: rgba(255, 180, 180, 0.65);
+            background: rgba(48, 16, 16, 0.88);
+        }
         /* ===== FIM PAINEL DE PROJETO ===== */
 
         /* Modal de criação de projeto */
@@ -3147,13 +3226,10 @@
             if (_adminAuthBound || !auth) return;
             _adminAuthBound = true;
             auth.onAuthStateChanged(function (user) {
-                var logoutButton = document.getElementById('logout-button-index');
-                var createButton = document.getElementById('create-project-button');
-
                 if (user && user.uid === ADMIN_UID) {
                     isAdminLoggedIn = true;
-                    if (logoutButton) logoutButton.style.display = 'inline-block';
-                    if (createButton) createButton.style.display = 'inline-block';
+                    var dockOn = document.getElementById('admin-chrome-dock');
+                    if (dockOn) dockOn.classList.add('is-visible');
                     var passContainer = document.getElementById('admin-password-container-index');
                     if (passContainer) passContainer.remove();
                     if (typeof startProjectsRealtimeListener === 'function') startProjectsRealtimeListener();
@@ -3164,8 +3240,8 @@
                 } else {
                     isAdminLoggedIn = false;
                     if (typeof stopProjectsRealtimeListener === 'function') stopProjectsRealtimeListener();
-                    if (logoutButton) logoutButton.style.display = 'none';
-                    if (createButton) createButton.style.display = 'none';
+                    var dockOff = document.getElementById('admin-chrome-dock');
+                    if (dockOff) dockOff.classList.remove('is-visible');
                     var panelOff = document.getElementById('project-panel');
                     if (panelOff && panelOff.classList.contains('visible') && typeof _panelDisableEditMode === 'function') {
                         _panelDisableEditMode();
@@ -3226,6 +3302,7 @@
         function cubeFaceImageUrls(projectData) {
             if (!projectData) return [];
             var items = projectData.carouselItems;
+            // Se carouselItems existe (mesmo []), é a fonte de verdade — não cair no fallback legado.
             if (Array.isArray(items)) {
                 for (var i = 0; i < items.length; i++) {
                     var it = items[i];
@@ -3233,6 +3310,7 @@
                     var url = (typeof it === 'string') ? it : (it.thumb || it.url);
                     if (url) return [url];
                 }
+                return [];
             }
             if (Array.isArray(projectData.images) && projectData.images.length) {
                 var first = projectData.images[0];
@@ -3370,9 +3448,10 @@
         }
 
         function applyCubeLoadingGlass(material) {
-            if (!material || material.map) return;
+            if (!material) return;
             var wasOpaque = !material.transparent;
-            material.color.setHex(0xE8F4FF);
+            // Mesmo com map antigo, forçar estado “loading” visível (opacidade > 0).
+            if (!material.map) material.color.setHex(0xE8F4FF);
             material.transparent = true;
             material.opacity = 0.62;
             material.roughness = 0.08;
@@ -3686,6 +3765,7 @@
              cube.userData.firstVideoPoster = firstVideoPoster;
              cube.userData.videoTextureLoaded = false;
              cube.userData.texturesReady = !hasImages;
+             cube.userData._mediaSig = (imageUrls[0] || '') + '|' + (firstVideoUrl || '') + '|' + (firstVideoPoster || '');
              
              cube.currentHex = material.color.getHex();
 
@@ -3711,7 +3791,10 @@
                 loadCubeTextures(prepareFaceImages([firstVideoPoster]), material, cube).catch(function() {
                     markCubeTexturesReady(cube);
                 });
+            } else if (!hasImages) {
+                markCubeTexturesReady(cube);
             }
+            // Vídeo sem poster: textura só na revelação (enqueue), mas o cubo já revela com vidro.
         }
         
         function startCubeRevealWave(stagger) {
@@ -3738,6 +3821,9 @@
                     });
                 } else if (!cube.userData.texturesReady && cube.userData.firstVideoUrl) {
                     enqueueCubeVideoTexture(cube);
+                } else if (!cube.userData.texturesReady && cube.userData.hasImages) {
+                    // Sem URL resolvida: não deixar o cubo preso invisível.
+                    markCubeTexturesReady(cube);
                 }
             };
             if (delay > 0.04 && typeof gsap !== 'undefined') {
@@ -3752,6 +3838,27 @@
             var targetOpacity = stillLoading ? 0.62 : 1;
             var fromOpacity = materials[0] ? materials[0].opacity : 0;
 
+            // Nunca revelar com opacity 0 (bug: cubo “sumia” até o pulse atrasado).
+            for (var mi = 0; mi < materials.length; mi++) {
+                if (!materials[mi]) continue;
+                materials[mi].transparent = true;
+                if (!(materials[mi].opacity > 0.05)) materials[mi].opacity = targetOpacity;
+            }
+
+            if (typeof gsap !== 'undefined') {
+                gsap.killTweensOf(cube.scale);
+                gsap.to(cube.scale, {
+                    x: stillLoading ? 0.86 : 1,
+                    y: stillLoading ? 0.86 : 1,
+                    z: stillLoading ? 0.86 : 1,
+                    duration: 0.72,
+                    ease: 'back.out(1.25)',
+                    delay: delay
+                });
+            } else {
+                cube.scale.set(stillLoading ? 0.86 : 1, stillLoading ? 0.86 : 1, stillLoading ? 0.86 : 1);
+            }
+
             if (stillLoading) {
                 if (delay > 0 && typeof gsap !== 'undefined') {
                     gsap.delayedCall(delay, function () { startCubeLoadingPulse(cube); });
@@ -3762,15 +3869,7 @@
             }
 
             if (typeof gsap !== 'undefined') {
-                gsap.to(cube.scale, {
-                    x: 1,
-                    y: 1,
-                    z: 1,
-                    duration: 0.72,
-                    ease: 'back.out(1.25)',
-                    delay: delay
-                });
-                var fade = { o: fromOpacity };
+                var fade = { o: Math.max(fromOpacity, 0.05) };
                 gsap.to(fade, {
                     o: targetOpacity,
                     duration: 0.7,
@@ -3789,7 +3888,6 @@
                     }
                 });
             } else {
-                cube.scale.set(1, 1, 1);
                 materials.forEach(function (mat) {
                     if (!mat) return;
                     mat.opacity = targetOpacity;
@@ -3857,8 +3955,6 @@
                  
                  const newImageUrls = cubeFaceImageUrls(projectData);
                  const newCarouselItems = (projectData.carouselItems && Array.isArray(projectData.carouselItems)) ? projectData.carouselItems : [];
-                 cube.userData.videoTextureLoaded = false;
-                 cube.userData.texturesReady = false;
                  var nextVideo = null;
                  for (var ci = 0; ci < newCarouselItems.length; ci++) {
                      if (newCarouselItems[ci] && newCarouselItems[ci].type === 'video' && newCarouselItems[ci].url) {
@@ -3866,8 +3962,20 @@
                          break;
                      }
                  }
-                 cube.userData.firstVideoUrl = nextVideo ? nextVideo.url : null;
-                 cube.userData.firstVideoPoster = nextVideo && nextVideo.poster ? nextVideo.poster : null;
+                 var nextVideoUrl = nextVideo ? nextVideo.url : null;
+                 var nextVideoPoster = nextVideo && nextVideo.poster ? nextVideo.poster : null;
+                 var mediaSig = (newImageUrls[0] || '') + '|' + (nextVideoUrl || '') + '|' + (nextVideoPoster || '');
+                 // Admin onSnapshot reenvia todos os docs: não recarregar texturas se a mídia não mudou
+                 // (evita cubos a “sumir” / pulse em massa).
+                 if (cube.userData._mediaSig === mediaSig) {
+                     if (typeof renderImmersiveProjectsList === 'function') renderImmersiveProjectsList();
+                     return;
+                 }
+                 cube.userData._mediaSig = mediaSig;
+                 cube.userData.videoTextureLoaded = false;
+                 cube.userData.texturesReady = false;
+                 cube.userData.firstVideoUrl = nextVideoUrl;
+                 cube.userData.firstVideoPoster = nextVideoPoster;
                  updateCubeTextures(cube, newImageUrls, newCarouselItems);
              } else {
                  console.warn("Cubo não encontrado para atualização:", projectId);
@@ -3910,7 +4018,9 @@
                     applyCubeLoadingGlass(mat);
                 });
             } else {
+                disposeCubeFaceMaps(mats);
                 mats.forEach(function(mat) {
+                    mat.needsUpdate = true;
                     applyCubeOpaqueFinish(mat);
                     mat.roughness = 0.22;
                     mat.metalness = 0;
@@ -5833,47 +5943,27 @@ function showNavigationNotification() {
             });
     }
 
-    // Função para mostrar notificações (versão simples para index.html)
+    // Função para mostrar notificações (pills alinhados ao UI do painel)
     function showNotification(message, type = 'info', isIndex = false) {
-        // Remover notificação anterior se existir
         const existingNotification = document.getElementById('index-notification');
         if (existingNotification) existingNotification.remove();
 
-        // Criar elemento de notificação visual
-         const notification = document.createElement('div');
-         notification.id = 'index-notification'; // Adicionar ID para remoção
-         notification.textContent = message;
-         let bgColor;
-         switch (type) {
-            case 'error': bgColor = 'rgba(220, 53, 69, 0.85)'; break; // Vermelho bootstrap danger
-            case 'success': bgColor = 'rgba(40, 167, 69, 0.85)'; break; // Verde bootstrap success
-            default: bgColor = 'rgba(0, 0, 0, 0.8)'; // Preto/cinza padrão
-         }
-         notification.style.cssText = `
-             position: fixed;
-             bottom: 70px; /* Posição acima dos botões de admin */
-             left: 50%;
-             transform: translateX(-50%);
-             padding: 10px 20px;
-             border-radius: 5px;
-             background-color: ${bgColor};
-             color: white;
-             font-family: 'Courier New', monospace;
-             font-size: 14px;
-             z-index: 10001;
-             opacity: 0;
-             transition: opacity 0.4s ease-in-out;
-             text-align: center;
-             max-width: 80%;
-         `;
-         document.body.appendChild(notification);
-         // Fade in
-         setTimeout(() => notification.style.opacity = 1, 10);
-         // Fade out and remove (aumentar tempo para ler)
-         setTimeout(() => {
-             notification.style.opacity = 0;
-             setTimeout(() => notification.remove(), 500);
-         }, 3500); // Mostrar por 3.5 segundos
+        const notification = document.createElement('div');
+        notification.id = 'index-notification';
+        notification.setAttribute('role', 'status');
+        notification.textContent = message;
+        if (type === 'success') notification.classList.add('is-success');
+        else if (type === 'error') notification.classList.add('is-error');
+        document.body.appendChild(notification);
+        requestAnimationFrame(function () {
+            notification.classList.add('is-visible');
+        });
+        setTimeout(function () {
+            notification.classList.remove('is-visible');
+            setTimeout(function () {
+                if (notification.parentNode) notification.remove();
+            }, 380);
+        }, 3200);
     }
 
 
@@ -5881,41 +5971,24 @@ function showNavigationNotification() {
     // Visitantes não descarregam esses SDKs.
 
     // --- Botão e Função de Logout para index.html ---
-    function addLogoutButtonIndex() {
-         if (document.getElementById('logout-button-index')) return; // Evitar duplicados
+    function ensureAdminChromeDock() {
+        var dock = document.getElementById('admin-chrome-dock');
+        if (dock) return dock;
+        dock = document.createElement('div');
+        dock.id = 'admin-chrome-dock';
+        document.body.appendChild(dock);
+        return dock;
+    }
 
-        const logoutButton = document.createElement('button');
+    function addLogoutButtonIndex() {
+        if (document.getElementById('logout-button-index')) return;
+        var logoutButton = document.createElement('button');
         logoutButton.id = 'logout-button-index';
-        logoutButton.textContent = 'Logout Admin';
-        logoutButton.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px; /* Perto do canto inferior direito */
-            padding: 10px 15px;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: #ff6b6b; /* Vermelho para logout */
-            border: 2px solid #ff6b6b;
-            border-radius: 5px;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
-            text-shadow: 0 0 5px #ff6b6b;
-            z-index: 999;
-            display: none; /* Começa escondido */
-        `;
-         logoutButton.addEventListener('mouseover', function() {
-            this.style.backgroundColor = 'rgba(255, 107, 107, 0.2)';
-            this.style.transform = 'scale(1.05)';
-        });
-        logoutButton.addEventListener('mouseout', function() {
-            this.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-            this.style.transform = 'scale(1)';
-        });
+        logoutButton.type = 'button';
+        logoutButton.className = 'ui-chrome-btn';
+        logoutButton.textContent = 'Logout';
         logoutButton.addEventListener('click', logoutAdminIndex);
-        document.body.appendChild(logoutButton);
+        ensureAdminChromeDock().appendChild(logoutButton);
     }
 
     function logoutAdminIndex() {
@@ -5934,40 +6007,20 @@ function showNavigationNotification() {
 
     // --- Botão Criar Novo Projeto (NOVO) ---
     function addCreateProjectButton() {
-        if (document.getElementById('create-project-button')) return; // Evitar duplicados
-
-        const createButton = document.createElement('button');
+        if (document.getElementById('create-project-button')) return;
+        var createButton = document.createElement('button');
         createButton.id = 'create-project-button';
-        createButton.textContent = 'Criar Novo Projeto';
-        createButton.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 180px; /* Ajustar para ficar à esquerda do botão Logout */
-            padding: 10px 15px;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: #33ff33; /* Verde para ação principal */
-            border: 2px solid #33ff33;
-            border-radius: 5px;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 10px rgba(51, 255, 51, 0.5);
-            text-shadow: 0 0 5px #33ff33;
-            z-index: 999;
-            display: none; /* Começa escondido */
-        `;
-        createButton.addEventListener('mouseover', function() {
-            this.style.backgroundColor = 'rgba(51, 255, 51, 0.2)';
-            this.style.transform = 'scale(1.05)';
-        });
-        createButton.addEventListener('mouseout', function() {
-            this.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-            this.style.transform = 'scale(1)';
-        });
-        createButton.addEventListener('click', createNewProject); // Chama a função de criar projeto
-        document.body.appendChild(createButton);
+        createButton.type = 'button';
+        createButton.className = 'ui-chrome-btn';
+        createButton.textContent = 'Novo projeto';
+        createButton.addEventListener('click', createNewProject);
+        var dock = ensureAdminChromeDock();
+        var logoutBtn = document.getElementById('logout-button-index');
+        if (logoutBtn && logoutBtn.parentNode === dock) {
+            dock.insertBefore(createButton, logoutBtn);
+        } else {
+            dock.appendChild(createButton);
+        }
     }
     // --- Fim Botão Criar Novo Projeto ---
 
@@ -6986,9 +7039,14 @@ document.addEventListener('keydown', function(event) {
             descEl.classList.add('visible');
         }
         _panelVideoFit = _panelResolveMediaFit(data);
-        var items = (data.carouselItems && Array.isArray(data.carouselItems) && data.carouselItems.length > 0)
-            ? data.carouselItems
-            : (data.images && Array.isArray(data.images)) ? data.images.map(function(u) { return { type: 'image', url: u }; }) : [];
+        var items;
+        if (Array.isArray(data.carouselItems)) {
+            items = data.carouselItems;
+        } else if (data.images && Array.isArray(data.images)) {
+            items = data.images.map(function(u) { return { type: 'image', url: u }; });
+        } else {
+            items = [];
+        }
         _panelCarouselItems = items;
 
         var sig = _panelItemsSignature(items);
@@ -7156,9 +7214,14 @@ document.addEventListener('keydown', function(event) {
             .then(function(doc) {
                 var data = doc.data() || {};
                 _panelVideoFit = _panelResolveMediaFit(data);
-                var items = (data.carouselItems && Array.isArray(data.carouselItems) && data.carouselItems.length > 0)
-                    ? data.carouselItems
-                    : (data.images && Array.isArray(data.images)) ? data.images.map(function(u) { return { type: 'image', url: u }; }) : [];
+                var items;
+                if (Array.isArray(data.carouselItems)) {
+                    items = data.carouselItems;
+                } else if (data.images && Array.isArray(data.images)) {
+                    items = data.images.map(function(u) { return { type: 'image', url: u }; });
+                } else {
+                    items = [];
+                }
                 _panelCarouselItems = items;
                 _panelRenderCarousel(items, projectId);
             })
@@ -7222,6 +7285,28 @@ document.addEventListener('keydown', function(event) {
         });
     }
 
+    function _panelStoragePathFromUrl(url) {
+        if (!url || typeof url !== 'string') return null;
+        try {
+            var parts = url.split('/o/');
+            if (parts.length < 2) return null;
+            return decodeURIComponent(parts[1].split('?')[0]);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    async function _panelDeleteStorageUrl(url) {
+        if (!url || !storage) return;
+        var path = _panelStoragePathFromUrl(url);
+        if (!path) return;
+        try {
+            await storage.ref(path).delete();
+        } catch (e) {
+            console.warn('Falha ao deletar do Storage:', path, e);
+        }
+    }
+
     async function _panelDeleteCarouselItem(itemIndex) {
         if (typeof isAdminLoggedIn === 'undefined' || !isAdminLoggedIn) return;
         var projectId = _panelCurrentProjectId;
@@ -7231,43 +7316,43 @@ document.addEventListener('keydown', function(event) {
             var projectRef = db.collection('projetos').doc(projectId);
             var projectDoc = await projectRef.get();
             var data = projectDoc.data() || {};
-            var items = (data.carouselItems && Array.isArray(data.carouselItems) && data.carouselItems.length > 0)
+            var items = Array.isArray(data.carouselItems)
                 ? data.carouselItems.slice()
                 : (data.images && Array.isArray(data.images)) ? data.images.map(function(u) { return { type: 'image', url: u }; }) : [];
             var images = (data.images && Array.isArray(data.images)) ? data.images.slice() : [];
             if (itemIndex < 0 || itemIndex >= items.length) return;
             var removed = items[itemIndex];
             var urlToDelete = (removed && removed.url) ? removed.url : (typeof removed === 'string' ? removed : null);
+            var thumbToDelete = (removed && removed.thumb) ? removed.thumb : null;
+            var posterToDelete = (removed && removed.poster) ? removed.poster : null;
+
             await ensureFirebaseAdminSdk().catch(function () {});
-            if (urlToDelete && storage) {
-                try {
-                    var urlParts = urlToDelete.split('/o/');
-                    if (urlParts.length > 1) {
-                        var decodedPath = decodeURIComponent(urlParts[1].split('?')[0]);
-                        await storage.ref(decodedPath).delete();
-                    }
-                } catch(e) { console.warn('Falha ao deletar do Storage:', e); }
-            }
-            var posterToDelete = removed && removed.poster ? removed.poster : null;
-            if (posterToDelete && storage) {
-                try {
-                    var posterParts = posterToDelete.split('/o/');
-                    if (posterParts.length > 1) {
-                        var posterPath = decodeURIComponent(posterParts[1].split('?')[0]);
-                        await storage.ref(posterPath).delete();
-                    }
-                } catch(e) { console.warn('Falha ao deletar poster do Storage:', e); }
-            }
+            await _panelDeleteStorageUrl(urlToDelete);
+            await _panelDeleteStorageUrl(thumbToDelete);
+            await _panelDeleteStorageUrl(posterToDelete);
+
             items.splice(itemIndex, 1);
-            if (removed && removed.type === 'image' && urlToDelete) {
-                var imgIdx = images.indexOf(urlToDelete);
-                if (imgIdx !== -1) images.splice(imgIdx, 1);
+
+            // Limpa URLs órfãs do array legado `images` (full, thumb, ou string antiga).
+            function stripFromImages(u) {
+                if (!u) return;
+                for (var i = images.length - 1; i >= 0; i--) {
+                    if (images[i] === u) images.splice(i, 1);
+                }
             }
-            var update = { carouselItems: items };
-            if (removed && removed.type === 'image') update.images = images;
-            await projectRef.update(update);
+            stripFromImages(urlToDelete);
+            stripFromImages(thumbToDelete);
+
+            await projectRef.update({
+                carouselItems: items,
+                images: images
+            });
             showNotification('Item removido com sucesso!', 'success', true);
-            _panelLoadProjectImages(projectId);
+            await _panelLoadProjectImages(projectId, true);
+            if (typeof updateCubeData === 'function') {
+                var fresh = Object.assign({}, data, { carouselItems: items, images: images });
+                updateCubeData(projectId, fresh);
+            }
         } catch(err) {
             showNotification('Erro ao deletar: ' + err.message, 'error', true);
         }
@@ -7280,7 +7365,7 @@ document.addEventListener('keydown', function(event) {
         var projectRef = db.collection('projetos').doc(projectId);
         var projectDoc = await projectRef.get();
         var data = projectDoc.data() || {};
-        var items = (data.carouselItems && Array.isArray(data.carouselItems) && data.carouselItems.length > 0)
+        var items = Array.isArray(data.carouselItems)
             ? data.carouselItems.slice()
             : (data.images && Array.isArray(data.images)) ? data.images.map(function(u) { return { type: 'image', url: u }; }) : [];
         if (fromIndex < 0 || fromIndex >= items.length || toIndex < 0 || toIndex >= items.length) return;
@@ -7427,17 +7512,16 @@ document.addEventListener('keydown', function(event) {
         var doc = await ref.get();
         var data = doc.exists ? (doc.data() || {}) : {};
         var existingImages = (data.images && Array.isArray(data.images)) ? data.images : [];
-        var existingCarousel = (data.carouselItems && Array.isArray(data.carouselItems) && data.carouselItems.length > 0)
+        var existingCarousel = Array.isArray(data.carouselItems)
             ? data.carouselItems
             : existingImages.map(function(u) { return { type: 'image', url: u }; });
-        var cubeUrls = entries.map(function (item) { return item.thumb || item.url; });
         var newImageEntries = entries.map(function (item) {
             var row = { type: 'image', url: item.url };
             if (item.thumb) row.thumb = item.thumb;
             return row;
         });
         await ref.set({
-            images: existingImages.concat(cubeUrls),
+            images: existingImages.concat(entries.map(function (item) { return item.url; })),
             carouselItems: existingCarousel.concat(newImageEntries)
         }, { merge: true });
     }
@@ -7633,21 +7717,13 @@ document.addEventListener('keydown', function(event) {
 
         var panel = document.getElementById('project-panel');
         var host = (panel && panel.querySelector('.project-container')) || panel;
-        if (host && !document.getElementById('panel-edit-indicator')) {
-            var ind = document.createElement('div');
-            ind.id = 'panel-edit-indicator';
-            ind.textContent = 'MODO DE EDIÇÃO';
-            ind.style.cssText = 'position:absolute;top:10px;right:200px;background-color:rgba(51,255,51,0.2);color:#33ff33;padding:6px 12px;border-radius:6px;font-family:Courier New,monospace;font-size:13px;font-weight:bold;border:1px solid #33ff33;z-index:1600;pointer-events:auto;';
-            host.appendChild(ind);
-        }
+        var existingInd = document.getElementById('panel-edit-indicator');
+        if (existingInd) existingInd.remove();
         if (!document.getElementById('panel-save-button')) {
             var saveBtn = document.createElement('button');
             saveBtn.id = 'panel-save-button';
             saveBtn.type = 'button';
-            saveBtn.textContent = 'Salvar Alterações';
-            saveBtn.style.cssText = 'position:absolute;top:10px;right:20px;background-color:rgba(0,0,0,0.8);color:#33ff33;border:2px solid #33ff33;padding:8px 16px;border-radius:8px;font-family:Courier New,monospace;font-size:14px;font-weight:bold;cursor:pointer;z-index:1600;pointer-events:auto;transition:background-color 0.2s;';
-            saveBtn.addEventListener('mouseover', function() { this.style.backgroundColor = 'rgba(51,255,51,0.25)'; });
-            saveBtn.addEventListener('mouseout',  function() { this.style.backgroundColor = 'rgba(0,0,0,0.8)'; });
+            saveBtn.textContent = (typeof i18nT === 'function') ? i18nT('immersive.saveChanges') : 'Salvar Alterações';
             saveBtn.addEventListener('click', function (e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -7757,7 +7833,7 @@ document.addEventListener('keydown', function(event) {
                     <div class="carousel-indicators" id="panel-carousel-dots"></div>
                 </div>
                 <div class="image-upload-container" id="panel-image-upload-container">
-                    <label for="panel-media-upload-input" class="image-upload-label">📷 Adicionar Imagens ou Vídeos</label>
+                    <label for="panel-media-upload-input" class="image-upload-label">Adicionar mídia</label>
                     <span class="upload-limits-hint" data-i18n="immersive.uploadLimits">(imagens até 10 MB, vídeos até 80 MB — MP4, WebM, MOV)</span>
                     <input type="file" id="panel-media-upload-input" class="image-upload-input" accept="image/*,video/mp4,video/webm,video/quicktime" multiple>
                     <div class="image-list" id="panel-image-list"></div>
