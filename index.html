@@ -4322,13 +4322,13 @@
         var skyZapBusy = false;
         var skyCycleTimer = null;
         var SKYBOX_CYCLE_MS = 60000;
-        // Na tela de entrada o visitante fica pouco tempo: troca de canal mais rápida.
-        var START_SKYBOX_CYCLE_MS = 1800;
+        // Na tela de entrada: troca mais frequente que no site, mas sem ficar frenética.
+        var START_SKYBOX_CYCLE_MS = 3800;
         // Rotação lenta do fundo, usada só na tela de entrada (rad/s).
         var START_SKY_SPIN = 0.022;
-        // Crossfade entre canais: mais curto na tela de entrada, original dentro do site.
+        // Crossfade entre canais: um pouco mais curto na start, mas próximo do original.
         var SKY_ZAP_DURATION = 1.15;
-        var START_SKY_ZAP_DURATION = 0.38;
+        var START_SKY_ZAP_DURATION = 0.55;
 
         function currentSkyCycleMs() {
             return startScreenActive ? START_SKYBOX_CYCLE_MS : SKYBOX_CYCLE_MS;
