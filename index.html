@@ -19,15 +19,18 @@
       })();
     </script>
     <link rel="icon" href="3d_6297747.ico" type="image/x-icon">
-    <!-- Skybox primeiro: é o que aparece na tela de entrada (~70KB no total) -->
-    <link rel="preload" href="desertdawn/desertdawn_ft.jpg" as="image">
-    <link rel="preload" href="desertdawn/desertdawn_bk.jpg" as="image">
-    <link rel="preload" href="desertdawn/desertdawn_up.jpg" as="image">
-    <link rel="preload" href="desertdawn/desertdawn_dn.jpg" as="image">
-    <link rel="preload" href="desertdawn/desertdawn_rt.jpg" as="image">
-    <link rel="preload" href="desertdawn/desertdawn_lf.jpg" as="image">
+    <!-- GLB primeiro (maior custo da 1ª visita); skybox é leve e já está em preload secundário -->
+    <link rel="preload" href="models/NezmodelF2.glb" as="fetch" type="model/gltf-binary" crossorigin="anonymous" fetchpriority="high">
+    <!-- Skybox da start (~70KB): prioridade menor para não competir com o modelo -->
+    <link rel="preload" href="desertdawn/desertdawn_ft.jpg" as="image" fetchpriority="low">
+    <link rel="preload" href="desertdawn/desertdawn_bk.jpg" as="image" fetchpriority="low">
+    <link rel="preload" href="desertdawn/desertdawn_up.jpg" as="image" fetchpriority="low">
+    <link rel="preload" href="desertdawn/desertdawn_dn.jpg" as="image" fetchpriority="low">
+    <link rel="preload" href="desertdawn/desertdawn_rt.jpg" as="image" fetchpriority="low">
+    <link rel="preload" href="desertdawn/desertdawn_lf.jpg" as="image" fetchpriority="low">
     <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin>
     <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com">
+    <link rel="dns-prefetch" href="https://firestore.googleapis.com">
 	 <link rel="stylesheet" href="landing.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -249,80 +252,128 @@
             height: 100%;
             z-index: 1900;
             display: none;
-            align-items: center;
-            justify-content: center;
+            align-items: stretch;
+            justify-content: stretch;
             opacity: 0;
             background: transparent;
             pointer-events: none;
+            padding: 0;
+            box-sizing: border-box;
         }
         .start-screen.is-visible {
             display: flex;
-            pointer-events: auto;
+            pointer-events: none;
         }
         .start-screen-inner {
-            text-align: center;
+            position: relative;
+            width: 100%;
+            height: 100%;
             color: #fff;
-            padding: 0 24px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 30px;
+            pointer-events: none;
+            max-width: none;
         }
+        /* Nome: mesma posição do menu (topo esquerdo) + role ao lado; entra só após 100% */
         .start-title {
+            position: absolute;
+            top: 0;
+            left: 0;
             margin: 0;
+            padding: 12px 26px;
+            min-height: var(--ih-height);
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
             font-family: "EB Garamond", "Times New Roman", Georgia, serif;
             text-transform: uppercase;
             line-height: 1;
-            letter-spacing: 0.02em;
-            display: block;
-            text-align: center;
-            text-shadow: 0 6px 40px rgba(0, 0, 0, 0.55);
-            transform-origin: center center;
+            letter-spacing: 0;
+            text-shadow:
+                0 1px 1px rgba(0, 0, 0, 0.55),
+                0 0 14px rgba(0, 0, 0, 0.45);
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
         }
-        .start-kicker {
-            display: block;
-            margin-bottom: 14px;
-            font-family: "IBM Plex Mono", ui-monospace, monospace;
-            font-size: clamp(10px, 0.85vw, 12px);
-            font-weight: 500;
-            letter-spacing: 0.44em;
-            text-indent: 0.44em;
-            opacity: 0.68;
+        .start-title.is-revealed {
+            opacity: 1;
+            visibility: visible;
         }
         .start-title-name,
         .start-title-last {
-            display: inline;
-            font-size: clamp(22px, 3vw, 44px);
+            display: inline-block;
+            font-size: clamp(32px, 3.2vw, 48px);
             font-weight: 500;
+            color: #fff;
+            white-space: nowrap;
         }
         .start-title-last {
-            margin-left: 0.06em;
-            opacity: 0.92;
+            margin-left: 0;
+            opacity: 1;
         }
         .start-title-role {
-            display: block;
-            margin-top: 16px;
+            display: inline-block;
             font-family: "IBM Plex Mono", ui-monospace, monospace;
-            font-size: clamp(11px, 1vw, 14px);
-            letter-spacing: 0.24em;
+            font-size: clamp(14px, 1.15vw, 18px);
+            font-weight: 500;
             text-transform: none;
-            opacity: 0.82;
+            opacity: 1;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+        }
+        .start-screen-meta {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.55s ease, visibility 0.55s ease;
+        }
+        .start-screen-meta.is-complete {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .start-loading-label,
+        .start-loading-pct {
+            margin: 0;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: clamp(12px, 1.4vw, 15px);
+            font-weight: 400;
+            letter-spacing: 0.28em;
+            text-indent: 0.28em;
+            text-transform: lowercase;
+            color: rgba(255, 255, 255, 0.68);
+            text-shadow: 0 2px 14px rgba(0, 0, 0, 0.55);
+            font-variant-numeric: tabular-nums;
+        }
+        .start-loading-pct {
+            letter-spacing: 0.18em;
+            text-indent: 0.18em;
+            color: rgba(255, 255, 255, 0.55);
+            min-height: 1em;
+            font-size: clamp(13px, 1.5vw, 16px);
+        }
+        .start-screen-meta.is-error .start-loading-label,
+        .start-screen-meta.is-error .start-loading-pct {
+            color: rgba(255, 160, 160, 0.9);
         }
         .start-loading {
-            position: absolute;
-            inset: 0;
-            border-radius: inherit;
+            position: relative;
+            width: min(280px, 62vw);
+            height: 3px;
+            border-radius: 999px;
             overflow: hidden;
             pointer-events: none;
-            opacity: 1;
-            transition: opacity 0.55s ease;
-        }
-        .start-loading.is-complete {
-            opacity: 0;
-        }
-        .start-loading-bar-container {
-            width: 100%;
-            height: 100%;
+            background: rgba(255, 255, 255, 0.14);
         }
         .start-loading-bar {
             position: absolute;
@@ -331,80 +382,34 @@
             bottom: 0;
             width: 0%;
             border-radius: inherit;
-            background: rgba(255, 255, 255, 0.22);
-            box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.55);
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+            will-change: transform, width;
         }
-        .start-loading-bar.is-error {
-            background: rgba(255, 90, 90, 0.45);
-            box-shadow: inset 0 0 12px rgba(255, 90, 90, 0.2);
+        .start-loading.is-indeterminate .start-loading-bar {
+            width: 38%;
+            animation: start-load-shimmer 1.15s ease-in-out infinite;
         }
-        .start-enter {
-            position: relative;
-            overflow: hidden;
-            isolation: isolate;
-            appearance: none;
-            -webkit-appearance: none;
-            cursor: pointer;
-            font-family: "IBM Plex Mono", ui-monospace, monospace;
-            font-size: 13px;
-            font-weight: 500;
-            letter-spacing: 0.42em;
-            text-indent: 0.42em;
-            text-transform: uppercase;
-            color: #fff;
-            padding: 14px 34px;
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid rgba(255, 255, 255, 0.55);
-            border-radius: 999px;
-            box-shadow: 0 6px 30px rgba(0, 0, 0, 0.35);
-            transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease, opacity 0.25s ease;
+        .start-loading-bar.is-error,
+        .start-screen-meta.is-error .start-loading-bar {
+            background: rgba(255, 90, 90, 0.75);
+            box-shadow: 0 0 12px rgba(255, 90, 90, 0.25);
+            animation: none;
         }
-        .start-enter-label {
-            position: relative;
-            z-index: 1;
-            display: inline-block;
-            letter-spacing: inherit;
-            text-indent: inherit;
-        }
-        .start-enter:hover,
-        .start-enter:focus-visible {
-            background: rgba(255, 255, 255, 0.95);
-            border-color: rgba(255, 255, 255, 0.95);
-            color: #0b0b0d;
-            transform: translateY(-2px);
-            box-shadow: 0 10px 38px rgba(0, 0, 0, 0.45);
-            outline: none;
-        }
-        .start-enter:active {
-            transform: translateY(0);
-        }
-        .start-enter:disabled {
-            cursor: default;
-            opacity: 0.42;
-            border-color: rgba(255, 255, 255, 0.3);
-            background: rgba(255, 255, 255, 0.04);
-        }
-        .start-enter:disabled:hover {
-            color: #fff;
-            transform: none;
-            background: rgba(255, 255, 255, 0.04);
-            border-color: rgba(255, 255, 255, 0.3);
-            box-shadow: 0 6px 30px rgba(0, 0, 0, 0.35);
-        }
-        .start-status {
-            margin: -14px 0 0;
-            min-height: 15px;
-            font-family: "IBM Plex Mono", ui-monospace, monospace;
-            font-size: 11px;
-            letter-spacing: 0.14em;
-            color: rgba(255, 255, 255, 0.62);
-            font-variant-numeric: tabular-nums;
-            text-shadow: 0 2px 14px rgba(0, 0, 0, 0.7);
+        @keyframes start-load-shimmer {
+            0% { transform: translateX(-130%); }
+            100% { transform: translateX(360%); }
         }
         @media (prefers-reduced-motion: reduce) {
             .loading-bar::after { animation: none; opacity: 0; }
             .loading-text { transition: none; }
-            .start-enter { transition: none; }
+            .start-screen-meta { transition: none; }
+            .start-loading.is-indeterminate .start-loading-bar {
+                animation: none;
+                width: 30%;
+                left: 35%;
+                transform: none;
+            }
         }
         /* Estilo para o botão de skybox */
         .skybox-button {
@@ -1716,7 +1721,7 @@
             position: fixed;
             left: 0;
             top: 0;
-            z-index: 1200;
+            z-index: 1950;
             pointer-events: none;
             background: none;
             border: none;
@@ -2551,21 +2556,21 @@
      } catch (e) {}
    </script>
 
-<!-- Tela de entrada: skybox ao fundo, barra de carregamento dentro do botão ENTER -->
+<!-- Tela de entrada: skybox ao fundo; entrada por clique na cabeça -->
 <div id="start-screen" class="start-screen" aria-hidden="true">
     <div class="start-screen-inner">
         <h1 class="start-title">
-            <span class="start-kicker" data-i18n="ui.startKicker">Portfólio</span>
             <span class="start-title-name">João</span>
             <span class="start-title-last">Nunez</span>
-            <span class="start-title-role" data-i18n="ui.titleRole">| designer multimídia</span>
+            <span class="start-title-role" data-i18n="ui.titleRole">| interactive designer</span>
         </h1>
-        <button type="button" id="startEnterButton" class="start-enter" disabled aria-busy="true">
-            <span class="start-loading" id="startLoading" aria-hidden="false">
+        <div class="start-screen-meta" id="startLoading" aria-busy="true" aria-live="polite">
+            <p class="start-loading-label" id="startLoadingLabel" data-i18n="ui.startLoadingLabel">carregando…</p>
+            <div class="start-loading is-indeterminate" id="startLoadingTrack">
                 <span class="start-loading-bar" id="startLoadingBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></span>
-            </span>
-            <span class="start-enter-label" data-i18n="ui.startEnter">ENTER</span>
-        </button>
+            </div>
+            <p class="start-loading-pct" id="startLoadingPct">0%</p>
+        </div>
     </div>
 </div>
 
@@ -2590,7 +2595,6 @@
        <h1 class="lite-title">
          <span class="lite-title-top">João</span>
          <span class="lite-title-right">Nunez</span>
-         <span class="lite-title-role" data-i18n="ui.titleRole">| designer multimídia</span>
        </h1>
        <div class="header-actions">
          <nav class="header-content-nav" data-i18n-attr="aria-label:ui.contentNav">
@@ -4116,34 +4120,58 @@
         
         var loadingBar = null;
         var loadingBarWrap = null;
+        var loadingBarTrack = null;
+        var loadingBarLabel = null;
+        var loadingBarPct = null;
         // Valor exibido na barra, interpolado para não saltar quando o
         // modelo vem do cache (progresso chega de uma vez só).
         var _barDisplay = { value: 0 };
+        var _loadingIndeterminate = true;
+        var _loadingCompleted = false;
+        var _loadingHideTimer = null;
 
         function bindStartLoadingBar() {
             if (!loadingBar) loadingBar = document.getElementById('startLoadingBar');
             if (!loadingBarWrap) loadingBarWrap = document.getElementById('startLoading');
+            if (!loadingBarTrack) loadingBarTrack = document.getElementById('startLoadingTrack');
+            if (!loadingBarLabel) loadingBarLabel = document.getElementById('startLoadingLabel');
+            if (!loadingBarPct) loadingBarPct = document.getElementById('startLoadingPct');
+        }
+
+        function setLoadingIndeterminate(on) {
+            _loadingIndeterminate = !!on;
+            bindStartLoadingBar();
+            if (!loadingBarTrack) return;
+            if (on) loadingBarTrack.classList.add('is-indeterminate');
+            else loadingBarTrack.classList.remove('is-indeterminate');
         }
 
         function renderLoadingBar() {
             if (!loadingBar) return;
             var pct = _barDisplay.value;
-            loadingBar.style.width = pct.toFixed(2) + '%';
-            loadingBar.setAttribute('aria-valuenow', String(Math.round(pct)));
+            var rounded = Math.round(pct);
+            if (!_loadingIndeterminate) {
+                loadingBar.style.width = pct.toFixed(2) + '%';
+                loadingBar.style.transform = '';
+            }
+            loadingBar.setAttribute('aria-valuenow', String(rounded));
+            if (loadingBarPct) loadingBarPct.textContent = rounded + '%';
         }
 
         // Função para atualizar progresso total
         function updateLoadingProgress() {
-            // Pesos: Modelo 70%, Skybox 20%, Firestore 10%
             loadingProgress.total = loadingProgress.model;
-            
+
             if (loadingBar) {
-                var displayPercent = Math.min(loadingProgress.total, 99); // Máximo 99% até tudo carregar
-                if (displayPercent <= _barDisplay.value) return; // a barra nunca volta
+                if (_loadingIndeterminate && loadingProgress.model > 0.5) {
+                    setLoadingIndeterminate(false);
+                }
+                var displayPercent = Math.min(loadingProgress.total, 99);
+                if (displayPercent <= _barDisplay.value) return;
                 if (typeof gsap !== 'undefined') {
                     gsap.to(_barDisplay, {
                         value: displayPercent,
-                        duration: 0.6,
+                        duration: 0.55,
                         ease: 'power2.out',
                         overwrite: true,
                         onUpdate: renderLoadingBar
@@ -4160,24 +4188,115 @@
             loadingProgress[component] = 100;
             updateLoadingProgress();
             
-            // Verificar se tudo está completo
             if (loadingProgress.model === 100) {
                 completeLoading();
             }
         }
-        
-        // Função para completar loading
-        function completeLoading() {
-            if (typeof gsap !== 'undefined') gsap.killTweensOf(_barDisplay);
-            _barDisplay.value = 100;
-            renderLoadingBar();
 
-            if (startScreenPending()) {
+        function playStartTitleEntrance() {
+            var title = document.querySelector('#start-screen .start-title');
+            if (!title || title.classList.contains('is-revealed')) return;
+            title.classList.add('is-revealed');
+
+            var name = title.querySelector('.start-title-name');
+            var last = title.querySelector('.start-title-last');
+            var role = title.querySelector('.start-title-role');
+            var parts = [name, last, role].filter(Boolean);
+
+            if (typeof gsap === 'undefined') {
+                parts.forEach(function (el) {
+                    el.style.opacity = '1';
+                    el.style.transform = 'none';
+                });
+                return;
+            }
+
+            gsap.killTweensOf(parts);
+            gsap.set(parts, { opacity: 0, y: -14 });
+            gsap.to(parts, {
+                opacity: 1,
+                y: 0,
+                duration: 0.7,
+                stagger: 0.1,
+                ease: 'power3.out',
+                clearProps: 'transform'
+            });
+        }
+
+        function finishStartLoadingReveal() {
+            if (startScreenPending() || startScreenActive) {
                 setStartScreenReady(!!model || headModelFailed);
-                if (loadingBarWrap) loadingBarWrap.classList.add('is-complete');
+                if (model) {
+                    model.visible = true;
+                    camera.position.set(0, 0, 5.8);
+                    if (controls) controls.target.set(0, 0, 0);
+                }
+                playStartTitleEntrance();
+                showHeadChatBubble();
             } else {
                 if (model) model.visible = true;
                 showHeadChatBubble();
+            }
+            scheduleDeferredBootAssets();
+        }
+
+        // Assets que competiam com o GLB na 1ª visita: só depois da cabeça pronta.
+        var _deferredBootScheduled = false;
+        function scheduleDeferredBootAssets() {
+            if (_deferredBootScheduled) return;
+            _deferredBootScheduled = true;
+
+            if (renderer) {
+                renderer.setPixelRatio(getRenderPixelRatio(_lowPowerGpu));
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            restartSkyboxChannelCycle();
+
+            var runHdr = function () {
+                if (typeof loadHDREnvironment === 'function') loadHDREnvironment();
+            };
+            if (typeof requestIdleCallback === 'function') {
+                requestIdleCallback(runHdr, { timeout: 2800 });
+            } else {
+                setTimeout(runHdr, 900);
+            }
+
+            setTimeout(function () {
+                if (typeof listenToProjects === 'function') listenToProjects();
+            }, 450);
+        }
+        
+        // Função para completar loading
+        function completeLoading() {
+            if (_loadingCompleted) return;
+            _loadingCompleted = true;
+            bindStartLoadingBar();
+            setLoadingIndeterminate(false);
+
+            if (typeof gsap !== 'undefined') gsap.killTweensOf(_barDisplay);
+
+            var afterFill = function () {
+                if (_loadingHideTimer) clearTimeout(_loadingHideTimer);
+                _loadingHideTimer = setTimeout(function () {
+                    hideStartLoadingBar();
+                    finishStartLoadingReveal();
+                }, 220);
+            };
+
+            if (typeof gsap !== 'undefined') {
+                gsap.to(_barDisplay, {
+                    value: 100,
+                    duration: 0.32,
+                    ease: 'power2.out',
+                    overwrite: true,
+                    onUpdate: renderLoadingBar,
+                    onComplete: afterFill
+                });
+            } else {
+                _barDisplay.value = 100;
+                renderLoadingBar();
+                afterFill();
             }
         }
 	  
@@ -4204,12 +4323,12 @@
         var skyCycleTimer = null;
         var SKYBOX_CYCLE_MS = 60000;
         // Na tela de entrada o visitante fica pouco tempo: troca de canal mais rápida.
-        var START_SKYBOX_CYCLE_MS = 3500;
+        var START_SKYBOX_CYCLE_MS = 1800;
         // Rotação lenta do fundo, usada só na tela de entrada (rad/s).
-        var START_SKY_SPIN = 0.014;
+        var START_SKY_SPIN = 0.022;
         // Crossfade entre canais: mais curto na tela de entrada, original dentro do site.
         var SKY_ZAP_DURATION = 1.15;
-        var START_SKY_ZAP_DURATION = 0.55;
+        var START_SKY_ZAP_DURATION = 0.38;
 
         function currentSkyCycleMs() {
             return startScreenActive ? START_SKYBOX_CYCLE_MS : SKYBOX_CYCLE_MS;
@@ -4363,8 +4482,8 @@
 
         function startSkyboxChannelCycle() {
             if (skyCycleTimer || skyboxes.length < 2) return;
-            // Na tela de entrada o segundo cubemap compete com o GLB e o HDR.
-            if (startScreenActive || startScreenPending()) return;
+            // Só após o GLB pronto: Rainbow competia com o modelo na 1ª visita.
+            if (!_loadingCompleted) return;
             skyCycleTimer = setInterval(function () {
                 cycleSkyboxChannel();
             }, currentSkyCycleMs());
@@ -4376,13 +4495,16 @@
             if (next === currentSkyIndex && skyboxes.length > 1) {
                 next = (next + 1) % skyboxes.length;
             }
+            // Durante o boot: força só o primeiro canal (Desert Dawn).
+            if (!_loadingCompleted) next = 0;
             var isFirst = currentSkyIndex < 0;
+            if (!isFirst && !_loadingCompleted) return;
             loadSkyboxTexture(next).then(function (texture) {
                 currentSkyIndex = next;
                 applyWorldSkybox(texture, !isFirst);
                 if (isFirst) onEnvLoadComplete();
                 startSkyboxChannelCycle();
-                if (!startScreenPending()) {
+                if (_loadingCompleted) {
                     var lookahead = (next + 1) % skyboxes.length;
                     loadSkyboxTexture(lookahead).catch(function () {});
                 }
@@ -4412,7 +4534,10 @@
         }
 
         // Função para carregar ambiente HDR (apenas iluminação, fundo vem do cubemap)
+        var _hdrLoadStarted = false;
         function loadHDREnvironment() {
+            if (_hdrLoadStarted) return;
+            _hdrLoadStarted = true;
             var hdrTimeout = setTimeout(function() {
                 if (typeof loadingProgress !== 'undefined' && loadingProgress.skybox < 100) {
                     onEnvLoadComplete();
@@ -4519,8 +4644,13 @@
                             }
                         }
                     });
-                    // Fora de cena até dispensar a start page ou terminar a pausa de transição.
-                    model.visible = !startScreenPending() && !startScreenTransitioning && !pendingHeadReveal;
+                    // Cabeça só aparece com a start revelada (após 100%).
+                    var onStartBoot = startScreenPending() || startScreenActive;
+                    model.visible = !onStartBoot;
+                    if (onStartBoot) {
+                        camera.position.set(0, 0, 5.8);
+                        if (controls) controls.target.set(0, 0, 0);
+                    }
                     scene.add(model);
                     
                     // Hitbox invisível para detectar clique na cabeça (SkinnedMesh não suporta raycast nesta versão do Three.js)
@@ -4547,11 +4677,9 @@
                         mixer.clipAction(clip).play();
                     });
 
-                    if (startScreenActive) {
-                        setStartScreenReady(true);
-                    } else if (!startScreenPending()) {
+                    if (!(startScreenActive || startScreenPending())) {
                         if (pendingHeadReveal) {
-                            playSceneEntryAnimation();
+                            dismissStartAndRevealProjects();
                         } else if (!startScreenTransitioning) {
                             animateCameraToPosition(0, 0, 5.8);
                         }
@@ -4569,7 +4697,20 @@
                     console.error(error);
                     // Falhou o GLB: libera a entrada mesmo sem cabeça, para não travar o visitante.
                     headModelFailed = true;
+                    bindStartLoadingBar();
+                    setLoadingIndeterminate(false);
+                    if (loadingBarWrap) loadingBarWrap.classList.add('is-error');
                     if (loadingBar) loadingBar.classList.add('is-error');
+                    if (loadingBarLabel) {
+                        var errMsg = 'falha ao carregar';
+                        try {
+                            if (window.I18n && typeof window.I18n.t === 'function') {
+                                errMsg = window.I18n.t('ui.startLoadingError') || errMsg;
+                            }
+                        } catch (e) {}
+                        loadingBarLabel.textContent = errMsg;
+                    }
+                    if (loadingBarPct) loadingBarPct.textContent = '';
                     if (startScreenActive) setStartScreenReady(true);
                     completeLoading();
                 }
@@ -4610,7 +4751,8 @@
                 powerPreference: 'high-performance',
                 stencil: false
             });
-            renderer.setPixelRatio(getRenderPixelRatio(_lowPowerGpu));
+            // Durante o load: 1× — menos GPU enquanto o GLB baixa/parseia.
+            renderer.setPixelRatio(1);
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.shadowMap.enabled = false;
             renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -4643,14 +4785,9 @@
                 total: 0
             };
             
-            // Ambiente antes do modelo: o cubemap é leve e já dá imagem na tela
-            // enquanto o GLB (pesado) continua baixando em segundo plano.
+            // Fundo leve + modelo; HDR/Firestore/ciclo Rainbow só após a cabeça pronta.
             loadSkyboxBackground();
             addModel();
-            // HDR gera PMREM na GPU: espera o primeiro fundo para não congelar a entrada.
-            setTimeout(function () {
-                loadHDREnvironment();
-            }, 400);
 
             if (startScreenPending()) {
                 showStartScreen();
@@ -4663,11 +4800,6 @@
                 }
             }, 20000);
             
-            // Firestore depois (não bloqueia visual)
-            setTimeout(function() {
-                listenToProjects();
-            }, 100);
-            
             animate();
         }
 	  
@@ -4675,13 +4807,6 @@ function updateHeadChatBubble() {
     var el = _hintEl || document.querySelector('.initial-notification');
     _hintEl = el;
     if (!el || headClicked || !headHitbox || !camera) return;
-    if (startScreenActive) {
-        if (_hintDomVisible !== false) {
-            el.style.visibility = 'hidden';
-            _hintDomVisible = false;
-        }
-        return;
-    }
     if (!_hintWorld) {
         _hintWorld = new THREE.Vector3();
         _hintRight = new THREE.Vector3();
@@ -4796,8 +4921,7 @@ function queueHeadChatBubble(el, bubble, delay) {
 
 function showHeadChatBubble() {
     if (headClicked) return;
-    // Sem cabeça em cena o balão não teria a que apontar.
-    if (startScreenPending() || !headHitbox) return;
+    if (!headHitbox) return;
     var el = document.querySelector('.initial-notification');
     if (!el || _hintSequenceStarted) return;
     _hintSequenceStarted = true;
@@ -4825,15 +4949,19 @@ function showHeadChatBubble() {
 }
 
 // ---------- TELA DE ENTRADA (antes do primeiro estado) ----------
-// O ENTER só libera com o GLB em memória: sem ele não haveria cabeça para revelar.
+// A cena só libera com o GLB em memória: sem ele não haveria cabeça para revelar.
+function hideStartLoadingBar() {
+    bindStartLoadingBar();
+    if (!loadingBarWrap) return;
+    loadingBarWrap.classList.add('is-complete');
+    loadingBarWrap.setAttribute('aria-hidden', 'true');
+    loadingBarWrap.setAttribute('aria-busy', 'false');
+}
+
 function setStartScreenReady(ready) {
     startEntryAllowed = !!ready;
-    var btn = document.getElementById('startEnterButton');
-    if (btn) {
-        btn.disabled = !ready;
-        btn.setAttribute('aria-busy', ready ? 'false' : 'true');
-    }
-    if (ready && startScreenActive && btn) btn.focus({ preventScroll: true });
+    bindStartLoadingBar();
+    if (loadingBarWrap) loadingBarWrap.setAttribute('aria-busy', ready ? 'false' : 'true');
 }
 
 function showStartScreen() {
@@ -4847,6 +4975,7 @@ function showStartScreen() {
         return;
     }
     startScreenActive = true;
+    if (controls) controls.enabled = false;
     el.classList.add('is-visible');
     el.setAttribute('aria-hidden', 'false');
     if (typeof gsap !== 'undefined') {
@@ -4856,7 +4985,15 @@ function showStartScreen() {
     }
     bindStartLoadingBar();
     restartSkyboxChannelCycle();
-    setStartScreenReady(!!model || headModelFailed);
+    setStartScreenReady(false);
+    if (model || headModelFailed) {
+        // Cache: completa o fluxo (barra some + nome entra + cabeça).
+        if (!_loadingCompleted) completeLoading();
+        else {
+            hideStartLoadingBar();
+            finishStartLoadingReveal();
+        }
+    }
 }
 
 function hideStartOverlay() {
@@ -4864,7 +5001,6 @@ function hideStartOverlay() {
     if (!el) return;
     var inner = el.querySelector('.start-screen-inner');
     var title = inner && inner.querySelector('.start-title');
-    var btn = document.getElementById('startEnterButton');
 
     el.setAttribute('aria-hidden', 'true');
     el.classList.remove('is-visible');
@@ -4872,93 +5008,80 @@ function hideStartOverlay() {
         gsap.set(el, { clearProps: 'opacity,pointerEvents' });
         if (inner) gsap.set(inner, { clearProps: 'opacity,transform' });
         if (title) gsap.set(title, { clearProps: 'opacity,transform' });
-        if (btn) gsap.set(btn, { clearProps: 'opacity,transform' });
     }
 }
 
-// Entrada da cena: cabeça e câmera no mesmo ritmo — avanço suave em profundidade.
-function playSceneEntryAnimation() {
-    if (!model) return false;
+// Clique na cabeça: esconde a start e revela os projetos.
+function dismissStartAndRevealProjects() {
+    if (headClicked) return;
 
     pendingHeadReveal = false;
     startScreenTransitioning = false;
-    if (headEntryBaseY === null) headEntryBaseY = model.position.y;
+    startScreenActive = false;
+    startScreenDismissed = true;
+    startEntryAnimating = false;
 
-    model.visible = true;
+    if (model) model.visible = true;
 
-    if (typeof gsap === 'undefined') {
-        model.position.set(0, headEntryBaseY, 0);
-        model.rotation.y = 0;
-        model.scale.set(1.2, 1.2, 1.2);
-        setTimeout(showHeadChatBubble, 500);
-        return true;
+    hideStartOverlay();
+    restartSkyboxChannelCycle();
+    playFirstRevealFromEntry();
+}
+
+function playFirstRevealFromEntry() {
+    if (headClicked) return;
+
+    revealCubesIfNeeded();
+
+    if (typeof gsap !== 'undefined') {
+        gsap.killTweensOf(camera.position);
+        gsap.killTweensOf(camera.quaternion);
+        if (controls) gsap.killTweensOf(controls.target);
     }
-
-    gsap.killTweensOf(model.scale);
-    gsap.killTweensOf(model.position);
-    gsap.killTweensOf(model.rotation);
-    gsap.killTweensOf(camera.position);
-
-    model.position.set(0, headEntryBaseY, -0.58);
-    model.rotation.y = -0.09;
-    model.scale.set(0.78, 0.78, 0.78);
-
     if (controls) {
         controls.enabled = false;
-        controls.minDistance = 4.6;
+        controls.minDistance = 6.5;
+        controls.maxDistance = 8;
+        controls.target.set(0, 0, 0);
     }
 
-    var entryTl = gsap.timeline({
+    if (typeof gsap === 'undefined' || !initialCameraPosition) {
+        if (initialCameraPosition) {
+            camera.position.copy(initialCameraPosition);
+            camera.lookAt(0, 0, 0);
+        }
+        if (controls) {
+            controls.enabled = true;
+            controls.update();
+        }
+        return;
+    }
+
+    gsap.to(camera.position, {
+        x: initialCameraPosition.x,
+        y: initialCameraPosition.y,
+        z: initialCameraPosition.z,
+        duration: 1.15,
+        ease: 'power2.inOut',
+        onUpdate: function () {
+            camera.lookAt(0, 0, 0);
+        },
         onComplete: function () {
             if (controls) {
-                controls.minDistance = 5.7;
+                controls.target.set(0, 0, 0);
                 controls.enabled = true;
                 controls.update();
             }
         }
     });
-
-    entryTl.to(model.position, {
-        z: 0,
-        duration: 0.9,
-        ease: 'power3.out'
-    }, 0);
-    entryTl.to(model.rotation, {
-        y: 0,
-        duration: 0.9,
-        ease: 'power3.out'
-    }, 0);
-    entryTl.to(model.scale, {
-        x: 1.2,
-        y: 1.2,
-        z: 1.2,
-        duration: 0.9,
-        ease: 'power3.out'
-    }, 0);
-    entryTl.to(camera.position, {
-        x: 0,
-        y: 0,
-        z: 5.8,
-        duration: 0.9,
-        ease: 'power3.out',
-        onUpdate: function () {
-            if (controls) controls.target.set(0, 0, 0);
-        }
-    }, 0);
-    entryTl.add(showHeadChatBubble, 0.68);
-
-    return true;
 }
 
 function beginSceneEntry() {
-    if (!playSceneEntryAnimation()) {
-        pendingHeadReveal = true;
-    }
-    startEntryAnimating = false;
+    dismissStartAndRevealProjects();
 }
 
 function enterSite() {
-    if (!startScreenActive || !startEntryAllowed || startEntryAnimating) return;
+    if (!startScreenActive || !startEntryAllowed || startEntryAnimating || headClicked) return;
     startEntryAnimating = true;
     startScreenActive = false;
     startScreenDismissed = true;
@@ -4966,46 +5089,43 @@ function enterSite() {
 
     var el = document.getElementById('start-screen');
     var inner = el && el.querySelector('.start-screen-inner');
-    var title = inner && inner.querySelector('.start-title');
-    var btn = document.getElementById('startEnterButton');
 
     restartSkyboxChannelCycle();
 
-    var ENTRY_SCENE_AT = 0.32;
+    var ENTRY_SCENE_AT = 0.28;
 
     if (typeof gsap !== 'undefined' && el) {
-        if (btn) btn.disabled = true;
         gsap.set(el, { pointerEvents: 'none' });
 
-        var tl = gsap.timeline();
+        var tl = gsap.timeline({
+            onComplete: function () {
+                startEntryAnimating = false;
+            }
+        });
 
-        if (btn) {
-            tl.to(btn, {
+        if (inner) {
+            tl.to(inner, {
                 opacity: 0,
-                y: 6,
-                duration: 0.14,
+                y: 18,
+                duration: 0.28,
                 ease: 'power2.in'
             }, 0);
-        }
-        if (title) {
-            tl.to(title, {
-                opacity: 0,
-                y: -14,
-                scale: 0.98,
-                duration: 0.2,
-                ease: 'power2.in'
-            }, 0.02);
         }
         tl.to(el, {
             opacity: 0,
             duration: 0.22,
             ease: 'power2.inOut'
         }, 0.1);
-        tl.add(hideStartOverlay, ENTRY_SCENE_AT);
-        tl.add(beginSceneEntry, ENTRY_SCENE_AT);
+        tl.add(function () {
+            hideStartOverlay();
+            playFirstRevealFromEntry();
+            startScreenTransitioning = false;
+        }, ENTRY_SCENE_AT);
     } else {
         hideStartOverlay();
-        setTimeout(beginSceneEntry, ENTRY_SCENE_AT * 1000);
+        playFirstRevealFromEntry();
+        startScreenTransitioning = false;
+        startEntryAnimating = false;
     }
 }
 
@@ -5054,6 +5174,12 @@ function revealCubesIfNeeded(options) {
 }
 
 function handleHeadClick() {
+    // Na tela de entrada: mesmo efeito do ENTER (nome some + projetos aparecem).
+    if (startScreenActive && !headClicked) {
+        if (startEntryAllowed && !startEntryAnimating) enterSite();
+        return;
+    }
+
     var firstReveal = !headClicked;
     revealCubesIfNeeded();
 
@@ -5890,11 +6016,11 @@ function clearCubeHoverVisual(cube) {
         cube.userData.hoverRestore = null;
     }
     if (cube.userData && cube.userData.hoverLight) {
-        if (typeof gsap !== 'undefined') {
-            gsap.to(cube.userData.hoverLight, { intensity: 0, duration: 0.22 });
-        } else {
-            cube.userData.hoverLight.intensity = 0;
-        }
+        try {
+            cube.remove(cube.userData.hoverLight);
+            cube.userData.hoverLight.dispose();
+        } catch (e) {}
+        cube.userData.hoverLight = null;
     }
     if (cube.userData) cube.userData.hovered = false;
     if (cube.userData && !cube.userData.loadingPulse && typeof gsap !== 'undefined') {
@@ -5921,16 +6047,6 @@ function applyCubeHoverVisual(cube) {
         if (mat.emissiveIntensity !== undefined) mat.emissiveIntensity = 0.12;
         if (mat.envMapIntensity !== undefined) mat.envMapIntensity = (mat.envMapIntensity || 1.7) * 1.28;
     });
-    if (!cube.userData.hoverLight) {
-        cube.userData.hoverLight = new THREE.PointLight(0x2f78c8, 0, 3.4);
-        cube.userData.hoverLight.position.set(0.35, 0.45, 0.7);
-        cube.add(cube.userData.hoverLight);
-    }
-    if (typeof gsap !== 'undefined') {
-        gsap.to(cube.userData.hoverLight, { intensity: 1.35, duration: 0.22 });
-    } else {
-        cube.userData.hoverLight.intensity = 1.35;
-    }
     if (!cube.userData.loadingPulse && typeof gsap !== 'undefined' && cube.scale.x > 0.7) {
         gsap.killTweensOf(cube.scale);
         cube.userData.hoverTween = gsap.to(cube.scale, {
@@ -5995,6 +6111,15 @@ function positionCubeTooltip(event) {
 function processPointerRaycast(eventLike) {
     if (startScreenActive) {
         clearCubeHoverTooltip();
+        // Cursor de pointer na cabeça durante a start (clique = ENTER).
+        if (!headClicked && headHitbox && camera) {
+            mouse.x = (pointerClientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(pointerClientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            setCubePointerCursor(raycaster.intersectObject(headHitbox, false).length > 0);
+        } else {
+            setCubePointerCursor(false);
+        }
         return;
     }
     var panel = document.getElementById('project-panel');
@@ -6042,6 +6167,13 @@ function processPointerRaycast(eventLike) {
 function onDocumentMouseMove(event) {
     if (startScreenActive) {
         clearCubeHoverTooltip();
+        if (!isCanvasPointerEvent(event)) {
+            setCubePointerCursor(false);
+            return;
+        }
+        pointerClientX = event.clientX;
+        pointerClientY = event.clientY;
+        pointerRayDirty = true;
         return;
     }
     if (!isCanvasPointerEvent(event)) {
@@ -6064,7 +6196,19 @@ function onDocumentMouseMove(event) {
         }
 	  
 	  function onDocumentMouseDown(event) {
-    if (startScreenActive) return;
+    if (startScreenActive) {
+        // Na start: só clique na cabeça (mesmo que ENTER). Cubos ainda não.
+        if (!isCanvasPointerEvent(event)) return;
+        if (!headHitbox || headClicked || !startEntryAllowed || startEntryAnimating) return;
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+        if (raycaster.intersectObject(headHitbox, false).length > 0) {
+            event.preventDefault();
+            handleHeadClick();
+        }
+        return;
+    }
     if (!isCanvasPointerEvent(event)) return;
     var panel = document.getElementById('project-panel');
     if (panel && panel.classList.contains('visible')) return;
@@ -7389,12 +7533,6 @@ document.addEventListener('keydown', function(event) {
 
 <script>
     (function () {
-        var startBtn = document.getElementById('startEnterButton');
-        if (startBtn) {
-            startBtn.addEventListener('click', function () {
-                if (typeof enterSite === 'function') enterSite();
-            });
-        }
         document.addEventListener('keydown', function (event) {
             if (event.key !== 'Enter') return;
             if (typeof startScreenActive === 'undefined' || !startScreenActive) return;
@@ -7420,16 +7558,8 @@ document.addEventListener('keydown', function(event) {
                 <span></span><span></span><span></span>
             </div>
             <p class="head-hint-msg">
-                <span class="head-hint-title" data-i18n="immersive.headIntro">Sou o João!</span>
-            </p>
-        </div>
-        <div class="head-hint">
-            <div class="head-hint-typing" aria-hidden="true">
-                <span></span><span></span><span></span>
-            </div>
-            <p class="head-hint-msg">
-                <span class="head-hint-title" data-i18n="immersive.headHint">Clique na cabeça</span>
-                <span class="head-hint-sub" data-i18n="immersive.headHintSub">para revelar os projetos</span>
+                <span class="head-hint-title" data-i18n="immersive.headHint">Clica na cabeça</span>
+                <span class="head-hint-sub" data-i18n="immersive.headHintSub">pra ver os meus projetos</span>
             </p>
         </div>
         <div class="head-hint" data-hint-followup="1">

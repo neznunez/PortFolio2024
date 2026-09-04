@@ -1,9 +1,13 @@
 {
   "ui": {
-    "titleRole": "| designer multimídia",
+    "titleRole": "| interactive designer",
+    "startRole": "Interactive Designer",
+    "startWorks": "Portfolio of Selected Works",
     "startKicker": "Portfólio",
     "startEnter": "ENTRAR",
     "startLoading": "preparando a cena… {{p}}%",
+    "startLoadingLabel": "carregando…",
+    "startLoadingError": "falha ao carregar",
     "cv": "Curriculum",
     "projects": "Projetos",
     "immersive": "Imersivo",
@@ -189,7 +193,7 @@
     "headGreeting": "Oi, tudo bem?",
     "headIntro": "Sou o João!",
     "headHint": "Clica na cabeça",
-    "headHintSub": "pra ver os projetos",
+    "headHintSub": "pra ver os meus projetos",
     "headNudge1": "Ainda por aí?",
     "back": "← Voltar",
     "createProject": "Criar Novo Projeto",
