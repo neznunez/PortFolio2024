@@ -2192,6 +2192,42 @@
         #project-panel .carousel-slide.has-poster.is-loading video.slide-media {
             opacity: 1;
         }
+        #project-panel .carousel-slide .panel-media-play {
+            appearance: none;
+            -webkit-appearance: none;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            z-index: 4;
+            width: 58px;
+            height: 58px;
+            padding: 0 0 0 4px;
+            transform: translate(-50%, -50%);
+            border: 1px solid rgba(255, 255, 255, 0.72);
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.58);
+            color: #fff;
+            font-size: 21px;
+            line-height: 1;
+            cursor: pointer;
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.42);
+            backdrop-filter: blur(8px);
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+        #project-panel .carousel-slide .panel-media-play:hover,
+        #project-panel .carousel-slide .panel-media-play:focus-visible {
+            transform: translate(-50%, -50%) scale(1.08);
+            background: rgba(255, 255, 255, 0.92);
+            color: #0b0b0d;
+            outline: none;
+        }
+        #project-panel .carousel-slide .panel-media-play.is-hidden {
+            display: none;
+        }
+        #project-panel .carousel-slide .panel-youtube-poster.is-hidden,
+        #project-panel .carousel-slide iframe.slide-media:not([src]) {
+            display: none;
+        }
         #project-panel #panel-carousel-loading-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -7530,6 +7566,10 @@ document.addEventListener('keydown', function(event) {
         if (!slide) return;
         var v = slide.querySelector('video.slide-media');
         if (!v) return;
+        if (v.getAttribute('data-user-started') !== '1') {
+            _panelSetSlideLoading(slide, false);
+            return;
+        }
         var pendingSrc = v.getAttribute('data-src');
         var justAttached = false;
         if (pendingSrc && !v.getAttribute('src')) {
@@ -7568,14 +7608,13 @@ document.addEventListener('keydown', function(event) {
             if (!video) return;
             video.pause();
             video.style.opacity = '';
-            // Vizinhos não recebem src (só poster via _panelPrefetchNeighborCovers).
-            var currentSrc = video.getAttribute('src');
-            if (currentSrc) {
-                if (!video.getAttribute('data-src')) video.setAttribute('data-src', currentSrc);
-                video.removeAttribute('src');
-                try { video.load(); } catch (e) {}
+            // Se o visitante já reproduziu, mantém o buffer enquanto o painel estiver aberto.
+            // Vídeos ainda não reproduzidos continuam sem src e sem download.
+            if (!video.getAttribute('src')) video.preload = 'none';
+            var playBtn = s.querySelector('.panel-media-play');
+            if (playBtn && video.getAttribute('data-user-started') !== '1') {
+                playBtn.classList.remove('is-hidden');
             }
-            video.preload = 'none';
         });
     }
 
@@ -7590,6 +7629,11 @@ document.addEventListener('keydown', function(event) {
                 if (!iframe.getAttribute('data-src')) iframe.setAttribute('data-src', currentSrc);
                 iframe.removeAttribute('src');
             }
+            iframe.removeAttribute('data-user-started');
+            var poster = s.querySelector('.panel-youtube-poster');
+            if (poster) poster.classList.remove('is-hidden');
+            var playBtn = s.querySelector('.panel-media-play');
+            if (playBtn) playBtn.classList.remove('is-hidden');
             _panelSetSlideLoading(s, false);
         });
     }
@@ -7598,11 +7642,48 @@ document.addEventListener('keydown', function(event) {
         if (!slide) return;
         var iframe = slide.querySelector('iframe.slide-media');
         if (!iframe) return;
+        if (iframe.getAttribute('data-user-started') !== '1') {
+            _panelSetSlideLoading(slide, false);
+            return;
+        }
         var pendingSrc = iframe.getAttribute('data-src');
         if (pendingSrc && !iframe.getAttribute('src')) {
             iframe.src = pendingSrc;
         }
         _panelSetSlideLoading(slide, false);
+    }
+
+    function _panelStartSlideMedia(slide) {
+        if (!slide) return;
+        var playBtn = slide.querySelector('.panel-media-play');
+        var iframe = slide.querySelector('iframe.slide-media');
+        if (iframe) {
+            iframe.setAttribute('data-user-started', '1');
+            var poster = slide.querySelector('.panel-youtube-poster');
+            if (poster) poster.classList.add('is-hidden');
+            if (playBtn) playBtn.classList.add('is-hidden');
+            _panelArmSlideYouTube(slide);
+            return;
+        }
+        var video = slide.querySelector('video.slide-media');
+        if (!video) return;
+        video.setAttribute('data-user-started', '1');
+        if (playBtn) playBtn.classList.add('is-hidden');
+        _panelArmSlideVideos(slide);
+    }
+
+    function _panelAddPlayButton(slide) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'panel-media-play';
+        btn.setAttribute('aria-label', i18nT('ui.playVideo'));
+        btn.textContent = '▶';
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            _panelStartSlideMedia(slide);
+        });
+        slide.appendChild(btn);
     }
 
     function _panelPrefetchNeighborCovers(index) {
@@ -7797,24 +7878,34 @@ document.addEventListener('keydown', function(event) {
                 var isYt = typeof isYouTubeCarouselItem === 'function' && isYouTubeCarouselItem(item);
                 var ytId = item.youtubeId || (typeof parseYouTubeId === 'function' ? parseYouTubeId(url) : null);
                 if (isYt && ytId && typeof youtubeEmbedUrl === 'function') {
-                    var embedUrl = youtubeEmbedUrl(ytId, { autoplay: false, mute: false });
+                    var embedUrl = youtubeEmbedUrl(ytId, { autoplay: true, mute: false });
                     var ytPoster = item.poster || (typeof youtubePosterUrl === 'function' ? youtubePosterUrl(ytId) : '');
                     if (ytPoster) {
                         slide.classList.add('has-poster');
                         _panelWarmUrl(ytPoster, 'image');
+                        var ytPosterImg = document.createElement('img');
+                        ytPosterImg.className = 'slide-media panel-youtube-poster';
+                        ytPosterImg.alt = 'YouTube ' + (idx + 1);
+                        ytPosterImg.decoding = 'async';
+                        if (idx === 0) ytPosterImg.src = mediaUrl(ytPoster);
+                        else {
+                            ytPosterImg.setAttribute('data-src', mediaUrl(ytPoster));
+                            ytPosterImg.loading = 'lazy';
+                        }
+                        slide.appendChild(ytPosterImg);
                     }
                     var iframe = document.createElement('iframe');
                     iframe.className = 'slide-media';
                     iframe.setAttribute('title', 'YouTube ' + (idx + 1));
                     iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
                     iframe.setAttribute('allowfullscreen', '');
-                    iframe.setAttribute('loading', idx === 0 ? 'eager' : 'lazy');
+                    iframe.setAttribute('loading', 'lazy');
                     iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
                     iframe.setAttribute('data-src', embedUrl);
-                    if (idx === 0) iframe.src = embedUrl;
                     slide.appendChild(iframe);
+                    _panelAddPlayButton(slide);
                     _panelEnsureSlideLoadingEl(slide);
-                    if (idx === 0) _panelSetSlideLoading(slide, false);
+                    _panelSetSlideLoading(slide, false);
                 } else {
                     var resolvedUrl = mediaUrl(url);
                     var posterUrl = item && item.poster ? mediaUrl(item.poster) : '';
@@ -7831,15 +7922,10 @@ document.addEventListener('keydown', function(event) {
                         slide.classList.add('has-poster');
                         _panelWarmUrl(posterUrl, 'image');
                     }
-                    if (idx === 0) {
-                        video.preload = 'auto';
-                        video.setAttribute('fetchpriority', 'high');
-                        video.src = resolvedUrl;
-                        video.autoplay = true;
-                    }
                     slide.appendChild(video);
+                    _panelAddPlayButton(slide);
                     _panelEnsureSlideLoadingEl(slide);
-                    if (idx === 0) _panelSetSlideLoading(slide, true);
+                    _panelSetSlideLoading(slide, false);
                 }
             } else {
                 var resolvedImg = mediaUrl(url);
@@ -7874,8 +7960,17 @@ document.addEventListener('keydown', function(event) {
         _panelSlides = Array.from(slidesEl.querySelectorAll('.carousel-slide'));
         _panelDots   = Array.from(dotsEl.querySelectorAll('.carousel-dot'));
         if (navEl) navEl.style.display = items.length > 1 ? 'flex' : 'none';
-        _panelCurrentSlide = 0;
-        panelShowSlide(0);
+        var startIndex = 0;
+        for (var startI = 0; startI < items.length; startI++) {
+            var startItem = items[startI];
+            var startType = startItem && startItem.type ? startItem.type : 'image';
+            if (startType !== 'video') {
+                startIndex = startI;
+                break;
+            }
+        }
+        _panelCurrentSlide = startIndex;
+        panelShowSlide(startIndex);
         if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) {
             _panelUpdateCarouselList(items);
             _panelSchedulePosterBackfill(projectId, items);

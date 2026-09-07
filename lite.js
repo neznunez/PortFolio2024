@@ -1655,6 +1655,13 @@
       return item && item.src;
     }) : [];
     activeMediaIndex = 0;
+    // Abre pela primeira imagem quando existe; mantém a ordem real para a navegação.
+    for (var firstImageIndex = 0; firstImageIndex < activeProjectMedia.length; firstImageIndex += 1) {
+      if (activeProjectMedia[firstImageIndex].type !== 'video') {
+        activeMediaIndex = firstImageIndex;
+        break;
+      }
+    }
 
     if (!activeProjectMedia.length) {
       setProjectPreviewLoading(false);
@@ -1720,18 +1727,17 @@
       var ytId =
         targetItem.youtubeId ||
         (typeof window.parseYouTubeId === 'function' ? window.parseYouTubeId(targetSrc) : '');
-      if (youtubeEl && ytId && typeof window.youtubeEmbedUrl === 'function') {
-        youtubeEl.src = window.youtubeEmbedUrl(ytId, { autoplay: false });
-        youtubeEl.classList.add('is-visible');
-      } else {
-        var poster =
-          targetItem.poster ||
-          (ytId && typeof window.youtubePosterUrl === 'function' ? window.youtubePosterUrl(ytId) : '');
-        if (poster) {
-          imageEl.src = poster;
-          imageEl.classList.add('is-visible');
-        }
+      var poster =
+        targetItem.poster ||
+        (ytId && typeof window.youtubePosterUrl === 'function' ? window.youtubePosterUrl(ytId) : '');
+      if (poster) {
+        imageEl.src = poster;
+        imageEl.classList.add('is-visible');
       }
+      if (youtubeEl && ytId && typeof window.youtubeEmbedUrl === 'function') {
+        youtubeEl.dataset.embedSrc = window.youtubeEmbedUrl(ytId, { autoplay: true });
+      }
+      if (playButton) playButton.classList.toggle('is-hidden', !opts.showControls);
       setProjectPreviewLoading(false);
     } else if (targetItem.type === 'video') {
       currentPreviewIsVideo = true;
@@ -1774,6 +1780,7 @@
     if (!yt) return;
     yt.classList.remove('is-visible');
     if (yt.getAttribute('src')) yt.removeAttribute('src');
+    delete yt.dataset.embedSrc;
   }
 
   function clearPreviewVideoSource() {
@@ -2307,6 +2314,16 @@
         item.youtubeId ||
         (typeof window.isYouTubeUrl === 'function' && window.isYouTubeUrl(item.src)))
     ) {
+      var youtubeEl = document.getElementById('project-preview-youtube');
+      var ytId =
+        item.youtubeId ||
+        (typeof window.parseYouTubeId === 'function' ? window.parseYouTubeId(item.src) : '');
+      if (!youtubeEl || !ytId || typeof window.youtubeEmbedUrl !== 'function') return;
+      setProjectPreviewLoading(false);
+      youtubeEl.src = youtubeEl.dataset.embedSrc || window.youtubeEmbedUrl(ytId, { autoplay: true });
+      youtubeEl.classList.add('is-visible');
+      if (imageEl) imageEl.classList.remove('is-visible');
+      if (playButton) playButton.classList.add('is-hidden');
       return;
     }
     var src = item && item.src;

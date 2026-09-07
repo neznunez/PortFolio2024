@@ -9,8 +9,10 @@
  *      node scripts/optimize-videos.js
  * 5) Processar só o mais pesado:
  *      node scripts/optimize-videos.js --apply --max 1
- * 6) Processar todos ≥ 8 MB:
+ * 6) Processar todos ≥ 8 MB (ainda não otimizados):
  *      node scripts/optimize-videos.js --apply --min-mb 8
+ * 7) Reprocessar os URGENTES (≥ 20 MB), mesmo já marcados — usa o original:
+ *      npm run optimize-videos:urgente
  *
  * Não apaga o ficheiro original. Guarda urlOriginal no Firestore.
  */
@@ -31,22 +33,25 @@ var SERVICE_PATHS = [
 var FIREBASE_PROJECT = 'portfolio-neznunez';
 var FIREBASE_API_KEY = 'AIzaSyDSgff-2XhWgAhfzB8U6MjHvpMr61v28so';
 var STORAGE_BUCKET = 'portfolio-neznunez.firebasestorage.app';
+var URGENT_MB = 20;
 
 function parseArgs(argv) {
-  var out = { apply: false, max: Infinity, minMb: 8, only: '', help: false };
+  var out = { apply: false, max: Infinity, minMb: 8, only: '', help: false, urgente: false };
   for (var i = 2; i < argv.length; i++) {
     var a = argv[i];
     if (a === '--apply') out.apply = true;
     else if (a === '--help' || a === '-h') out.help = true;
+    else if (a === '--urgente') out.urgente = true;
     else if (a === '--max') out.max = Number(argv[++i] || 1) || 1;
     else if (a === '--min-mb') out.minMb = Number(argv[++i] || 8) || 8;
     else if (a === '--only') out.only = String(argv[++i] || '').toLowerCase();
   }
+  if (out.urgente) out.minMb = URGENT_MB;
   return out;
 }
 
 function printHelp() {
-  console.log('\nUso:\n  node scripts/optimize-videos.js                 lista (não altera)\n  node scripts/optimize-videos.js --apply --max 1  comprime o mais pesado\n  node scripts/optimize-videos.js --apply --min-mb 8\n  node scripts/optimize-videos.js --apply --only "plasma"\n');
+  console.log('\nUso:\n  node scripts/optimize-videos.js                      lista (não altera)\n  node scripts/optimize-videos.js --apply --max 1       comprime o mais pesado novo\n  node scripts/optimize-videos.js --apply --min-mb 8\n  node scripts/optimize-videos.js --apply --urgente     reprocessa ≥ 20 MB (inclui já otimizados)\n  node scripts/optimize-videos.js --apply --only "plasma"\n');
 }
 
 function fieldVal(f) {
@@ -171,6 +176,7 @@ function findHandBrake() {
 }
 
 function encodeWithHandBrake(cli, inputPath, outputPath) {
+  // maxWidth + maxHeight: encaixa no retângulo 1280×1280 sem aumentar (vertical ou horizontal).
   var args = [
     '-i', inputPath,
     '-o', outputPath,
@@ -178,7 +184,8 @@ function encodeWithHandBrake(cli, inputPath, outputPath) {
     '-q', '23',
     '--encoder-preset', 'medium',
     '--optimize',
-    '-w', '1280',
+    '--maxWidth', '1280',
+    '--maxHeight', '1280',
     '--keep-display-aspect',
     '-B', '96',
     '--aencoder', 'av_aac'
@@ -228,6 +235,7 @@ async function listVideos() {
         idx: idx,
         kind: 'storage',
         url: item.url,
+        urlOriginal: item.urlOriginal || '',
         poster: !!item.poster,
         optimized: !!item.optimized,
         bytes: null
@@ -252,22 +260,42 @@ function priorityLabel(bytes) {
   return 'ok';
 }
 
+function sourceUrl(row) {
+  return row.urlOriginal || row.url;
+}
+
+function guessExt(fileUrl) {
+  try {
+    var p = decodeURIComponent(new URL(fileUrl).pathname);
+    var ext = path.extname(p).toLowerCase();
+    if (/\.(mp4|webm|mov|m4v)$/.test(ext)) return ext;
+  } catch (e) {}
+  return '.mp4';
+}
+
 async function applyOne(admin, hb, row) {
   if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR, { recursive: true });
   var base = safeName(row.title) + '_' + row.idx;
-  var inPath = path.join(TMP_DIR, base + path.extname(new URL(row.url).pathname).replace('%20', ' ') || '.mov');
-  if (!/\.(mp4|webm|mov|m4v)$/i.test(inPath)) inPath += '.mov';
+  var downloadFrom = sourceUrl(row);
+  var inPath = path.join(TMP_DIR, base + guessExt(downloadFrom));
   var outPath = path.join(TMP_DIR, base + '_opt.mp4');
 
-  console.log('\n→ ' + row.title + '  slide ' + (row.idx + 1) + '  ' + fmtMb(row.bytes));
-  console.log('  A descarregar do Storage…');
-  await downloadFile(row.url, inPath);
+  console.log('\n→ ' + row.title + '  slide ' + (row.idx + 1) + '  no site agora: ' + fmtMb(row.bytes));
+  if (row.urlOriginal && row.urlOriginal !== row.url) {
+    console.log('  A descarregar o ORIGINAL (não a versão que ficou maior)…');
+  } else {
+    console.log('  A descarregar do Storage…');
+  }
+  await downloadFile(downloadFrom, inPath);
 
   encodeWithHandBrake(hb, inPath, outPath);
   var newSize = fs.statSync(outPath).size;
-  console.log('  Original ' + fmtMb(row.bytes) + ' → novo ' + fmtMb(newSize));
-  if (newSize >= (row.bytes || Infinity) * 0.95) {
-    console.warn('  Aviso: quase não reduziu. Mesmo assim vou enviar se for MP4 mais web-friendly.');
+  console.log('  Ficheiro fonte → novo ' + fmtMb(newSize) + '  (no site estava ' + fmtMb(row.bytes) + ')');
+  if (row.bytes && newSize >= row.bytes) {
+    console.warn('  Não enviei: o novo não ficou mais leve que o que está no site.');
+    try { fs.unlinkSync(inPath); } catch (e) {}
+    try { fs.unlinkSync(outPath); } catch (e) {}
+    return;
   }
 
   var bucket = admin.storage().bucket();
@@ -293,10 +321,12 @@ async function applyOne(admin, hb, row) {
     var data = snap.data() || {};
     var carousel = Array.isArray(data.carouselItems) ? data.carouselItems.slice() : [];
     var item = carousel[row.idx];
-    if (!item || item.url !== row.url) {
+    if (!item) throw new Error('Slide desapareceu: ' + row.idx);
+    var sameSlide = item.url === row.url || item.url === downloadFrom || item.urlOriginal === row.urlOriginal;
+    if (!sameSlide) {
       throw new Error('O slide mudou entretanto. Interrompi para não gravar no sítio errado.');
     }
-    if (!item.urlOriginal) item.urlOriginal = item.url;
+    if (!item.urlOriginal) item.urlOriginal = item.urlOriginal || downloadFrom || item.url;
     item.url = downloadUrl;
     item.type = 'video';
     item.optimized = true;
@@ -340,15 +370,15 @@ async function main() {
   }
 
   var candidates = storage.filter(function (r) {
-    if (r.optimized) return false;
     if ((r.bytes || 0) < opts.minMb * 1024 * 1024) return false;
+    if (!opts.urgente && r.optimized) return false;
     if (opts.only && String(r.title).toLowerCase().indexOf(opts.only) === -1 && r.id.toLowerCase().indexOf(opts.only) === -1) {
       return false;
     }
     return true;
   }).slice(0, opts.max === Infinity ? undefined : opts.max);
 
-  console.log('\nCandidatos (≥ ' + opts.minMb + ' MB): ' + candidates.length);
+  console.log('\nCandidatos (≥ ' + opts.minMb + ' MB' + (opts.urgente ? ', incluindo já otimizados / urgentes' : '') + '): ' + candidates.length);
 
   if (!opts.apply) {
     printHelp();
