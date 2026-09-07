@@ -65,5 +65,14 @@ node_modules/
 # dotenv environment variables file
 .env
 
+# Chave de serviço Firebase (script local de vídeos)
+secrets/*
+!secrets/.gitkeep
+serviceAccount*.json
+*-firebase-adminsdk-*.json
+
+# Temporários do otimizador de vídeos
+.tmp-videos/
+
 # dataconnect generated files
 .dataconnect

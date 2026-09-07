@@ -6,9 +6,12 @@
     "dev": "vite",
     "start": "vite",
     "preview": "vite preview",
-    "start:win": "node node_modules/vite/bin/vite.js"
+    "start:win": "node node_modules/vite/bin/vite.js",
+    "optimize-videos": "node scripts/optimize-videos.js",
+    "optimize-videos:one": "node scripts/optimize-videos.js --apply --max 1"
   },
   "devDependencies": {
+    "firebase-admin": "^13.10.0",
     "firebase-tools": "^15.28.1",
     "vite": "^6.3.5"
   }
