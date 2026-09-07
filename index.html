@@ -475,8 +475,9 @@
         body.ui-aero .immersive-header .lite-title {
             position: relative;
             z-index: 1;
-            flex: 1 1 auto;
+            flex: 0 1 auto;
             min-width: 0;
+            max-width: min(52%, 640px);
             text-transform: none;
         }
 
@@ -977,6 +978,17 @@
         }
 
         .immersive-header-inner,
+        .immersive-header-handle,
+        .immersive-header-hotzone {
+            pointer-events: none;
+        }
+
+        /* Só os blocos reais (título / ações) capturam clique — o vão do meio passa para a cena 3D. */
+        .immersive-header .lite-title,
+        .immersive-header .header-actions {
+            pointer-events: auto;
+        }
+
         .immersive-header-handle,
         .immersive-header-hotzone {
             pointer-events: auto;
@@ -2454,6 +2466,79 @@
         }
         #project-panel .image-upload-container.visible { display: flex; }
         #project-panel .image-upload-input { display: none; }
+        #project-panel .youtube-url-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            flex-shrink: 0;
+        }
+        #project-panel .youtube-url-input {
+            flex: 1;
+            min-width: 0;
+            appearance: none;
+            -webkit-appearance: none;
+            height: 28px;
+            padding: 4px 10px;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.28);
+            color: #fff;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 10px;
+            letter-spacing: 0.04em;
+        }
+        #project-panel .youtube-url-input::placeholder {
+            color: rgba(255, 255, 255, 0.38);
+        }
+        #project-panel .youtube-url-input:focus-visible {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        #project-panel .youtube-url-btn {
+            flex-shrink: 0;
+            appearance: none;
+            -webkit-appearance: none;
+            height: 28px;
+            padding: 4px 11px;
+            border: 1px solid rgba(255, 255, 255, 0.38);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 9px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        #project-panel .youtube-url-btn:hover {
+            background: rgba(255, 255, 255, 0.92);
+            border-color: rgba(255, 255, 255, 0.92);
+            color: #0b0b0d;
+        }
+        #project-panel .carousel-slide iframe.slide-media {
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            border: 0;
+            background: #000;
+            aspect-ratio: 16 / 9;
+        }
+        #project-panel .carousel-slide.is-contain iframe.slide-media {
+            width: min(100%, calc(100vh * 16 / 9));
+            height: auto;
+            max-height: 100%;
+            box-shadow: 0 18px 64px rgba(0, 0, 0, 0.45);
+        }
+        #project-panel .carousel-slide.is-cover iframe.slide-media {
+            object-fit: cover;
+            width: 100%;
+            height: 100%;
+        }
         #project-panel .upload-limits-hint {
             display: block;
             margin-top: 6px;
@@ -3576,13 +3661,22 @@
             var items = projectData.carouselItems;
             // Se carouselItems existe (mesmo []), é a fonte de verdade — não cair no fallback legado.
             if (Array.isArray(items)) {
+                var fallbackPoster = null;
                 for (var i = 0; i < items.length; i++) {
                     var it = items[i];
-                    if (!it || it.type === 'video') continue;
+                    if (!it) continue;
+                    if (it.type === 'video') {
+                        if (!fallbackPoster) {
+                            var ytId = it.youtubeId || (typeof parseYouTubeId === 'function' ? parseYouTubeId(it.url || '') : null);
+                            var poster = it.poster || (ytId && typeof youtubePosterUrl === 'function' ? youtubePosterUrl(ytId) : '');
+                            if (poster) fallbackPoster = poster;
+                        }
+                        continue;
+                    }
                     var url = (typeof it === 'string') ? it : (it.thumb || it.url);
                     if (url) return [url];
                 }
-                return [];
+                return fallbackPoster ? [fallbackPoster] : [];
             }
             if (Array.isArray(projectData.images) && projectData.images.length) {
                 var first = projectData.images[0];
@@ -4006,9 +4100,10 @@
              const faceImages = prepareFaceImages(imageUrls);
              const firstVideo = carouselItems && carouselItems.length ? (function() {
                  for (var i = 0; i < carouselItems.length; i++) {
-                     if (carouselItems[i] && carouselItems[i].type === 'video' && carouselItems[i].url) {
-                         return carouselItems[i];
-                     }
+                     var cand = carouselItems[i];
+                     if (!cand || cand.type !== 'video' || !cand.url) continue;
+                     if (typeof isYouTubeCarouselItem === 'function' && isYouTubeCarouselItem(cand)) continue;
+                     return cand;
                  }
                  return null;
              }()) : null;
@@ -4229,10 +4324,11 @@
                  const newCarouselItems = (projectData.carouselItems && Array.isArray(projectData.carouselItems)) ? projectData.carouselItems : [];
                  var nextVideo = null;
                  for (var ci = 0; ci < newCarouselItems.length; ci++) {
-                     if (newCarouselItems[ci] && newCarouselItems[ci].type === 'video' && newCarouselItems[ci].url) {
-                         nextVideo = newCarouselItems[ci];
-                         break;
-                     }
+                     var cand = newCarouselItems[ci];
+                     if (!cand || cand.type !== 'video' || !cand.url) continue;
+                     if (typeof isYouTubeCarouselItem === 'function' && isYouTubeCarouselItem(cand)) continue;
+                     nextVideo = cand;
+                     break;
                  }
                  var nextVideoUrl = nextVideo ? nextVideo.url : null;
                  var nextVideoPoster = nextVideo && nextVideo.poster ? nextVideo.poster : null;
@@ -4267,6 +4363,12 @@
             if (!firstVideoUrl) {
             for (var c = 0; c < carouselItems.length; c++) {
                     if (carouselItems[c].type === 'video' && carouselItems[c].url) {
+                        if (typeof isYouTubeCarouselItem === 'function' && isYouTubeCarouselItem(carouselItems[c])) {
+                            if (!firstVideoPoster) {
+                                firstVideoPoster = carouselItems[c].poster || null;
+                            }
+                            continue;
+                        }
                         firstVideoUrl = carouselItems[c].url;
                         firstVideoPoster = carouselItems[c].poster || null;
                         break;
@@ -7340,6 +7442,32 @@ document.addEventListener('keydown', function(event) {
         });
     }
 
+    function _panelUnloadInactiveYouTube(activeIndex) {
+        if (!_panelSlides || !_panelSlides.length) return;
+        _panelSlides.forEach(function(s, i) {
+            if (i === activeIndex) return;
+            var iframe = s.querySelector('iframe.slide-media');
+            if (!iframe) return;
+            var currentSrc = iframe.getAttribute('src');
+            if (currentSrc) {
+                if (!iframe.getAttribute('data-src')) iframe.setAttribute('data-src', currentSrc);
+                iframe.removeAttribute('src');
+            }
+            _panelSetSlideLoading(s, false);
+        });
+    }
+
+    function _panelArmSlideYouTube(slide) {
+        if (!slide) return;
+        var iframe = slide.querySelector('iframe.slide-media');
+        if (!iframe) return;
+        var pendingSrc = iframe.getAttribute('data-src');
+        if (pendingSrc && !iframe.getAttribute('src')) {
+            iframe.src = pendingSrc;
+        }
+        _panelSetSlideLoading(slide, false);
+    }
+
     function _panelPrefetchNeighborCovers(index) {
         if (!_panelSlides || !_panelSlides.length) return;
         [index - 1, index + 1].forEach(function(i) {
@@ -7361,6 +7489,7 @@ document.addEventListener('keydown', function(event) {
         if (!_panelSlides.length || index < 0 || index >= _panelSlides.length) return;
 
         _panelUnloadInactiveVideos(index);
+        _panelUnloadInactiveYouTube(index);
         _panelSlides.forEach(function(s) {
             s.classList.remove('active');
         });
@@ -7368,7 +7497,9 @@ document.addEventListener('keydown', function(event) {
         _panelSlides[index].classList.add('active');
 
         var activeSlide = _panelSlides[index];
-        if (activeSlide.querySelector('video.slide-media')) {
+        if (activeSlide.querySelector('iframe.slide-media')) {
+            _panelArmSlideYouTube(activeSlide);
+        } else if (activeSlide.querySelector('video.slide-media')) {
             _panelArmSlideVideos(activeSlide);
         } else {
             _panelArmSlideImages(activeSlide);
@@ -7487,6 +7618,13 @@ document.addEventListener('keydown', function(event) {
                 try { v.load(); } catch (e) {}
             }
         });
+        Array.prototype.forEach.call(slidesEl.querySelectorAll('iframe.slide-media'), function(iframe) {
+            var currentSrc = iframe.getAttribute('src');
+            if (currentSrc) {
+                if (!iframe.getAttribute('data-src')) iframe.setAttribute('data-src', currentSrc);
+                iframe.removeAttribute('src');
+            }
+        });
     }
 
     // ---------- CARROSSEL (IMAGENS E VÍDEOS) ----------
@@ -7517,31 +7655,53 @@ document.addEventListener('keydown', function(event) {
             var slide = document.createElement('div');
             slide.className = 'carousel-slide ' + (mediaFit === 'cover' ? 'is-cover' : 'is-contain') + (idx === 0 ? ' active' : '');
             if (type === 'video') {
-                var resolvedUrl = mediaUrl(url);
-                var posterUrl = item && item.poster ? mediaUrl(item.poster) : '';
-                var video = document.createElement('video');
-                video.playsInline = true;
-                video.setAttribute('playsinline', '');
-                video.muted = true;
-                video.loop = true;
-                video.className = 'slide-media';
-                video.preload = 'none';
-                video.setAttribute('data-src', resolvedUrl);
-                if (posterUrl) {
-                    video.poster = posterUrl;
-                    slide.classList.add('has-poster');
-                    _panelWarmUrl(posterUrl, 'image');
+                var isYt = typeof isYouTubeCarouselItem === 'function' && isYouTubeCarouselItem(item);
+                var ytId = item.youtubeId || (typeof parseYouTubeId === 'function' ? parseYouTubeId(url) : null);
+                if (isYt && ytId && typeof youtubeEmbedUrl === 'function') {
+                    var embedUrl = youtubeEmbedUrl(ytId, { autoplay: false, mute: false });
+                    var ytPoster = item.poster || (typeof youtubePosterUrl === 'function' ? youtubePosterUrl(ytId) : '');
+                    if (ytPoster) {
+                        slide.classList.add('has-poster');
+                        _panelWarmUrl(ytPoster, 'image');
+                    }
+                    var iframe = document.createElement('iframe');
+                    iframe.className = 'slide-media';
+                    iframe.setAttribute('title', 'YouTube ' + (idx + 1));
+                    iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+                    iframe.setAttribute('allowfullscreen', '');
+                    iframe.setAttribute('loading', idx === 0 ? 'eager' : 'lazy');
+                    iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+                    iframe.setAttribute('data-src', embedUrl);
+                    if (idx === 0) iframe.src = embedUrl;
+                    slide.appendChild(iframe);
+                    _panelEnsureSlideLoadingEl(slide);
+                    if (idx === 0) _panelSetSlideLoading(slide, false);
+                } else {
+                    var resolvedUrl = mediaUrl(url);
+                    var posterUrl = item && item.poster ? mediaUrl(item.poster) : '';
+                    var video = document.createElement('video');
+                    video.playsInline = true;
+                    video.setAttribute('playsinline', '');
+                    video.muted = true;
+                    video.loop = true;
+                    video.className = 'slide-media';
+                    video.preload = 'none';
+                    video.setAttribute('data-src', resolvedUrl);
+                    if (posterUrl) {
+                        video.poster = posterUrl;
+                        slide.classList.add('has-poster');
+                        _panelWarmUrl(posterUrl, 'image');
+                    }
+                    if (idx === 0) {
+                        video.preload = 'auto';
+                        video.setAttribute('fetchpriority', 'high');
+                        video.src = resolvedUrl;
+                        video.autoplay = true;
+                    }
+                    slide.appendChild(video);
+                    _panelEnsureSlideLoadingEl(slide);
+                    if (idx === 0) _panelSetSlideLoading(slide, true);
                 }
-                if (idx === 0) {
-                    video.preload = 'auto';
-                    video.setAttribute('fetchpriority', 'high');
-                    video.src = resolvedUrl;
-                    video.autoplay = true;
-                    // Sem link preload extra: o próprio <video> já pede o ficheiro.
-                }
-                slide.appendChild(video);
-                _panelEnsureSlideLoadingEl(slide);
-                if (idx === 0) _panelSetSlideLoading(slide, true);
             } else {
                 var resolvedImg = mediaUrl(url);
                 var loadNow = idx === 0;
@@ -7629,8 +7789,15 @@ document.addEventListener('keydown', function(event) {
         items.forEach(function(item, idx) {
             var url = typeof item === 'string' ? item : (item && item.url) ? item.url : '';
             var type = (item && item.type) ? item.type : 'image';
-            var label = type === 'video' ? ('Vídeo ' + (idx + 1)) : ('Imagem ' + (idx + 1));
+            var isYt = typeof isYouTubeCarouselItem === 'function' && isYouTubeCarouselItem(item);
+            var label = isYt
+                ? ('YouTube ' + (idx + 1))
+                : (type === 'video' ? ('Vídeo ' + (idx + 1)) : ('Imagem ' + (idx + 1)));
             var poster = (item && item.poster) ? item.poster : '';
+            if (!poster && isYt) {
+                var listYtId = item.youtubeId || (typeof parseYouTubeId === 'function' ? parseYouTubeId(url) : null);
+                if (listYtId && typeof youtubePosterUrl === 'function') poster = youtubePosterUrl(listYtId);
+            }
             var thumb = type === 'image'
                 ? ('<img src="' + url + '" alt="Preview" onerror="this.style.display=\'none\'">')
                 : (poster ? ('<img src="' + poster + '" alt="Preview" onerror="this.style.display=\'none\'">') : '<span style="font-size:20px;">▶</span>');
@@ -7761,6 +7928,8 @@ document.addEventListener('keydown', function(event) {
 
     async function _panelDeleteStorageUrl(url) {
         if (!url || !storage) return;
+        if (typeof isYouTubeUrl === 'function' && isYouTubeUrl(url)) return;
+        if (String(url).indexOf('i.ytimg.com') !== -1) return;
         var path = _panelStoragePathFromUrl(url);
         if (!path) return;
         try {
@@ -7981,6 +8150,87 @@ document.addEventListener('keydown', function(event) {
                 _panelHideCarouselLoading();
             }
         });
+
+        _panelBindYouTubeUrlControls();
+    }
+
+    function _panelBindYouTubeUrlControls() {
+        var input = document.getElementById('panel-youtube-url-input');
+        var btn = document.getElementById('panel-youtube-url-btn');
+        if (!input || !btn || btn.dataset.bound === '1') return;
+        btn.dataset.bound = '1';
+        function submitYouTube() {
+            if (typeof isAdminLoggedIn === 'undefined' || !isAdminLoggedIn) return;
+            var projectId = _panelCurrentProjectId;
+            if (!projectId) {
+                showNotification('Erro: projeto não identificado.', 'error', true);
+                return;
+            }
+            var raw = String(input.value || '').trim();
+            if (!raw) {
+                showNotification('Cole uma URL do YouTube.', 'error', true);
+                return;
+            }
+            var ytId = typeof parseYouTubeId === 'function' ? parseYouTubeId(raw) : null;
+            if (!ytId) {
+                showNotification('URL do YouTube inválida.', 'error', true);
+                return;
+            }
+            btn.disabled = true;
+            input.disabled = true;
+            _panelShowCarouselLoading('A adicionar YouTube...');
+            _panelSaveYouTubeUrl(projectId, ytId)
+                .then(function () {
+                    input.value = '';
+                    return _panelLoadProjectImages(projectId, true);
+                })
+                .then(function () {
+                    showNotification('Vídeo do YouTube adicionado!', 'success', true);
+                })
+                .catch(function (err) {
+                    showNotification('Erro ao adicionar YouTube: ' + ((err && err.message) ? err.message : err), 'error', true);
+                })
+                .finally(function () {
+                    btn.disabled = false;
+                    input.disabled = false;
+                    _panelHideCarouselLoading();
+                });
+        }
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            submitYouTube();
+        });
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                submitYouTube();
+            }
+        });
+    }
+
+    async function _panelSaveYouTubeUrl(projectId, youtubeId) {
+        if (typeof db === 'undefined' || !db) throw new Error('Firestore não inicializado.');
+        if (!youtubeId) throw new Error('ID do YouTube em falta.');
+        var ref = db.collection('projetos').doc(projectId);
+        var doc = await ref.get();
+        var data = doc.exists ? (doc.data() || {}) : {};
+        var existingCarousel = Array.isArray(data.carouselItems) ? data.carouselItems.slice() : [];
+        var already = existingCarousel.some(function (item) {
+            if (!item) return false;
+            if (item.youtubeId === youtubeId) return true;
+            return typeof parseYouTubeId === 'function' && parseYouTubeId(item.url || '') === youtubeId;
+        });
+        if (already) throw new Error('Este vídeo já está no carrossel.');
+        var row = {
+            type: 'video',
+            provider: 'youtube',
+            youtubeId: youtubeId,
+            url: typeof youtubeWatchUrl === 'function' ? youtubeWatchUrl(youtubeId) : ('https://www.youtube.com/watch?v=' + youtubeId),
+            poster: typeof youtubePosterUrl === 'function' ? youtubePosterUrl(youtubeId) : ''
+        };
+        existingCarousel.push(row);
+        await ref.set({ carouselItems: existingCarousel }, { merge: true });
     }
 
     function _panelUploadImage(projectId, file) {
@@ -8087,7 +8337,9 @@ document.addEventListener('keydown', function(event) {
         var missing = items
             .map(function(item, idx) { return { item: item, idx: idx }; })
             .filter(function(row) {
-                return row.item && row.item.type === 'video' && row.item.url && !row.item.poster;
+                if (!row.item || row.item.type !== 'video' || !row.item.url || row.item.poster) return false;
+                if (typeof isYouTubeCarouselItem === 'function' && isYouTubeCarouselItem(row.item)) return false;
+                return true;
             });
         if (!missing.length) return;
 
@@ -8361,6 +8613,10 @@ document.addEventListener('keydown', function(event) {
                     <label for="panel-media-upload-input" class="image-upload-label">Adicionar mídia</label>
                     <span class="upload-limits-hint" data-i18n="immersive.uploadLimits">(imagens até 10 MB, vídeos até 80 MB — MP4, WebM, MOV)</span>
                     <input type="file" id="panel-media-upload-input" class="image-upload-input" accept="image/*,video/mp4,video/webm,video/quicktime" multiple>
+                    <div class="youtube-url-row">
+                        <input type="url" id="panel-youtube-url-input" class="youtube-url-input" placeholder="URL do YouTube…" autocomplete="off" spellcheck="false">
+                        <button type="button" id="panel-youtube-url-btn" class="youtube-url-btn">YouTube</button>
+                    </div>
                     <p class="image-list-hint">Arraste ou use ▲▼ para ordenar</p>
                     <div class="image-list" id="panel-image-list"></div>
                 </div>

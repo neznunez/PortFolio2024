@@ -36,4 +36,77 @@
     }
     return url;
   };
+
+  /** Extrai o ID de um link do YouTube (watch, youtu.be, embed, shorts, live). */
+  global.parseYouTubeId = function (input) {
+    if (!input || typeof input !== 'string') return null;
+    var raw = input.trim();
+    if (!raw) return null;
+    if (/^[A-Za-z0-9_-]{11}$/.test(raw)) return raw;
+    try {
+      var url = new URL(raw, 'https://www.youtube.com');
+      var host = (url.hostname || '').replace(/^www\./, '').toLowerCase();
+      if (host === 'youtu.be') {
+        var shortId = (url.pathname || '').split('/').filter(Boolean)[0] || '';
+        return /^[A-Za-z0-9_-]{11}$/.test(shortId) ? shortId : null;
+      }
+      if (
+        host === 'youtube.com' ||
+        host === 'm.youtube.com' ||
+        host === 'music.youtube.com' ||
+        host === 'youtube-nocookie.com'
+      ) {
+        var v = url.searchParams.get('v');
+        if (v && /^[A-Za-z0-9_-]{11}$/.test(v)) return v;
+        var parts = (url.pathname || '').split('/').filter(Boolean);
+        var kind = parts[0] || '';
+        var idPart = parts[1] || '';
+        if (
+          (kind === 'embed' || kind === 'shorts' || kind === 'live' || kind === 'v') &&
+          /^[A-Za-z0-9_-]{11}$/.test(idPart)
+        ) {
+          return idPart;
+        }
+      }
+    } catch (e) {
+      /* ignore */
+    }
+    var match = raw.match(
+      /(?:youtube\.com\/(?:watch\?(?:[^#]*&)?v=|embed\/|shorts\/|live\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/
+    );
+    return match ? match[1] : null;
+  };
+
+  global.isYouTubeUrl = function (url) {
+    return !!global.parseYouTubeId(url);
+  };
+
+  global.youtubeWatchUrl = function (id) {
+    return id ? 'https://www.youtube.com/watch?v=' + id : '';
+  };
+
+  global.youtubeEmbedUrl = function (id, options) {
+    if (!id) return '';
+    var opts = options || {};
+    var params = [
+      'rel=0',
+      'modestbranding=1',
+      'playsinline=1'
+    ];
+    if (opts.autoplay) params.push('autoplay=1');
+    if (opts.mute) params.push('mute=1');
+    return 'https://www.youtube.com/embed/' + id + '?' + params.join('&');
+  };
+
+  global.youtubePosterUrl = function (id) {
+    return id ? 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg' : '';
+  };
+
+  global.isYouTubeCarouselItem = function (item) {
+    if (!item || typeof item !== 'object') return false;
+    if (item.provider === 'youtube' || item.source === 'youtube') return true;
+    if (item.youtubeId && /^[A-Za-z0-9_-]{11}$/.test(String(item.youtubeId))) return true;
+    var url = item.url || item.src || '';
+    return global.isYouTubeUrl(url);
+  };
 })(window);
