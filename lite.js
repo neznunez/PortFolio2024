@@ -1342,8 +1342,6 @@
     }, 800);
 
     listEl.innerHTML = projectsData.map(function (project) {
-      var cleanDescription = toPlainText(loc(project, 'description'));
-      var safeDescription = cleanDescription.replace(/\n+/g, ' ').trim();
       var meta = loc(project, 'subtitle') || (project.year ? String(project.year) : t('projects.metaFallback'));
       var isActive = project.key === selectedProjectId;
       var isEditing = isLiteAdmin && isActive && editingProjectKey === project.key;
@@ -1352,7 +1350,7 @@
       var draft = isEditable ? getProjectDraft(project.key) : null;
       var titleValue = isEditable ? '' : loc(project, 'title');
       var subtitleValue = isEditable ? '' : meta;
-      var descValue = isEditable ? '' : safeDescription;
+      var descValue = isEditable ? '' : formatProjectDescriptionHtml(loc(project, 'description'));
       var isSaving = !!adminSavingByKey[project.key];
       var saveNotice = adminSaveNoticeByKey[project.key];
       var saveNoticeHtml =
@@ -1390,7 +1388,7 @@
             '</div>'
           : '<h3 class="project-item-title">' + escapeHtml(titleValue) + '</h3>',
         !isEditable ? '<p class="project-item-meta">' + escapeHtml(subtitleValue) + '</p>' : '',
-        !isEditable ? '<p class="project-item-description">' + escapeHtml(descValue) + '</p>' : '',
+        !isEditable ? (descValue ? '<div class="project-item-description">' + descValue + '</div>' : '') : '',
         isEditable
           ? '<div class="project-edit-actions">' +
               '<button class="project-edit-button" data-project-action="save" type="button"' + (isSaving || adminOrderSaving ? ' disabled' : '') + '>' + escapeHtml(t('projects.save')) + '</button>' +
@@ -2842,9 +2840,9 @@
       subtitle: String(draft.subtitle || '').trim(),
       subtitulo: String(draft.subtitle || '').trim(),
       subtitle_en: String(draft.subtitle || '').trim(),
-      description: String(draft.description_pt || '').trim(),
-      descricao: String(draft.description_pt || '').trim(),
-      description_en: String(draft.description_en || '').trim()
+      description: normalizeProjectDescription(draft.description_pt || ''),
+      descricao: normalizeProjectDescription(draft.description_pt || ''),
+      description_en: normalizeProjectDescription(draft.description_en || '')
     };
 
     dbRef.collection('projetos').doc(project.docId).set(payload, { merge: true })
@@ -2881,13 +2879,26 @@
       .replace(/'/g, '&#39;');
   }
 
-  function toPlainText(value) {
-    var raw = String(value || '').trim();
+  function normalizeProjectDescription(text) {
+    var t = String(text || '').replace(/\r\n/g, '\n');
+    t = t.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<[^>]+>/g, '');
+    t = t.replace(/SELECTED\s*\n+\s*RECOGNITION/gi, 'Selected recognition');
+    t = t.replace(/([^\n])[ \t]+(?=(?:ROLE|Role|ATUAÇÃO|Atuação)\b)/g, '$1\n\n');
+    t = t.replace(/([^\n])[ \t]+(?=(?:SELECTED\s+RECOGNITION|Selected\s+recognition|RECONHECIMENTOS|Reconhecimentos)\b)/g, '$1\n\n');
+    t = t.replace(/((?:ROLE|Role|ATUAÇÃO|Atuação)[^\n]*)[ \t]+(?=(?:SELECTED|Selected|RECONHECIMENTOS|Reconhecimentos)\b)/g, '$1\n\n');
+    return t.replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  function formatProjectDescriptionHtml(text) {
+    var raw = normalizeProjectDescription(text);
     if (!raw) return '';
-    // Remove tags e atributos vindos de rich text (Firestore/editor).
-    var noTags = raw.replace(/<[^>]*>/g, ' ');
-    // Compacta espacos para uma linha limpa.
-    return noTags.replace(/\s+/g, ' ').trim();
+    return raw.split(/\n{2,}/).map(function (block) {
+      return '<p>' + escapeHtml(block.trim()).replace(/\n/g, '<br>') + '</p>';
+    }).join('');
+  }
+
+  function toPlainText(value) {
+    return normalizeProjectDescription(value);
   }
 
   function setupSectionIndexTracking() {

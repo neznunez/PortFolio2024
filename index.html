@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8">
@@ -34,15 +34,14 @@
       })();
     </script>
     <link rel="icon" href="3d_6297747.ico" type="image/x-icon">
-    <!-- GLB primeiro (maior custo da 1ª visita); skybox é leve e já está em preload secundário -->
     <link rel="preload" href="models/NezmodelF2.tex.webp.1k.glb" as="fetch" type="model/gltf-binary" crossorigin="anonymous" fetchpriority="high">
-    <!-- Skybox da start (~70KB): prioridade menor para não competir com o modelo -->
-    <link rel="preload" href="desertdawn/desertdawn_ft.jpg" as="image" fetchpriority="low">
-    <link rel="preload" href="desertdawn/desertdawn_bk.jpg" as="image" fetchpriority="low">
-    <link rel="preload" href="desertdawn/desertdawn_up.jpg" as="image" fetchpriority="low">
-    <link rel="preload" href="desertdawn/desertdawn_dn.jpg" as="image" fetchpriority="low">
-    <link rel="preload" href="desertdawn/desertdawn_rt.jpg" as="image" fetchpriority="low">
-    <link rel="preload" href="desertdawn/desertdawn_lf.jpg" as="image" fetchpriority="low">
+    <!-- Céu da 1ª visita (~70KB): alta prioridade para não ficar ecrã preto atrás da barra -->
+    <link rel="preload" href="desertdawn/desertdawn_ft.jpg" as="image" fetchpriority="high">
+    <link rel="preload" href="desertdawn/desertdawn_bk.jpg" as="image" fetchpriority="high">
+    <link rel="preload" href="desertdawn/desertdawn_up.jpg" as="image" fetchpriority="high">
+    <link rel="preload" href="desertdawn/desertdawn_dn.jpg" as="image" fetchpriority="high">
+    <link rel="preload" href="desertdawn/desertdawn_rt.jpg" as="image" fetchpriority="high">
+    <link rel="preload" href="desertdawn/desertdawn_lf.jpg" as="image" fetchpriority="high">
     <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin>
     <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com">
     <link rel="dns-prefetch" href="https://firestore.googleapis.com">
@@ -1633,6 +1632,12 @@
             line-height: 1.35;
             display: none;
         }
+        .immersive-projects-list .project-item-description p {
+            margin: 0 0 0.7em;
+        }
+        .immersive-projects-list .project-item-description p:last-child {
+            margin-bottom: 0;
+        }
 
         .immersive-projects-list .project-item.is-active .project-item-description {
             display: block;
@@ -3211,6 +3216,34 @@
         </div>
     </div>
 </div>
+<script>
+  (function () {
+    var skip = false;
+    try { skip = sessionStorage.getItem('immersive_resume_scene') === '1'; } catch (e) {}
+    if (!skip) {
+      try {
+        if (new URLSearchParams(window.location.search || '').get('project')) skip = true;
+        else {
+          var path = decodeURIComponent(window.location.pathname || '').replace(/^\/+|\/+$/g, '');
+          var first = (path.split('/')[0] || '').toLowerCase();
+          var reserved = {
+            '': 1, 'index.html': 1, 'lite.html': 1, 'project.html': 1,
+            models: 1, hdr: 1, locales: 1, libs: 1, scripts: 1, secrets: 1,
+            'fb-storage': 1, 'fb-storage-app': 1, 'gcs-storage': 1,
+            desertdawn: 1, assets: 1, rainbow: 1, park2: 1, lycksele3: 1
+          };
+          if (first && first.indexOf('.') === -1 && !reserved[first]) skip = true;
+        }
+      } catch (e2) {}
+    }
+    if (skip) return;
+    var el = document.getElementById('start-screen');
+    if (!el) return;
+    el.classList.add('is-visible');
+    el.style.opacity = '1';
+    el.setAttribute('aria-hidden', 'false');
+  })();
+</script>
 
    <script src="ReLibs/three.min.js"></script>
    <script src="ReLibs/OrbitControls.js"></script>
@@ -3596,6 +3629,24 @@
 
         var immersiveSelectedProjectId = null;
 
+        function immersiveNormalizeDescription(text) {
+          var t = String(text || '').replace(/\r\n/g, '\n');
+          t = t.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<[^>]+>/g, '');
+          t = t.replace(/SELECTED\s*\n+\s*RECOGNITION/gi, 'Selected recognition');
+          t = t.replace(/([^\n])[ \t]+(?=(?:ROLE|Role|ATUAÇÃO|Atuação)\b)/g, '$1\n\n');
+          t = t.replace(/([^\n])[ \t]+(?=(?:SELECTED\s+RECOGNITION|Selected\s+recognition|RECONHECIMENTOS|Reconhecimentos)\b)/g, '$1\n\n');
+          t = t.replace(/((?:ROLE|Role|ATUAÇÃO|Atuação)[^\n]*)[ \t]+(?=(?:SELECTED|Selected|RECONHECIMENTOS|Reconhecimentos)\b)/g, '$1\n\n');
+          return t.replace(/\n{3,}/g, '\n\n').trim();
+        }
+
+        function immersiveFormatListDescription(text) {
+          var raw = immersiveNormalizeDescription(text);
+          if (!raw) return '';
+          return raw.split(/\n{2,}/).map(function (block) {
+            return '<p>' + immersiveEscapeHtml(block.trim()).replace(/\n/g, '<br>') + '</p>';
+          }).join('');
+        }
+
         function immersiveEscapeHtml(text) {
           return String(text == null ? '' : text)
             .replace(/&/g, '&amp;')
@@ -3641,12 +3692,12 @@
             var row = Object.assign({ docId: id, id: id }, data);
             var title = projectDisplayTitle(id, data);
             var meta = i18nProject(row, 'subtitle') || (data.year ? String(data.year) : '');
-            var desc = String(i18nProject(row, 'description') || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+            var descHtml = immersiveFormatListDescription(i18nProject(row, 'description') || '');
             var active = id === immersiveSelectedProjectId ? ' is-active' : '';
             return '<article class="project-item' + active + '" data-project-id="' + immersiveEscapeHtml(String(id)) + '" role="listitem">' +
               '<p class="project-item-title">' + immersiveEscapeHtml(title) + '</p>' +
               (meta ? '<p class="project-item-meta">' + immersiveEscapeHtml(meta) + '</p>' : '') +
-              (desc ? '<p class="project-item-description">' + immersiveEscapeHtml(desc) + '</p>' : '') +
+              (descHtml ? '<div class="project-item-description">' + descHtml + '</div>' : '') +
               '</article>';
           }).join('');
         }
@@ -5875,9 +5926,12 @@ function showStartScreen() {
     }
     startScreenActive = true;
     if (controls) controls.enabled = false;
+    var alreadyUp = el.classList.contains('is-visible') && (el.style.opacity === '1' || el.style.opacity === '');
     el.classList.add('is-visible');
     el.setAttribute('aria-hidden', 'false');
-    if (typeof gsap !== 'undefined') {
+    if (alreadyUp) {
+        el.style.opacity = '1';
+    } else if (typeof gsap !== 'undefined') {
         gsap.fromTo(el, { opacity: 0 }, { opacity: 1, duration: 0.6, ease: 'power2.out' });
     } else {
         el.style.opacity = '1';
@@ -8058,7 +8112,10 @@ document.addEventListener('keydown', function(event) {
 
     function _panelFormatDescription(text) {
         if (!text) return '';
-        var blocks = String(text).replace(/\r\n/g, '\n').split(/\n{2,}/);
+        var raw = (typeof immersiveNormalizeDescription === 'function')
+            ? immersiveNormalizeDescription(text)
+            : String(text).replace(/\r\n/g, '\n');
+        var blocks = String(raw).split(/\n{2,}/);
         return blocks.map(function (block) {
             return '<p>' + _escapeHtml(block.trim()).replace(/\n/g, '<br>') + '</p>';
         }).join('');
@@ -9491,7 +9548,9 @@ document.addEventListener('keydown', function(event) {
         var descEl  = document.getElementById('panel-project-description');
         var subtitleEl = document.getElementById('panel-project-subtitle');
         var newTitle = titleEl ? titleEl.textContent.trim() : '';
-        var newDesc  = descEl  ? descEl.innerText.replace(/\u00a0/g, ' ').trim() : '';
+        var newDesc  = descEl  ? descEl.innerText.replace(/\u00a0/g, ' ') : '';
+        if (typeof immersiveNormalizeDescription === 'function') newDesc = immersiveNormalizeDescription(newDesc);
+        else newDesc = newDesc.trim();
         var newSub   = subtitleEl ? subtitleEl.textContent.replace(/\u00a0/g, ' ').trim() : '';
         var saveBtn  = document.getElementById('panel-save-button');
         if (saveBtn) { saveBtn.textContent = i18nT('immersive.saving'); saveBtn.disabled = true; }

@@ -1,5 +1,4 @@
 (function (global) {
-  var STORAGE_KEY = 'portfolio_locale';
   var MOBILE_MAX_WIDTH = 768;
   var SUPPORTED = ['pt', 'en'];
   var currentLocale = 'pt';
@@ -20,18 +19,22 @@
   }
 
   function detectLocale() {
-    var stored = '';
+    var list = [];
     try {
-      stored = localStorage.getItem(STORAGE_KEY) || '';
+      if (global.navigator && global.navigator.languages && global.navigator.languages.length) {
+        list = Array.prototype.slice.call(global.navigator.languages);
+      }
     } catch (e) {
-      stored = '';
+      list = [];
     }
-    if (stored === 'pt' || stored === 'en') return stored;
-    var nav = (global.navigator && global.navigator.language) ||
-      (global.navigator && global.navigator.languages && global.navigator.languages[0]) ||
-      '';
-    // PT só para pt-BR; qualquer outro idioma do browser → EN
-    return isPtBr(nav) ? 'pt' : 'en';
+    if (!list.length) {
+      list = [(global.navigator && global.navigator.language) || ''];
+    }
+    var i;
+    for (i = 0; i < list.length; i++) {
+      if (isPtBr(list[i])) return 'pt';
+    }
+    return 'en';
   }
 
   function getByPath(obj, path) {
@@ -70,11 +73,6 @@
     var next = locale === 'en' ? 'en' : 'pt';
     if (next === currentLocale && !opts.force) return;
     currentLocale = next;
-    try {
-      localStorage.setItem(STORAGE_KEY, next);
-    } catch (e) {
-      /* ignore */
-    }
     apply();
     try {
       global.dispatchEvent(new CustomEvent('localechange', { detail: { locale: next } }));
@@ -200,22 +198,6 @@
     var skillsRoot = document.getElementById('skills-content');
     if (skillsRoot) renderSkills(skillsRoot);
 
-    Array.prototype.forEach.call(document.querySelectorAll('[data-lang]'), function (btn) {
-      var lang = btn.getAttribute('data-lang');
-      btn.classList.toggle('is-active', lang === currentLocale);
-      btn.setAttribute('aria-pressed', lang === currentLocale ? 'true' : 'false');
-    });
-  }
-
-  function bindLangSwitcher() {
-    Array.prototype.forEach.call(document.querySelectorAll('[data-lang]'), function (btn) {
-      if (btn.__i18nBound) return;
-      btn.__i18nBound = true;
-      btn.addEventListener('click', function () {
-        var lang = btn.getAttribute('data-lang');
-        if (lang === 'pt' || lang === 'en') setLocale(lang);
-      });
-    });
   }
 
   function loadLocaleFile(locale) {
@@ -233,14 +215,12 @@
         messages.pt = packs[0];
         messages.en = packs[1];
         currentLocale = detectLocale();
-        bindLangSwitcher();
         apply();
         return currentLocale;
       })
       .catch(function (err) {
         console.warn('i18n: falha ao carregar locales', err);
         currentLocale = detectLocale();
-        bindLangSwitcher();
         apply();
         return currentLocale;
       });

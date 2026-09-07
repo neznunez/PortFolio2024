@@ -979,6 +979,12 @@ select {
   line-height: 1.28;
   display: none;
 }
+.project-item-description p {
+  margin: 0 0 0.7em;
+}
+.project-item-description p:last-child {
+  margin-bottom: 0;
+}
 
 .project-item.is-active .project-item-description {
   display: block;
