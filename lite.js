@@ -327,14 +327,20 @@
   }
 
   function liteUploadImageWithCubeThumb(docId, file) {
-    return liteUploadProjectMediaFile(docId, file).then(function (url) {
-      return resizeFileToJpeg(file, CUBE_FACE_MAX_EDGE, 0.82).then(function (blob) {
-        if (!blob) return { url: url, thumb: '' };
-        var thumbFile = new File([blob], Date.now() + '_cube.jpg', { type: 'image/jpeg' });
-        return liteUploadProjectMediaFile(docId, thumbFile).then(function (thumbUrl) {
-          return { url: url, thumb: thumbUrl || '' };
-        }).catch(function () {
-          return { url: url, thumb: '' };
+    var prepare = (typeof window.prepareCarouselImageFile === 'function')
+      ? window.prepareCarouselImageFile(file)
+      : Promise.resolve(file);
+    return prepare.then(function (carouselFile) {
+      var uploadFile = carouselFile || file;
+      return liteUploadProjectMediaFile(docId, uploadFile).then(function (url) {
+        return resizeFileToJpeg(file, CUBE_FACE_MAX_EDGE, 0.82).then(function (blob) {
+          if (!blob) return { url: url, thumb: '', optimized: true };
+          var thumbFile = new File([blob], Date.now() + '_cube.jpg', { type: 'image/jpeg' });
+          return liteUploadProjectMediaFile(docId, thumbFile).then(function (thumbUrl) {
+            return { url: url, thumb: thumbUrl || '', optimized: true };
+          }).catch(function () {
+            return { url: url, thumb: '', optimized: true };
+          });
         });
       });
     });
@@ -363,6 +369,7 @@
         var newImageEntries = entries.map(function (item) {
           var row = { type: 'image', url: item.url };
           if (item.thumb) row.thumb = item.thumb;
+          if (item.optimized) row.optimized = true;
           return row;
         });
         return dbRef.collection('projetos').doc(docId).set(

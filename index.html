@@ -130,28 +130,6 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
-        .card {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            width: 240px;
-            height: 140px;
-            background-color: rgba(255, 255, 255, 0.6);
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: transform 0.3s ease, width 0.3s ease, height 0.3s ease;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        .card img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 10px;
-        }
         .loading-text {
             order: 1;
             color: rgba(255, 255, 255, 0.7);
@@ -1978,6 +1956,7 @@
         .ui-chrome-btn,
         #project-panel .panel-back-button,
         #project-panel #panel-save-button,
+        #project-panel #panel-optimize-images-button,
         #project-panel .image-upload-label {
             appearance: none;
             -webkit-appearance: none;
@@ -2010,6 +1989,8 @@
         #project-panel .panel-back-button:focus-visible,
         #project-panel #panel-save-button:hover,
         #project-panel #panel-save-button:focus-visible,
+        #project-panel #panel-optimize-images-button:hover,
+        #project-panel #panel-optimize-images-button:focus-visible,
         #project-panel .image-upload-label:hover,
         #project-panel .image-upload-label:focus-visible {
             background: rgba(255, 255, 255, 0.92);
@@ -2019,18 +2000,42 @@
             outline: none;
         }
         #project-panel #panel-save-button,
+        #project-panel #panel-optimize-images-button,
         #project-panel #panel-logout-button {
             z-index: 1600;
         }
-        #project-panel #panel-save-button {
+        #project-panel #panel-admin-actions {
             position: absolute;
             top: 14px;
             right: 14px;
+            z-index: 1600;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 8px;
+            pointer-events: none;
+        }
+        #project-panel #panel-admin-actions #panel-optimize-images-button,
+        #project-panel #panel-admin-actions #panel-save-button {
+            position: static;
+            top: auto;
+            right: auto;
+            pointer-events: auto;
+        }
+        #project-panel #panel-optimize-images-button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none;
+            pointer-events: none;
         }
         #project-panel #panel-save-button:disabled {
             opacity: 0.5;
             cursor: wait;
             transform: none;
+        }
+        #optimize-images-button:disabled {
+            opacity: 0.5;
+            cursor: wait;
         }
         #admin-chrome-dock {
             position: fixed;
@@ -2453,18 +2458,101 @@
             display: none;
             flex-direction: column;
             pointer-events: auto;
-            max-width: min(420px, calc(100% - 28px));
+            width: min(390px, calc(100% - 28px));
+            max-width: min(390px, calc(100% - 28px));
             max-height: calc(100% - 28px);
             overflow: hidden;
             padding: 10px;
             border-radius: 14px;
-            background: rgba(8, 10, 10, 0.72);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: rgba(8, 10, 10, 0.84);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 12px 34px rgba(0, 0, 0, 0.32);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
             box-sizing: border-box;
         }
         #project-panel .image-upload-container.visible { display: flex; }
+        #project-panel .image-upload-container.is-collapsed {
+            width: min(184px, calc(100% - 28px));
+            max-width: min(184px, calc(100% - 28px));
+            padding: 7px 8px 7px 12px;
+            border-radius: 999px;
+            background: rgba(8, 10, 10, 0.76);
+            box-shadow: 0 6px 22px rgba(0, 0, 0, 0.24);
+        }
+        #project-panel .image-upload-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            flex-shrink: 0;
+            margin-bottom: 8px;
+        }
+        #project-panel .image-upload-container.is-collapsed .image-upload-toolbar {
+            margin-bottom: 0;
+            cursor: pointer;
+        }
+        #project-panel .image-upload-title {
+            margin: 0;
+            flex: 1 1 auto;
+            min-width: 0;
+            color: rgba(255, 255, 255, 0.92);
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            line-height: 1.2;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        #project-panel .image-upload-title::before {
+            content: "+";
+            display: inline-block;
+            margin-right: 7px;
+            color: rgba(255, 255, 255, 0.58);
+            font-size: 13px;
+            font-weight: 400;
+        }
+        #project-panel .image-upload-collapse-btn {
+            appearance: none;
+            -webkit-appearance: none;
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 13px;
+            line-height: 1;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+        }
+        #project-panel .image-upload-collapse-btn:hover,
+        #project-panel .image-upload-collapse-btn:focus-visible {
+            background: rgba(255, 255, 255, 0.92);
+            border-color: rgba(255, 255, 255, 0.92);
+            color: #0b0b0d;
+            outline: none;
+        }
+        #project-panel .image-upload-body {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            flex: 1 1 auto;
+            overflow: hidden;
+            max-height: 330px;
+            opacity: 1;
+            visibility: visible;
+        }
+        #project-panel .image-upload-container.is-collapsed .image-upload-body {
+            display: none;
+        }
         #project-panel .image-upload-input { display: none; }
         #project-panel .youtube-url-row {
             display: flex;
@@ -6433,6 +6521,37 @@ function showNavigationNotification() {
     }
     // --- Fim Botão Criar Novo Projeto ---
 
+    function addOptimizeImagesButton() {
+        if (document.getElementById('optimize-images-button')) return;
+        var btn = document.createElement('button');
+        btn.id = 'optimize-images-button';
+        btn.type = 'button';
+        btn.className = 'ui-chrome-btn';
+        btn.setAttribute('data-i18n', 'immersive.optimizeImages');
+        btn.textContent = 'Otimizar fotos';
+        btn.addEventListener('click', function () {
+            if (typeof window._panelOptimizeCarouselImages === 'function') {
+                window._panelOptimizeCarouselImages({ allProjects: true });
+            }
+        });
+        var dock = ensureAdminChromeDock();
+        var createBtn = document.getElementById('create-project-button');
+        if (createBtn && createBtn.parentNode === dock) {
+            dock.insertBefore(btn, createBtn);
+        } else {
+            var logoutBtn = document.getElementById('logout-button-index');
+            if (logoutBtn && logoutBtn.parentNode === dock) {
+                dock.insertBefore(btn, logoutBtn);
+            } else {
+                dock.appendChild(btn);
+            }
+        }
+        if (window.I18n && typeof I18n.apply === 'function') {
+            try { I18n.apply(); } catch (e) {}
+        }
+    }
+
+
     // --- Event Listeners do Modal de Criação de Projeto ---
     // Aguardar DOM estar pronto
     if (document.readyState === 'loading') {
@@ -6607,11 +6726,13 @@ function showNavigationNotification() {
     // Chamar a adição dos botões (eles ficarão escondidos até o login)
     if (document.body) {
          addLogoutButtonIndex();
-         addCreateProjectButton(); // Adicionar chamada para o novo botão
+         addCreateProjectButton();
+         addOptimizeImagesButton();
     } else {
          document.addEventListener('DOMContentLoaded', () => {
              addLogoutButtonIndex();
-             addCreateProjectButton(); // Adicionar chamada para o novo botão
+             addCreateProjectButton();
+             addOptimizeImagesButton();
          });
     }
 
@@ -7012,43 +7133,59 @@ var spacePressTimeout;
 
 // Evento para detectar pressionamentos da barra de espaço
 document.addEventListener('keydown', function(event) {
-    if (event.code === 'Space') {
-        event.preventDefault(); // Prevenir o scroll da página
-        
-        // Incrementar o contador de pressionamentos da barra de espaço
-        spacePressCount++;
-        
-        // Limpar o timeout anterior se existir
-        if (spacePressTimeout) {
-            clearTimeout(spacePressTimeout);
+    if (event.code !== 'Space') return;
+
+    // Não bloquear Espaço ao editar título/descrição (contentEditable) nem inputs.
+    var target = event.target;
+    if (
+        target &&
+        (
+            target.tagName === 'INPUT' ||
+            target.tagName === 'TEXTAREA' ||
+            target.tagName === 'SELECT' ||
+            target.isContentEditable ||
+            (target.closest && target.closest('[contenteditable="true"]'))
+        )
+    ) {
+        spacePressCount = 0;
+        return;
+    }
+
+    event.preventDefault(); // Prevenir o scroll da página
+
+    // Incrementar o contador de pressionamentos da barra de espaço
+    spacePressCount++;
+
+    // Limpar o timeout anterior se existir
+    if (spacePressTimeout) {
+        clearTimeout(spacePressTimeout);
+    }
+
+    // Definir um novo timeout para resetar o contador após 1 segundo
+    spacePressTimeout = setTimeout(function() {
+        spacePressCount = 0;
+    }, 2000);
+
+    // Verificar se a barra de espaço foi pressionada 7 vezes
+    if (spacePressCount === 7) {
+        // Mostrar ou ocultar os controles de ambiente (toggle + botão)
+        var envControls = document.getElementById('envControls');
+        if (envControls && !envControls.classList.contains('visible')) {
+            envControls.classList.add('visible');
+            envControls.style.opacity = '0';
+            gsap.to(envControls, { opacity: 1, duration: 0.5, ease: "back.out(1.7)" });
+        } else if (envControls) {
+            gsap.to(envControls, {
+                opacity: 0,
+                duration: 0.3,
+                ease: "power2.in",
+                onComplete: function() {
+                    envControls.classList.remove('visible');
+                    envControls.style.opacity = '1';
+                }
+            });
         }
-        
-        // Definir um novo timeout para resetar o contador após 1 segundo
-        spacePressTimeout = setTimeout(function() {
-            spacePressCount = 0;
-        }, 2000);
-        
-        // Verificar se a barra de espaço foi pressionada 7 vezes
-        if (spacePressCount === 7) {
-            // Mostrar ou ocultar os controles de ambiente (toggle + botão)
-            var envControls = document.getElementById('envControls');
-            if (envControls && !envControls.classList.contains('visible')) {
-                envControls.classList.add('visible');
-                envControls.style.opacity = '0';
-                gsap.to(envControls, { opacity: 1, duration: 0.5, ease: "back.out(1.7)" });
-            } else if (envControls) {
-                gsap.to(envControls, { 
-                    opacity: 0, 
-                    duration: 0.3, 
-                    ease: "power2.in",
-                    onComplete: function() {
-                        envControls.classList.remove('visible');
-                        envControls.style.opacity = '1';
-                    }
-                });
-            }
-            spacePressCount = 0; // Resetar o contador
-        }
+        spacePressCount = 0; // Resetar o contador
     }
 });
 
@@ -7566,6 +7703,8 @@ document.addEventListener('keydown', function(event) {
 
         if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) {
             _panelEnableEditMode();
+        } else if (typeof _panelUpdateOptimizeButtonState === 'function') {
+            _panelUpdateOptimizeButtonState();
         }
     }
 
@@ -7762,6 +7901,9 @@ document.addEventListener('keydown', function(event) {
                 _panelCarouselItems = items;
                 _panelCarouselSignature = _panelItemsSignature(items);
                 _panelRenderCarousel(items, projectId);
+                if (typeof _panelUpdateOptimizeButtonState === 'function') {
+                    _panelUpdateOptimizeButtonState();
+                }
             })
             .catch(function(err) {
                 console.error('Erro ao carregar mídia do painel:', err);
@@ -8152,6 +8294,57 @@ document.addEventListener('keydown', function(event) {
         });
 
         _panelBindYouTubeUrlControls();
+        _panelBindMediaPanelCollapse();
+    }
+
+    var PANEL_MEDIA_COLLAPSE_KEY = 'portfolio_admin_media_panel_collapsed';
+
+    function _panelApplyMediaPanelCollapsed(collapsed) {
+        var container = document.getElementById('panel-image-upload-container');
+        var btn = document.getElementById('panel-media-collapse-btn');
+        if (!container || !btn) return;
+        container.classList.toggle('is-collapsed', !!collapsed);
+        btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        btn.textContent = collapsed ? '+' : '−';
+        var collapseLabel = (typeof i18nT === 'function') ? i18nT('immersive.collapseMediaPanel') : 'Minimizar painel de mídia';
+        var expandLabel = (typeof i18nT === 'function') ? i18nT('immersive.expandMediaPanel') : 'Expandir painel de mídia';
+        btn.setAttribute('aria-label', collapsed ? expandLabel : collapseLabel);
+        btn.setAttribute('title', collapsed ? expandLabel : collapseLabel);
+    }
+
+    function _panelBindMediaPanelCollapse() {
+        var container = document.getElementById('panel-image-upload-container');
+        var btn = document.getElementById('panel-media-collapse-btn');
+        if (!container || !btn) return;
+
+        var stored = false;
+        try {
+            stored = localStorage.getItem(PANEL_MEDIA_COLLAPSE_KEY) === '1';
+        } catch (e) {}
+        _panelApplyMediaPanelCollapsed(stored);
+
+        if (btn.dataset.bound === '1') return;
+        btn.dataset.bound = '1';
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var next = !container.classList.contains('is-collapsed');
+            _panelApplyMediaPanelCollapsed(next);
+            try {
+                localStorage.setItem(PANEL_MEDIA_COLLAPSE_KEY, next ? '1' : '0');
+            } catch (err) {}
+        });
+        var toolbar = container.querySelector('.image-upload-toolbar');
+        if (toolbar && toolbar.dataset.bound !== '1') {
+            toolbar.dataset.bound = '1';
+            toolbar.addEventListener('click', function (e) {
+                if (!container.classList.contains('is-collapsed') || e.target.closest('button')) return;
+                _panelApplyMediaPanelCollapsed(false);
+                try {
+                    localStorage.setItem(PANEL_MEDIA_COLLAPSE_KEY, '0');
+                } catch (err) {}
+            });
+        }
     }
 
     function _panelBindYouTubeUrlControls() {
@@ -8239,7 +8432,11 @@ document.addEventListener('keydown', function(event) {
                 if (!storage) { reject(new Error('Storage não inicializado.')); return; }
                 var fileName  = Date.now() + '_' + file.name;
                 var ref       = storage.ref('projects/' + projectId + '/' + fileName);
-                var task      = ref.put(file, { cacheControl: 'public, max-age=31536000' });
+                var meta = {
+                    cacheControl: 'public, max-age=31536000',
+                    contentType: (file && file.type) ? file.type : 'image/jpeg'
+                };
+                var task      = ref.put(file, meta);
                 task.on('state_changed', null,
                     function(err) { reject(err); },
                     function() { task.snapshot.ref.getDownloadURL().then(resolve).catch(reject); }
@@ -8249,14 +8446,20 @@ document.addEventListener('keydown', function(event) {
     }
 
     function _panelUploadImageWithCubeThumb(projectId, file) {
-        return _panelUploadImage(projectId, file).then(function (url) {
-            return resizeFileToJpeg(file, CUBE_FACE_MAX_EDGE, 0.82).then(function (blob) {
-                if (!blob) return { url: url, thumb: '' };
-                var thumbFile = new File([blob], Date.now() + '_cube.jpg', { type: 'image/jpeg' });
-                return _panelUploadImage(projectId, thumbFile).then(function (thumbUrl) {
-                    return { url: url, thumb: thumbUrl || '' };
-                }).catch(function () {
-                    return { url: url, thumb: '' };
+        var prepare = (typeof prepareCarouselImageFile === 'function')
+            ? prepareCarouselImageFile(file)
+            : Promise.resolve(file);
+        return prepare.then(function (carouselFile) {
+            var uploadFile = carouselFile || file;
+            return _panelUploadImage(projectId, uploadFile).then(function (url) {
+                return resizeFileToJpeg(file, CUBE_FACE_MAX_EDGE, 0.82).then(function (blob) {
+                    if (!blob) return { url: url, thumb: '', optimized: true };
+                    var thumbFile = new File([blob], Date.now() + '_cube.jpg', { type: 'image/jpeg' });
+                    return _panelUploadImage(projectId, thumbFile).then(function (thumbUrl) {
+                        return { url: url, thumb: thumbUrl || '', optimized: true };
+                    }).catch(function () {
+                        return { url: url, thumb: '', optimized: true };
+                    });
                 });
             });
         });
@@ -8278,13 +8481,324 @@ document.addEventListener('keydown', function(event) {
         var newImageEntries = entries.map(function (item) {
             var row = { type: 'image', url: item.url };
             if (item.thumb) row.thumb = item.thumb;
+            if (item.optimized) row.optimized = true;
             return row;
         });
         await ref.set({
-            images: existingImages.concat(entries.map(function (item) { return item.url; })),
+            images: existingImages.concat(entries.map(function (item) { return item.thumb || item.url; })),
             carouselItems: existingCarousel.concat(newImageEntries)
         }, { merge: true });
     }
+
+
+    var _optimizeImagesBusy = false;
+
+    function _panelCarouselImagesNeedingOptimize(items) {
+        var list = Array.isArray(items) ? items : [];
+        for (var i = 0; i < list.length; i++) {
+            var item = list[i];
+            if (!item || typeof item !== 'object') continue;
+            if (item.type === 'video') continue;
+            var url = item.url || '';
+            if (!url) continue;
+            if (typeof isYouTubeUrl === 'function' && isYouTubeUrl(url)) continue;
+            if (item.optimized) continue;
+            return true;
+        }
+        return false;
+    }
+
+    function _panelUpdateOptimizeButtonState() {
+        var panelBtn = document.getElementById('panel-optimize-images-button');
+        if (!panelBtn) return;
+        var needs = _panelCarouselImagesNeedingOptimize(_panelCarouselItems);
+        var busy = !!_optimizeImagesBusy;
+        var canClick = needs && !busy;
+        panelBtn.disabled = !canClick;
+        panelBtn.setAttribute('aria-disabled', canClick ? 'false' : 'true');
+        var labelOk = (typeof i18nT === 'function' && i18nT('immersive.optimizeImages') !== 'immersive.optimizeImages')
+            ? i18nT('immersive.optimizeImages')
+            : 'Otimizar fotos';
+        var labelDone = (typeof i18nT === 'function' && i18nT('immersive.optimizeImagesDoneBtn') !== 'immersive.optimizeImagesDoneBtn')
+            ? i18nT('immersive.optimizeImagesDoneBtn')
+            : 'Fotos otimizadas';
+        if (!busy) {
+            panelBtn.textContent = needs ? labelOk : labelDone;
+            panelBtn.title = needs
+                ? labelOk
+                : ((typeof i18nT === 'function' && i18nT('immersive.optimizeImagesAlready') !== 'immersive.optimizeImagesAlready')
+                    ? i18nT('immersive.optimizeImagesAlready')
+                    : 'Todas as fotos deste projeto já estão otimizadas');
+        }
+    }
+
+    function _panelProbeImageMeta(blob) {
+        return new Promise(function (resolve) {
+            if (!blob) {
+                resolve({ width: 0, height: 0 });
+                return;
+            }
+            var objectUrl = URL.createObjectURL(blob);
+            var img = new Image();
+            img.onload = function () {
+                var meta = {
+                    width: img.naturalWidth || img.width || 0,
+                    height: img.naturalHeight || img.height || 0
+                };
+                try { URL.revokeObjectURL(objectUrl); } catch (e) {}
+                resolve(meta);
+            };
+            img.onerror = function () {
+                try { URL.revokeObjectURL(objectUrl); } catch (e) {}
+                resolve({ width: 0, height: 0 });
+            };
+            img.src = objectUrl;
+        });
+    }
+
+    function _panelFetchImageBlob(url) {
+        var fetchUrl = (typeof rewriteStorageUrlForLocal === 'function')
+            ? rewriteStorageUrlForLocal(url)
+            : url;
+        return fetch(fetchUrl, { mode: 'cors', credentials: 'omit' }).then(function (res) {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.blob();
+        });
+    }
+
+    function _panelRebuildImagesField(carouselItems) {
+        var out = [];
+        (carouselItems || []).forEach(function (item) {
+            if (!item || item.type === 'video') return;
+            var u = item.thumb || item.url;
+            if (u) out.push(u);
+        });
+        return out;
+    }
+
+    async function _panelOptimizeOneCarouselImage(projectId, item) {
+        if (!item || !item.url || item.type === 'video') return { status: 'skip' };
+        if (item.optimized) return { status: 'skip' };
+        if (typeof isYouTubeUrl === 'function' && isYouTubeUrl(item.url)) return { status: 'skip' };
+
+        var blob = await _panelFetchImageBlob(item.url);
+        if (!blob || blob.size < 32) return { status: 'error', error: 'download vazio' };
+
+        var type = String(blob.type || '').toLowerCase();
+        if (type === 'image/gif' || type === 'image/svg+xml') {
+            return { status: 'skip', markOnly: true };
+        }
+
+        var meta = await _panelProbeImageMeta(blob);
+        if (!meta.width || !meta.height || meta.width < 16 || meta.height < 16) {
+            return { status: 'error', error: 'imagem inválida no download' };
+        }
+        if (typeof shouldSkipCarouselImageOptimize === 'function' &&
+            shouldSkipCarouselImageOptimize(blob, meta.width, meta.height)) {
+            return { status: 'skip', markOnly: true };
+        }
+
+        var maxEdge = (typeof PORTFOLIO_CAROUSEL_MAX_EDGE !== 'undefined') ? PORTFOLIO_CAROUSEL_MAX_EDGE : 1920;
+        var quality = (typeof PORTFOLIO_CAROUSEL_JPEG_QUALITY !== 'undefined') ? PORTFOLIO_CAROUSEL_JPEG_QUALITY : 0.88;
+        if (typeof resizeBlobToJpeg !== 'function') return { status: 'error', error: 'resize unavailable' };
+
+        var compressed = await resizeBlobToJpeg(blob, maxEdge, quality);
+        if (!compressed) return { status: 'skip' }; // não marcar optimized — pode tentar de novo
+        if (compressed.size >= blob.size * 0.92) {
+            return { status: 'skip', markOnly: true };
+        }
+        if (typeof validateImageBlob === 'function') {
+            var ok = await validateImageBlob(compressed, 16);
+            if (!ok) return { status: 'error', error: 'jpeg inválido após compressão' };
+        }
+
+        var optFile = new File([compressed], Date.now() + '_opt.jpg', { type: 'image/jpeg' });
+        var newUrl = await _panelUploadImage(projectId, optFile);
+        if (!newUrl) return { status: 'error', error: 'upload sem URL' };
+
+        // Verifica se a URL nova realmente carrega antes de trocar a referência.
+        try {
+            var verifyBlob = await _panelFetchImageBlob(newUrl);
+            var verifyOk = typeof validateImageBlob === 'function'
+                ? await validateImageBlob(verifyBlob, 16)
+                : !!(verifyBlob && verifyBlob.size > 256);
+            if (!verifyOk) {
+                try { await _panelDeleteStorageUrl(newUrl); } catch (e) {}
+                return { status: 'error', error: 'URL nova não validou' };
+            }
+        } catch (verifyErr) {
+            try { await _panelDeleteStorageUrl(newUrl); } catch (e) {}
+            return { status: 'error', error: 'falha ao validar URL nova' };
+        }
+
+        var oldUrl = item.url;
+        if (!item.urlOriginal) item.urlOriginal = oldUrl;
+        item.url = newUrl;
+        item.optimized = true;
+
+        if (!item.thumb) {
+            try {
+                var thumbBlob = await resizeBlobToJpeg(blob, 512, 0.82);
+                if (thumbBlob && (!validateImageBlob || await validateImageBlob(thumbBlob, 16))) {
+                    var thumbFile = new File([thumbBlob], Date.now() + '_cube.jpg', { type: 'image/jpeg' });
+                    item.thumb = await _panelUploadImage(projectId, thumbFile);
+                }
+            } catch (thumbErr) {
+                console.warn('Thumb opcional falhou:', thumbErr);
+            }
+        }
+
+        // NÃO apaga o original — fica em urlOriginal por segurança.
+        return { status: 'optimized' };
+    }
+
+    async function _panelOptimizeProjectImages(projectId) {
+        if (!db || !projectId) return { optimized: 0, skipped: 0, errors: 0 };
+        var ref = db.collection('projetos').doc(projectId);
+        var doc = await ref.get();
+        if (!doc.exists) return { optimized: 0, skipped: 0, errors: 0 };
+        var data = doc.data() || {};
+        var carousel = Array.isArray(data.carouselItems) ? data.carouselItems.slice() : [];
+        if (!carousel.length && Array.isArray(data.images)) {
+            carousel = data.images.map(function (u) { return { type: 'image', url: u }; });
+        }
+
+        var optimized = 0;
+        var skipped = 0;
+        var errors = 0;
+        var changed = false;
+
+        for (var i = 0; i < carousel.length; i++) {
+            var item = carousel[i];
+            if (!item || typeof item !== 'object') continue;
+            if (item.type === 'video') continue;
+            if (!item.type) item.type = 'image';
+            try {
+                var result = await _panelOptimizeOneCarouselImage(projectId, item);
+                if (result.status === 'optimized') {
+                    optimized += 1;
+                    changed = true;
+                } else if (result.markOnly) {
+                    if (!item.optimized) {
+                        item.optimized = true;
+                        changed = true;
+                    }
+                    skipped += 1;
+                } else {
+                    skipped += 1;
+                }
+            } catch (err) {
+                console.warn('Otimizar imagem falhou:', projectId, i, err);
+                errors += 1;
+            }
+        }
+
+        if (changed) {
+            await ref.set({
+                carouselItems: carousel,
+                images: _panelRebuildImagesField(carousel)
+            }, { merge: true });
+        }
+
+        return { optimized: optimized, skipped: skipped, errors: errors };
+    }
+
+    async function _panelOptimizeCarouselImages(opts) {
+        opts = opts || {};
+        if (_optimizeImagesBusy) return;
+        if (typeof isAdminLoggedIn === 'undefined' || !isAdminLoggedIn) return;
+
+        var allProjects = !!opts.allProjects;
+        var projectId = opts.projectId || (!allProjects ? _panelCurrentProjectId : null);
+
+        var confirmMsg = allProjects
+            ? ((typeof i18nT === 'function') ? i18nT('immersive.optimizeImagesConfirmAll') : 'Otimizar as fotos de todos os projetos? Qualidade alta (máx. 1920px). Pode demorar alguns minutos.')
+            : ((typeof i18nT === 'function') ? i18nT('immersive.optimizeImagesConfirmOne') : 'Otimizar as fotos deste projeto? Qualidade alta (máx. 1920px).');
+
+        var ok = await _panelShowAdminConfirm({
+            title: (typeof i18nT === 'function') ? i18nT('immersive.optimizeImages') : 'Otimizar fotos',
+            message: confirmMsg,
+            confirmLabel: (typeof i18nT === 'function') ? i18nT('immersive.optimizeImagesRun') : 'Otimizar',
+            cancelLabel: (typeof i18nT === 'function') ? i18nT('admin.cancel') : 'Cancelar',
+            danger: false
+        });
+        if (!ok) return;
+
+        _optimizeImagesBusy = true;
+        var dockBtn = document.getElementById('optimize-images-button');
+        var panelBtn = document.getElementById('panel-optimize-images-button');
+        if (dockBtn) dockBtn.disabled = true;
+        if (panelBtn) panelBtn.disabled = true;
+
+        try {
+            await (typeof ensureFirebaseAdminSdk === 'function'
+                ? ensureFirebaseAdminSdk()
+                : Promise.resolve());
+            var totals = { optimized: 0, skipped: 0, errors: 0 };
+            var ids = [];
+
+            if (allProjects) {
+                var snap = await db.collection('projetos').get();
+                snap.forEach(function (d) { ids.push(d.id); });
+            } else if (projectId) {
+                ids = [projectId];
+            } else {
+                showNotification((typeof i18nT === 'function') ? i18nT('immersive.projectNotIdentified') : 'Projeto não identificado.', 'error', true);
+                return;
+            }
+
+            for (var i = 0; i < ids.length; i++) {
+                var label = (typeof i18nT === 'function')
+                    ? i18nT('immersive.optimizeImagesProgress', { current: i + 1, total: ids.length })
+                    : ('Otimizando fotos… ' + (i + 1) + '/' + ids.length);
+                if (typeof _panelShowCarouselLoading === 'function') _panelShowCarouselLoading(label);
+                if (dockBtn) dockBtn.textContent = (i + 1) + '/' + ids.length;
+                var part = await _panelOptimizeProjectImages(ids[i]);
+                totals.optimized += part.optimized || 0;
+                totals.skipped += part.skipped || 0;
+                totals.errors += part.errors || 0;
+            }
+
+            if (typeof _panelLoadProjectImages === 'function') {
+                var reloadId = (!allProjects && projectId) ? projectId : _panelCurrentProjectId;
+                if (reloadId) await _panelLoadProjectImages(reloadId, true);
+            }
+
+            var doneMsg = (typeof i18nT === 'function')
+                ? i18nT('immersive.optimizeImagesDone', {
+                    optimized: totals.optimized,
+                    skipped: totals.skipped,
+                    errors: totals.errors
+                })
+                : ('Pronto: ' + totals.optimized + ' otimizada(s), ' + totals.skipped + ' ok/ignorada(s)' +
+                    (totals.errors ? ', ' + totals.errors + ' erro(s)' : '') + '.');
+            showNotification(doneMsg, totals.errors ? 'error' : 'success', true);
+        } catch (err) {
+            showNotification(
+                ((typeof i18nT === 'function') ? i18nT('immersive.optimizeImagesError') : 'Erro ao otimizar:') + ' ' + (err && err.message ? err.message : err),
+                'error',
+                true
+            );
+        } finally {
+            _optimizeImagesBusy = false;
+            if (typeof _panelHideCarouselLoading === 'function') _panelHideCarouselLoading();
+            if (dockBtn) {
+                dockBtn.disabled = false;
+                dockBtn.textContent = (typeof i18nT === 'function' && i18nT('immersive.optimizeImages') !== 'immersive.optimizeImages')
+                    ? i18nT('immersive.optimizeImages')
+                    : 'Otimizar fotos';
+            }
+            if (panelBtn) {
+                panelBtn.textContent = (typeof i18nT === 'function' && i18nT('immersive.optimizeImages') !== 'immersive.optimizeImages')
+                    ? i18nT('immersive.optimizeImages')
+                    : 'Otimizar fotos';
+            }
+            if (typeof _panelUpdateOptimizeButtonState === 'function') {
+                _panelUpdateOptimizeButtonState();
+            }
+        }
+    }
+    window._panelOptimizeCarouselImages = _panelOptimizeCarouselImages;
 
     function _panelCapturePosterFromUrl(videoUrl) {
         return new Promise(function(resolve) {
@@ -8492,7 +9006,34 @@ document.addEventListener('keydown', function(event) {
         var host = (panel && panel.querySelector('.project-container')) || panel;
         var existingInd = document.getElementById('panel-edit-indicator');
         if (existingInd) existingInd.remove();
-        if (!document.getElementById('panel-save-button')) {
+
+        var actions = document.getElementById('panel-admin-actions');
+        if (!actions && host) {
+            actions = document.createElement('div');
+            actions.id = 'panel-admin-actions';
+            host.appendChild(actions);
+        }
+
+        if (actions && !document.getElementById('panel-optimize-images-button')) {
+            var optBtn = document.createElement('button');
+            optBtn.id = 'panel-optimize-images-button';
+            optBtn.type = 'button';
+            optBtn.className = 'ui-chrome-btn';
+            optBtn.setAttribute('data-i18n', 'immersive.optimizeImages');
+            optBtn.textContent = (typeof i18nT === 'function' && i18nT('immersive.optimizeImages') !== 'immersive.optimizeImages')
+                ? i18nT('immersive.optimizeImages')
+                : 'Otimizar fotos';
+            optBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (typeof window._panelOptimizeCarouselImages === 'function') {
+                    window._panelOptimizeCarouselImages({ allProjects: false, projectId: _panelCurrentProjectId });
+                }
+            });
+            actions.appendChild(optBtn);
+        }
+
+        if (actions && !document.getElementById('panel-save-button')) {
             var saveBtn = document.createElement('button');
             saveBtn.id = 'panel-save-button';
             saveBtn.type = 'button';
@@ -8502,8 +9043,18 @@ document.addEventListener('keydown', function(event) {
                 e.stopPropagation();
                 _panelSaveChanges();
             });
-            if (host) host.appendChild(saveBtn);
+            actions.appendChild(saveBtn);
         }
+
+        // Garante ordem: otimizar à esquerda, salvar à direita.
+        if (actions) {
+            var optEl = document.getElementById('panel-optimize-images-button');
+            var saveEl = document.getElementById('panel-save-button');
+            if (optEl) actions.appendChild(optEl);
+            if (saveEl) actions.appendChild(saveEl);
+        }
+        _panelUpdateOptimizeButtonState();
+
         if (!document.getElementById('panel-video-fit-wrap')) {
             var wrap = document.createElement('div');
             wrap.id = 'panel-video-fit-wrap';
@@ -8545,7 +9096,9 @@ document.addEventListener('keydown', function(event) {
         if (titleEl) { titleEl.contentEditable = 'false'; titleEl.style.border = 'none'; titleEl.style.padding = '0'; }
         if (descEl)  { descEl.contentEditable  = 'false'; descEl.style.border  = 'none'; descEl.style.padding  = '0'; }
         var ind     = document.getElementById('panel-edit-indicator');     if (ind)     ind.remove();
+        var actions = document.getElementById('panel-admin-actions');      if (actions) actions.remove();
         var saveBtn = document.getElementById('panel-save-button');        if (saveBtn) saveBtn.remove();
+        var optBtn  = document.getElementById('panel-optimize-images-button'); if (optBtn) optBtn.remove();
         var logBtn  = document.getElementById('panel-logout-button');      if (logBtn)  logBtn.remove();
         var fitWrap = document.getElementById('panel-video-fit-wrap');     if (fitWrap) fitWrap.remove();
         var upCont  = document.getElementById('panel-image-upload-container');
@@ -8610,15 +9163,21 @@ document.addEventListener('keydown', function(event) {
                     <div class="carousel-indicators" id="panel-carousel-dots"></div>
                 </div>
                 <div class="image-upload-container" id="panel-image-upload-container">
-                    <label for="panel-media-upload-input" class="image-upload-label">Adicionar mídia</label>
-                    <span class="upload-limits-hint" data-i18n="immersive.uploadLimits">(imagens até 10 MB, vídeos até 80 MB — MP4, WebM, MOV)</span>
-                    <input type="file" id="panel-media-upload-input" class="image-upload-input" accept="image/*,video/mp4,video/webm,video/quicktime" multiple>
-                    <div class="youtube-url-row">
-                        <input type="url" id="panel-youtube-url-input" class="youtube-url-input" placeholder="URL do YouTube…" autocomplete="off" spellcheck="false">
-                        <button type="button" id="panel-youtube-url-btn" class="youtube-url-btn">YouTube</button>
+                    <div class="image-upload-toolbar">
+                        <span class="image-upload-title" data-i18n="immersive.addMediaShort">Adicionar mídia</span>
+                        <button type="button" id="panel-media-collapse-btn" class="image-upload-collapse-btn" aria-expanded="true" aria-controls="panel-media-upload-body" data-i18n-attr="aria-label:immersive.collapseMediaPanel" aria-label="Minimizar painel de mídia" title="Minimizar">−</button>
                     </div>
-                    <p class="image-list-hint">Arraste ou use ▲▼ para ordenar</p>
-                    <div class="image-list" id="panel-image-list"></div>
+                    <div class="image-upload-body" id="panel-media-upload-body">
+                        <label for="panel-media-upload-input" class="image-upload-label" data-i18n="immersive.selectMediaFiles">Selecionar arquivos</label>
+                        <span class="upload-limits-hint" data-i18n="immersive.uploadLimits">(imagens até 10 MB, vídeos até 80 MB — MP4, WebM, MOV)</span>
+                        <input type="file" id="panel-media-upload-input" class="image-upload-input" accept="image/*,video/mp4,video/webm,video/quicktime" multiple>
+                        <div class="youtube-url-row">
+                            <input type="url" id="panel-youtube-url-input" class="youtube-url-input" placeholder="URL do YouTube…" autocomplete="off" spellcheck="false">
+                            <button type="button" id="panel-youtube-url-btn" class="youtube-url-btn">YouTube</button>
+                        </div>
+                        <p class="image-list-hint">Arraste ou use ▲▼ para ordenar</p>
+                        <div class="image-list" id="panel-image-list"></div>
+                    </div>
                 </div>
             </div>
             <div class="project-text-container">
@@ -8671,97 +9230,15 @@ document.addEventListener('keydown', function(event) {
 </body>
 </html>
 
-<div class="card" id="aboutCard" style="display: none;">
-  <img src="asset/id.jpg" alt="">
-</div>
-
-<script>
-  const card = document.getElementById('aboutCard');
-
-  card.addEventListener('mouseenter', () => {
-    gsap.to(card, { duration: 0.3, width: 280, height: 180, ease: "power1.out" }); // Aumenta o tamanho
-  });
-
-  card.addEventListener('mouseleave', () => {
-    gsap.to(card, { duration: 0.3, width: 240, height: 140, ease: "power1.out" }); // Volta ao tamanho original
-  });
-
-  // Código para detectar a sequência de teclas "i" seguida de "d"
-  let lastKeyPressed = '';
-  let keySequence = '';
-  
-  document.addEventListener('keydown', function(event) {
-    const key = event.key.toLowerCase();
-    
-    // Adiciona a tecla atual à sequência
-    keySequence += key;
-    
-    // Verifica se a sequência termina com "id"
-    if (keySequence.endsWith('id')) {
-      // Alterna a visibilidade do card
-      if (card.style.display === 'none') {
-        card.style.display = 'flex';
-        // Animação de entrada
-        gsap.fromTo(card, 
-          { opacity: 0, scale: 0.8 }, 
-          { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.7)" }
-        );
-      } else {
-        // Animação de saída
-        gsap.to(card, { 
-          opacity: 0, 
-          scale: 0.8, 
-          duration: 0.3, 
-          ease: "power2.in",
-          onComplete: function() {
-            card.style.display = 'none';
-          }
-        });
-      }
-      
-      // Limpa a sequência após detectar "id"
-      keySequence = '';
-    }
-    
-    // Limita o tamanho da sequência para evitar consumo de memória
-    if (keySequence.length > 10) {
-      keySequence = keySequence.slice(-10);
-    }
-  });
-</script>
-
 <script>
   (function () {
-    var card = document.querySelector('#aboutCard');
-    if (!card || card.style.display === 'none') return;
-    var src = 'https://cdn.jsdelivr.net/npm/vanilla-tilt@1.7.0/dist/vanilla-tilt.min.js';
-    var s = document.createElement('script');
-    s.src = src;
-    s.async = true;
-    s.onload = function () {
-      if (typeof VanillaTilt === 'undefined') return;
-      VanillaTilt.init(card, {
-        max: 25,
-        speed: 400,
-        glare: true,
-        'max-glare': 0.5,
-        perspective: 1000,
-        scale: 1.05
-      });
-    };
-    document.head.appendChild(s);
+    document.addEventListener('keydown', function (event) {
+      if (event.key !== 'Enter') return;
+      if (typeof startScreenActive === 'undefined' || !startScreenActive) return;
+      event.preventDefault();
+      if (typeof enterSite === 'function') enterSite();
+    });
   })();
-</script>
-
-<script>
-    (function () {
-        document.addEventListener('keydown', function (event) {
-            if (event.key !== 'Enter') return;
-            if (typeof startScreenActive === 'undefined' || !startScreenActive) return;
-            event.preventDefault();
-            if (typeof enterSite === 'function') enterSite();
-        });
-    })();
 </script>
 
 <!-- Adicionar a notificação inicial -->
@@ -8780,7 +9257,7 @@ document.addEventListener('keydown', function(event) {
                 <span></span><span></span><span></span>
             </div>
             <p class="head-hint-msg">
-                <span class="head-hint-title" data-i18n="immersive.headHint">Clica na cabeça</span>
+                <span class="head-hint-title" data-i18n="immersive.headHint">Clique na cabeça</span>
                 <span class="head-hint-sub" data-i18n="immersive.headHintSub">pra ver os meus projetos</span>
             </p>
         </div>
@@ -8812,7 +9289,7 @@ document.addEventListener('keydown', function(event) {
 <div id="returnNotification" class="return-notification" style="opacity: 0;">
     <div class="head-hint is-static-msg">
         <p class="head-hint-msg">
-            <span class="head-hint-title">Clica fora do cubo</span>
+            <span class="head-hint-title">Clique fora do cubo</span>
             <span class="head-hint-sub">pra voltar</span>
         </p>
     </div>
