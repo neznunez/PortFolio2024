@@ -189,6 +189,8 @@
     "uploadLimits": "(images up to 10 MB — high-quality compressed; videos up to 80 MB — MP4, WebM, MOV — or YouTube URL)",
     "saving": "Saving...",
     "saveChanges": "Save changes",
+    "subtitleLabel": "Subtitle / category",
+    "subtitlePlaceholder": "DEV / 3D / AR / VR",
     "saved": "Changes saved successfully!",
     "saveError": "Error saving:",
     "projectNotIdentified": "Error: project not identified.",

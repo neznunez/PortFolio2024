@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8">
@@ -2443,8 +2443,22 @@
             text-transform: uppercase;
             color: rgba(255, 255, 255, 0.62);
         }
-        #project-panel .panel-project-meta:empty {
+        #project-panel .panel-project-meta.is-empty:not(.is-editing) {
             display: none;
+        }
+        #project-panel #panel-project-subtitle {
+            display: inline;
+            outline: none;
+        }
+        #project-panel #panel-project-subtitle.is-editing:empty::before {
+            content: attr(data-placeholder);
+            color: rgba(255, 255, 255, 0.32);
+        }
+        #project-panel #panel-project-year:empty {
+            display: none;
+        }
+        #project-panel #panel-project-year:not(:empty)::before {
+            content: '  ·  ';
         }
         #project-panel #panel-project-title {
             margin: 0 0 18px;
@@ -7564,7 +7578,14 @@ document.addEventListener('keydown', function(event) {
         var navEl    = document.getElementById('panel-carousel-nav');
         if (titleEl) titleEl.textContent = i18nT('immersive.loading');
         if (descEl)  descEl.innerHTML   = '';
-        if (metaEl)  metaEl.textContent = '';
+        var subtitleEl = document.getElementById('panel-project-subtitle');
+        var yearEl = document.getElementById('panel-project-year');
+        if (subtitleEl) subtitleEl.textContent = '';
+        if (yearEl) yearEl.textContent = '';
+        if (metaEl) {
+            metaEl.classList.add('is-empty');
+            metaEl.classList.add('visible');
+        }
         if (slidesEl) slidesEl.innerHTML = '';
         if (dotsEl)   dotsEl.innerHTML   = '';
         if (navEl)    navEl.style.display = 'none';
@@ -7970,7 +7991,11 @@ document.addEventListener('keydown', function(event) {
         if (metaEl) {
             var subtitle = i18nProject(row, 'subtitle') || '';
             var year = data.year ? String(data.year) : '';
-            metaEl.textContent = [subtitle, year].filter(Boolean).join('  ·  ');
+            var subtitleEl = document.getElementById('panel-project-subtitle');
+            var yearEl = document.getElementById('panel-project-year');
+            if (subtitleEl) subtitleEl.textContent = subtitle;
+            if (yearEl) yearEl.textContent = year;
+            metaEl.classList.toggle('is-empty', !subtitle && !year);
             metaEl.classList.add('visible');
         }
         if (descEl) {
@@ -9307,8 +9332,35 @@ document.addEventListener('keydown', function(event) {
         if (typeof isAdminLoggedIn === 'undefined' || !isAdminLoggedIn) return;
         var titleEl = document.getElementById('panel-project-title');
         var descEl  = document.getElementById('panel-project-description');
+        var subtitleEl = document.getElementById('panel-project-subtitle');
+        var metaEl = document.getElementById('panel-project-meta');
         if (titleEl) { titleEl.contentEditable = 'true'; titleEl.style.border = '1px dashed #33ff33'; titleEl.style.padding = '5px'; }
         if (descEl)  { descEl.contentEditable  = 'true'; descEl.style.border  = '1px dashed #33ff33'; descEl.style.padding  = '5px'; }
+        if (subtitleEl) {
+            subtitleEl.contentEditable = 'true';
+            subtitleEl.style.border = '1px dashed #33ff33';
+            subtitleEl.style.padding = '4px 6px';
+            subtitleEl.style.display = 'inline-block';
+            subtitleEl.style.minWidth = '8ch';
+            subtitleEl.classList.add('is-editing');
+            subtitleEl.setAttribute('data-placeholder', i18nT('immersive.subtitlePlaceholder'));
+            subtitleEl.setAttribute('role', 'textbox');
+            subtitleEl.setAttribute('aria-label', i18nT('immersive.subtitleLabel'));
+            if (!subtitleEl.getAttribute('data-sub-bound')) {
+                subtitleEl.setAttribute('data-sub-bound', '1');
+                subtitleEl.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        subtitleEl.blur();
+                    }
+                });
+            }
+        }
+        if (metaEl) {
+            metaEl.classList.add('is-editing');
+            metaEl.classList.remove('is-empty');
+            metaEl.classList.add('visible');
+        }
 
         var panel = document.getElementById('project-panel');
         var host = (panel && panel.querySelector('.project-container')) || panel;
@@ -9401,8 +9453,26 @@ document.addEventListener('keydown', function(event) {
     function _panelDisableEditMode() {
         var titleEl = document.getElementById('panel-project-title');
         var descEl  = document.getElementById('panel-project-description');
+        var subtitleEl = document.getElementById('panel-project-subtitle');
+        var metaEl = document.getElementById('panel-project-meta');
         if (titleEl) { titleEl.contentEditable = 'false'; titleEl.style.border = 'none'; titleEl.style.padding = '0'; }
         if (descEl)  { descEl.contentEditable  = 'false'; descEl.style.border  = 'none'; descEl.style.padding  = '0'; }
+        if (subtitleEl) {
+            subtitleEl.contentEditable = 'false';
+            subtitleEl.style.border = 'none';
+            subtitleEl.style.padding = '0';
+            subtitleEl.style.display = '';
+            subtitleEl.style.minWidth = '';
+            subtitleEl.classList.remove('is-editing');
+            subtitleEl.removeAttribute('data-placeholder');
+        }
+        if (metaEl) {
+            metaEl.classList.remove('is-editing');
+            var yearEl = document.getElementById('panel-project-year');
+            var hasSub = subtitleEl && subtitleEl.textContent.trim();
+            var hasYear = yearEl && yearEl.textContent.trim();
+            metaEl.classList.toggle('is-empty', !hasSub && !hasYear);
+        }
         var ind     = document.getElementById('panel-edit-indicator');     if (ind)     ind.remove();
         var actions = document.getElementById('panel-admin-actions');      if (actions) actions.remove();
         var saveBtn = document.getElementById('panel-save-button');        if (saveBtn) saveBtn.remove();
@@ -9419,14 +9489,16 @@ document.addEventListener('keydown', function(event) {
         if (!projectId) { showNotification(i18nT('immersive.projectNotIdentified'), 'error', true); return; }
         var titleEl = document.getElementById('panel-project-title');
         var descEl  = document.getElementById('panel-project-description');
+        var subtitleEl = document.getElementById('panel-project-subtitle');
         var newTitle = titleEl ? titleEl.textContent.trim() : '';
         var newDesc  = descEl  ? descEl.innerText.replace(/\u00a0/g, ' ').trim() : '';
+        var newSub   = subtitleEl ? subtitleEl.textContent.replace(/\u00a0/g, ' ').trim() : '';
         var saveBtn  = document.getElementById('panel-save-button');
         if (saveBtn) { saveBtn.textContent = i18nT('immersive.saving'); saveBtn.disabled = true; }
         var isEn = window.I18n && I18n.getLocale() === 'en';
         var payload = isEn
-          ? { title_en: newTitle, description_en: newDesc }
-          : { title: newTitle, nome: newTitle, description: newDesc, descricao: newDesc };
+          ? { title_en: newTitle, description_en: newDesc, subtitle_en: newSub }
+          : { title: newTitle, nome: newTitle, description: newDesc, descricao: newDesc, subtitle: newSub, subtitulo: newSub };
         db.collection('projetos').doc(projectId).set(payload, { merge: true })
             .then(function() {
                 if (saveBtn) { saveBtn.textContent = i18nT('immersive.saveChanges'); saveBtn.disabled = false; }
@@ -9489,7 +9561,9 @@ document.addEventListener('keydown', function(event) {
                 </div>
             </div>
             <div class="project-text-container">
-                <p class="panel-project-meta fade-in visible" id="panel-project-meta"></p>
+                <p class="panel-project-meta fade-in visible is-empty" id="panel-project-meta">
+                    <span id="panel-project-subtitle"></span><span id="panel-project-year"></span>
+                </p>
                 <h1 id="panel-project-title" class="fade-in visible">Carregando...</h1>
                 <div id="panel-project-description" class="fade-in visible"></div>
             </div>
