@@ -146,8 +146,9 @@
     "labelTitleEn": "Title (EN)",
     "labelDescPt": "Description (PT)",
     "labelDescEn": "Description (EN)",
-    "labelSubtitlePt": "Subtitle (PT)",
-    "labelSubtitleEn": "Subtitle (EN)"
+    "labelSubtitle": "Category",
+    "labelSubtitlePt": "Category",
+    "labelSubtitleEn": "Category"
   },
   "projectCatalog": {
     "byTitle": {}
@@ -190,7 +191,7 @@
     "saving": "Saving...",
     "saveChanges": "Save changes",
     "subtitleLabel": "Subtitle / category",
-    "subtitlePlaceholder": "DEV / 3D / AR / VR",
+    "subtitlePlaceholder": "DEV / Digital Art / AR / VR",
     "saved": "Changes saved successfully!",
     "saveError": "Error saving:",
     "projectNotIdentified": "Error: project not identified.",

@@ -3586,7 +3586,7 @@
           if (window.I18n && typeof I18n.localized === 'function') return I18n.localized(row, field);
           if (field === 'title') return String(row.title || row.nome || '').trim();
           if (field === 'description') return String(row.description || row.descricao || '').trim();
-          if (field === 'subtitle') return String(row.subtitle || row.subtitulo || row.meta || '').trim();
+          if (field === 'subtitle') return String(row.subtitle || row.subtitulo || row.subtitle_en || row.meta || '').trim();
           return '';
         }
 
@@ -9497,8 +9497,11 @@ document.addEventListener('keydown', function(event) {
         if (saveBtn) { saveBtn.textContent = i18nT('immersive.saving'); saveBtn.disabled = true; }
         var isEn = window.I18n && I18n.getLocale() === 'en';
         var payload = isEn
-          ? { title_en: newTitle, description_en: newDesc, subtitle_en: newSub }
-          : { title: newTitle, nome: newTitle, description: newDesc, descricao: newDesc, subtitle: newSub, subtitulo: newSub };
+          ? { title_en: newTitle, description_en: newDesc }
+          : { title: newTitle, nome: newTitle, description: newDesc, descricao: newDesc };
+        payload.subtitle = newSub;
+        payload.subtitulo = newSub;
+        payload.subtitle_en = newSub;
         db.collection('projetos').doc(projectId).set(payload, { merge: true })
             .then(function() {
                 if (saveBtn) { saveBtn.textContent = i18nT('immersive.saveChanges'); saveBtn.disabled = false; }

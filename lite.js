@@ -10,7 +10,9 @@
     if (!project) return '';
     if (field === 'title') return String(project.title || project.nome || '').trim();
     if (field === 'description') return String(project.description || project.descricao || '').trim();
-    if (field === 'subtitle') return String(project.subtitle || project.subtitulo || project.meta || '').trim();
+    if (field === 'subtitle') {
+      return String(project.subtitle || project.subtitulo || project.subtitle_en || project.meta || '').trim();
+    }
     return '';
   }
 
@@ -1379,10 +1381,8 @@
               '<input class="project-item-title project-edit-input" data-project-field="title_pt" value="' + escapeHtml(draft.title_pt || '') + '" />' +
               '<label class="project-bilingual-label">' + escapeHtml(t('projects.labelTitleEn')) + '</label>' +
               '<input class="project-item-title project-edit-input" data-project-field="title_en" value="' + escapeHtml(draft.title_en || '') + '" />' +
-              '<label class="project-bilingual-label">' + escapeHtml(t('projects.labelSubtitlePt')) + '</label>' +
-              '<input class="project-item-meta project-edit-input" data-project-field="subtitle_pt" value="' + escapeHtml(draft.subtitle_pt || '') + '" />' +
-              '<label class="project-bilingual-label">' + escapeHtml(t('projects.labelSubtitleEn')) + '</label>' +
-              '<input class="project-item-meta project-edit-input" data-project-field="subtitle_en" value="' + escapeHtml(draft.subtitle_en || '') + '" />' +
+              '<label class="project-bilingual-label">' + escapeHtml(t('projects.labelSubtitle')) + '</label>' +
+              '<input class="project-item-meta project-edit-input" data-project-field="subtitle" value="' + escapeHtml(draft.subtitle || '') + '" placeholder="DEV / Digital Art / AR / VR" />' +
               '<label class="project-bilingual-label">' + escapeHtml(t('projects.labelDescPt')) + '</label>' +
               '<textarea class="project-item-description project-edit-textarea" data-project-field="description_pt">' + escapeHtml(draft.description_pt || '') + '</textarea>' +
               '<label class="project-bilingual-label">' + escapeHtml(t('projects.labelDescEn')) + '</label>' +
@@ -1565,7 +1565,6 @@
       title_en: '',
       subtitle: '',
       subtitulo: '',
-      subtitle_en: '',
       description: '',
       descricao: '',
       description_en: '',
@@ -1583,7 +1582,6 @@
           title: newTitle,
           title_en: '',
           subtitle: '',
-          subtitle_en: '',
           description: '',
           description_en: '',
           mediaItems: [],
@@ -2548,8 +2546,7 @@
     var draft = {
       title_pt: String(project.title || project.nome || '').trim(),
       title_en: String(project.title_en || '').trim(),
-      subtitle_pt: String(project.subtitle || project.subtitulo || project.meta || (project.year ? String(project.year) : '')).trim(),
-      subtitle_en: String(project.subtitle_en || '').trim(),
+      subtitle: String(project.subtitle || project.subtitulo || project.subtitle_en || project.meta || '').trim(),
       description_pt: toPlainText(project.description || project.descricao || ''),
       description_en: toPlainText(project.description_en || '')
     };
@@ -2842,9 +2839,9 @@
       title: String(draft.title_pt || '').trim(),
       nome: String(draft.title_pt || '').trim(),
       title_en: String(draft.title_en || '').trim(),
-      subtitle: String(draft.subtitle_pt || '').trim(),
-      subtitulo: String(draft.subtitle_pt || '').trim(),
-      subtitle_en: String(draft.subtitle_en || '').trim(),
+      subtitle: String(draft.subtitle || '').trim(),
+      subtitulo: String(draft.subtitle || '').trim(),
+      subtitle_en: String(draft.subtitle || '').trim(),
       description: String(draft.description_pt || '').trim(),
       descricao: String(draft.description_pt || '').trim(),
       description_en: String(draft.description_en || '').trim()
@@ -2855,6 +2852,7 @@
         project.title = payload.title;
         project.title_en = payload.title_en;
         project.subtitle = payload.subtitle;
+        project.subtitulo = payload.subtitulo;
         project.subtitle_en = payload.subtitle_en;
         project.description = payload.description;
         project.description_en = payload.description_en;

@@ -100,6 +100,10 @@
   function localized(item, field) {
     if (!item) return '';
     var base = field === 'title' ? 'title' : field === 'description' ? 'description' : field === 'subtitle' ? 'subtitle' : field;
+    // Categoria/subtítulo é universal — o mesmo valor em PT e EN (filtro futuro).
+    if (base === 'subtitle') {
+      return String(item.subtitle || item.subtitulo || item.subtitle_en || item.meta || '').trim();
+    }
     if (currentLocale === 'en') {
       var enKey = base + '_en';
       var enVal = item[enKey];
@@ -109,7 +113,6 @@
     }
     if (base === 'title') return String(item.title || item.nome || t('projects.defaultTitle')).trim();
     if (base === 'description') return String(item.description || item.descricao || '').trim();
-    if (base === 'subtitle') return String(item.subtitle || item.subtitulo || item.meta || '').trim();
     return String(item[base] || '').trim();
   }
 
