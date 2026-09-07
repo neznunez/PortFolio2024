@@ -5164,7 +5164,7 @@
                     if (controls) controls.target.set(0, 0, 0);
                 }
             }, 0);
-            _startHeadEntryTl.add(showHeadChatBubble, 0.82);
+            _startHeadEntryTl.add(showHeadChatBubble, 0.52);
         }
 
         function finishStartLoadingReveal() {
@@ -5827,8 +5827,8 @@ function updateHeadChatBubble() {
 
 var _hintTimers = [];
 var _hintSequenceStarted = false;
-var HEAD_CHAT_TYPING_MS = 820;   // tempo com os pontinhos antes de virar texto
-var HEAD_CHAT_GAP_MS = 560;      // respiro entre uma mensagem e a próxima
+var HEAD_CHAT_TYPING_MS = 580;   // tempo com os pontinhos antes de virar texto
+var HEAD_CHAT_GAP_MS = 380;      // respiro entre uma mensagem e a próxima
 var HEAD_CHAT_IDLE_MS = 16000;   // espera antes de insistir com quem não clicou
 var HEAD_CHAT_MAX_VISIBLE = 3;   // acima disso a pilha invadiria o topo da tela
 
@@ -9725,7 +9725,7 @@ document.addEventListener('keydown', function(event) {
             } catch (e) {}
         if (typeof resumeImmersiveScene !== 'undefined' && resumeImmersiveScene) return;
         if (typeof startScreenPending === 'function' && startScreenPending()) return;
-        setTimeout(showHeadChatBubble, 400);
+        setTimeout(showHeadChatBubble, 180);
     });
 </script>
 
