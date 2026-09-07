@@ -2000,6 +2000,13 @@
     var ok = window.confirm(t('immersive.deleteMediaConfirm', { label: label }));
     if (!ok) return;
 
+    var previousItems = project.mediaItems.slice();
+    var previousPreview = project.preview;
+    var previousIndex = activeMediaIndex;
+    var urlToDelete = item && item.src ? item.src : null;
+    var thumbToDelete = item && item.thumb ? item.thumb : null;
+    var posterToDelete = item && item.poster ? item.poster : null;
+
     var reordered = project.mediaItems.slice();
     reordered.splice(index, 1);
     project.mediaItems = reordered;
@@ -2017,14 +2024,64 @@
 
     setProjectPreviewLoading(true);
     saveProjectMediaOrder(project)
+      .then(function () {
+        return liteDeleteStorageUrls([urlToDelete, thumbToDelete, posterToDelete]);
+      })
       .catch(function (error) {
         console.warn('Erro ao excluir mídia do projeto:', error);
+        project.mediaItems = previousItems;
+        project.preview = previousPreview;
+        activeProjectMedia = previousItems.slice();
+        activeMediaIndex = previousIndex;
+        if (activeProjectMedia.length) {
+          renderProjectMedia({ showControls: true });
+        } else {
+          updateProjectPreview([], { showControls: true, previewOwnerKey: selectedProjectId });
+        }
         alert(t('js.mediaDeleteFailed'));
       })
       .finally(function () {
         setProjectPreviewLoading(false);
         renderProjectsList({ preserveSelection: true, skipPreviewReset: true });
+        updateProjectMediaOrderTools();
       });
+  }
+
+  function liteStoragePathFromUrl(url) {
+    if (!url || typeof url !== 'string') return null;
+    if (url.indexOf('/fb-storage') === 0 || url.indexOf('/fb-storage-app') === 0 || url.indexOf('/gcs-storage') === 0) {
+      return null;
+    }
+    try {
+      var parts = url.split('/o/');
+      if (parts.length >= 2) {
+        return decodeURIComponent(parts[1].split('?')[0]);
+      }
+      var parsed = new URL(url, window.location.href);
+      if (parsed.hostname.indexOf('firebasestorage.app') !== -1) {
+        var path = decodeURIComponent(parsed.pathname || '').replace(/^\/+/, '');
+        return path || null;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function liteDeleteStorageUrls(urls) {
+    if (!storageRef || !urls || !urls.length) return Promise.resolve();
+    return Promise.all(
+      urls.filter(Boolean).map(function (url) {
+        var path = liteStoragePathFromUrl(url);
+        if (!path) return Promise.resolve();
+        return storageRef
+          .ref(path)
+          .delete()
+          .catch(function (err) {
+            console.warn('Falha ao deletar do Storage:', path, err);
+          });
+      })
+    );
   }
 
   function togglePreviewVideoPlayback() {

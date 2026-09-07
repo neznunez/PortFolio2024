@@ -7563,7 +7563,8 @@ document.addEventListener('keydown', function(event) {
                 : (poster ? ('<img src="' + poster + '" alt="Preview" onerror="this.style.display=\'none\'">') : '<span style="font-size:20px;">▶</span>');
             var div = document.createElement('div');
             div.className = 'image-item';
-            div.setAttribute('draggable', 'true');
+            // Só ativa drag a partir do handle — senão o clique em Deletar/▲▼ é engolido pelo HTML5 drag.
+            div.setAttribute('draggable', 'false');
             div.setAttribute('data-index', String(idx));
             div.innerHTML =
                 '<span class="carousel-drag-handle" title="Arrastar para reordenar" aria-hidden="true">⋮⋮</span>' +
@@ -7575,9 +7576,22 @@ document.addEventListener('keydown', function(event) {
                 '<button type="button" class="image-order-btn" data-move="down" title="Mover para baixo" aria-label="Mover para baixo"' + (idx === total - 1 ? ' disabled' : '') + '>▼</button>' +
                 '<button type="button" class="delete-image-btn" data-index="' + idx + '">Deletar</button>' +
                 '</div>';
+            var dragHandle = div.querySelector('.carousel-drag-handle');
+            if (dragHandle) {
+                dragHandle.addEventListener('mousedown', function() {
+                    div.setAttribute('draggable', 'true');
+                });
+                dragHandle.addEventListener('touchstart', function() {
+                    div.setAttribute('draggable', 'true');
+                }, { passive: true });
+            }
+            div.addEventListener('mouseup', function() {
+                div.setAttribute('draggable', 'false');
+            });
             div.addEventListener('dragstart', function(e) {
-                if (e.target.closest('button')) {
+                if (e.target.closest('button') || e.target.closest('.image-item-actions')) {
                     e.preventDefault();
+                    div.setAttribute('draggable', 'false');
                     return;
                 }
                 e.dataTransfer.setData('text/plain', String(idx));
@@ -7586,6 +7600,7 @@ document.addEventListener('keydown', function(event) {
             });
             div.addEventListener('dragend', function() {
                 div.classList.remove('carousel-item-dragging');
+                div.setAttribute('draggable', 'false');
                 _panelClearCarouselDropHints();
             });
             div.addEventListener('dragover', function(e) {
@@ -7617,8 +7632,19 @@ document.addEventListener('keydown', function(event) {
             });
             var upBtn = div.querySelector('[data-move="up"]');
             var downBtn = div.querySelector('[data-move="down"]');
+            Array.prototype.forEach.call(div.querySelectorAll('.image-item-actions button'), function(btn) {
+                btn.addEventListener('mousedown', function(ev) {
+                    ev.stopPropagation();
+                    div.setAttribute('draggable', 'false');
+                });
+                btn.addEventListener('pointerdown', function(ev) {
+                    ev.stopPropagation();
+                    div.setAttribute('draggable', 'false');
+                });
+            });
             if (upBtn) {
                 upBtn.addEventListener('click', function(ev) {
+                    ev.preventDefault();
                     ev.stopPropagation();
                     if (idx <= 0) return;
                     _panelReorderCarouselItems(idx, idx - 1);
@@ -7626,12 +7652,14 @@ document.addEventListener('keydown', function(event) {
             }
             if (downBtn) {
                 downBtn.addEventListener('click', function(ev) {
+                    ev.preventDefault();
                     ev.stopPropagation();
                     if (idx >= total - 1) return;
                     _panelReorderCarouselItems(idx, idx + 1);
                 });
             }
             div.querySelector('.delete-image-btn').addEventListener('click', function(ev) {
+                ev.preventDefault();
                 ev.stopPropagation();
                 _panelDeleteCarouselItem(idx);
             });
@@ -7643,8 +7671,16 @@ document.addEventListener('keydown', function(event) {
         if (!url || typeof url !== 'string') return null;
         try {
             var parts = url.split('/o/');
-            if (parts.length < 2) return null;
-            return decodeURIComponent(parts[1].split('?')[0]);
+            if (parts.length >= 2) {
+                return decodeURIComponent(parts[1].split('?')[0]);
+            }
+            // URLs do bucket *.firebasestorage.app (sem /o/)
+            var parsed = new URL(url, window.location.href);
+            if (parsed.hostname.indexOf('firebasestorage.app') !== -1) {
+                var path = decodeURIComponent(parsed.pathname || '').replace(/^\/+/, '');
+                return path || null;
+            }
+            return null;
         } catch (e) {
             return null;
         }
@@ -7681,7 +7717,11 @@ document.addEventListener('keydown', function(event) {
                 ? data.carouselItems.slice()
                 : (data.images && Array.isArray(data.images)) ? data.images.map(function(u) { return { type: 'image', url: u }; }) : [];
             var images = (data.images && Array.isArray(data.images)) ? data.images.slice() : [];
-            if (itemIndex < 0 || itemIndex >= items.length) return;
+            if (itemIndex < 0 || itemIndex >= items.length) {
+                // Fallback: usa a lista já renderizada no painel (evita índice inválido por dados desatualizados).
+                items = Array.isArray(_panelCarouselItems) ? _panelCarouselItems.slice() : items;
+                if (itemIndex < 0 || itemIndex >= items.length) return;
+            }
             var removed = items[itemIndex];
             var urlToDelete = (removed && removed.url) ? removed.url : (typeof removed === 'string' ? removed : null);
             var thumbToDelete = (removed && removed.thumb) ? removed.thumb : null;
@@ -7699,7 +7739,12 @@ document.addEventListener('keydown', function(event) {
             stripFromImages(urlToDelete);
             stripFromImages(thumbToDelete);
 
-            // Atualiza a UI já (não espera o round-trip do Storage/Firestore).
+            // Persiste no Firestore primeiro — Storage pode falhar/atrasar sem desfazer a exclusão.
+            await projectRef.update({
+                carouselItems: items,
+                images: images
+            });
+
             var fresh = Object.assign({}, data, { carouselItems: items, images: images });
             _panelCarouselItems = items;
             _panelCarouselSignature = _panelItemsSignature(items);
@@ -7711,10 +7756,6 @@ document.addEventListener('keydown', function(event) {
             await _panelDeleteStorageUrl(thumbToDelete);
             await _panelDeleteStorageUrl(posterToDelete);
 
-            await projectRef.update({
-                carouselItems: items,
-                images: images
-            });
             showNotification('Item removido com sucesso!', 'success', true);
         } catch(err) {
             showNotification('Erro ao deletar: ' + err.message, 'error', true);
@@ -7982,17 +8023,28 @@ document.addEventListener('keydown', function(event) {
             chain
                 .then(function() {
                     if (!changed || _panelCurrentProjectId !== projectId || typeof db === 'undefined' || !db) return;
-                    return db.collection('projetos').doc(projectId).set({ carouselItems: nextItems }, { merge: true })
+                    // Usa a lista atual do painel (não a cópia antiga) para não repor itens já apagados.
+                    var liveItems = Array.isArray(_panelCarouselItems) ? _panelCarouselItems.slice() : nextItems.slice();
+                    var byUrl = Object.create(null);
+                    nextItems.forEach(function(item) {
+                        if (item && item.url && item.poster) byUrl[item.url] = item.poster;
+                    });
+                    var merged = liveItems.map(function(item) {
+                        if (!item || item.type !== 'video' || !item.url || item.poster) return item;
+                        var poster = byUrl[item.url];
+                        return poster ? Object.assign({}, item, { poster: poster }) : item;
+                    });
+                    return db.collection('projetos').doc(projectId).set({ carouselItems: merged }, { merge: true })
                         .then(function() {
-                            _panelCarouselItems = nextItems;
+                            _panelCarouselItems = merged;
                             if (_panelSlides && _panelSlides.length) {
-                                nextItems.forEach(function(item, idx) {
+                                merged.forEach(function(item, idx) {
                                     if (!item || item.type !== 'video' || !item.poster || !_panelSlides[idx]) return;
                                     var v = _panelSlides[idx].querySelector('video');
                                     if (v) v.poster = mediaUrl(item.poster);
                                 });
                             }
-                            _panelUpdateCarouselList(nextItems);
+                            _panelUpdateCarouselList(merged);
                             showNotification('Capas de vídeo geradas.', 'success', true);
                         });
                 })
