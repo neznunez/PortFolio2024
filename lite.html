@@ -46,10 +46,21 @@
             <input id="project-youtube-url-input" class="project-youtube-url-input" type="url" placeholder="URL do YouTube…" autocomplete="off" spellcheck="false" data-i18n-attr="placeholder:ui.youtubePlaceholder">
             <button id="project-youtube-url-btn" class="project-youtube-url-btn" type="button" data-i18n="ui.youtubeAdd">YT</button>
           </div>
+          <div id="project-website-row" class="project-youtube-row">
+            <input id="project-website-url-input" class="project-youtube-url-input" type="url" placeholder="URL do site…" autocomplete="off" spellcheck="false" data-i18n-attr="placeholder:ui.websitePlaceholder">
+            <button id="project-website-url-btn" class="project-youtube-url-btn" type="button" data-i18n="ui.websiteAdd">Site</button>
+          </div>
         </div>
         <img id="project-preview-image" class="project-preview-image" decoding="async" data-i18n-attr="alt:ui.previewAlt" alt="Preview do projeto">
         <video id="project-preview-video" class="project-preview-video" muted playsinline preload="none"></video>
         <iframe id="project-preview-youtube" class="project-preview-youtube" title="YouTube" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        <div id="project-preview-website" class="project-preview-website">
+          <iframe id="project-preview-website-frame" class="project-preview-website-frame" title="Site" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+          <a id="project-preview-website-open" class="project-preview-website-open" href="#" target="_blank" rel="noopener noreferrer">
+            <span id="project-preview-website-host"></span>
+            <span data-i18n="ui.websiteOpen">Abrir site</span>
+          </a>
+        </div>
         <button id="project-video-play" class="project-video-play is-hidden" type="button" data-i18n-attr="aria-label:ui.playVideo" aria-label="Reproduzir vídeo">&#9658;</button>
         <div id="project-media-order-wrap" class="project-media-order-wrap" aria-hidden="true">
           <button id="project-media-move-left" class="project-media-order-btn" type="button" data-i18n-attr="aria-label:ui.moveMediaLeft" aria-label="Mover mídia para a esquerda">&#8592;</button>

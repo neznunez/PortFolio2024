@@ -644,6 +644,7 @@
     });
     input.addEventListener('change', handleProjectPreviewMediaInputChange);
     setupProjectYouTubeUrlControls();
+    setupProjectWebsiteUrlControls();
   }
 
   function setupProjectYouTubeUrlControls() {
@@ -692,30 +693,7 @@
           var base =
             Array.isArray(data.carouselItems) && data.carouselItems.length
               ? data.carouselItems.slice()
-              : existing.map(function (item) {
-                  if (
-                    item.provider === 'youtube' ||
-                    item.youtubeId ||
-                    (typeof window.isYouTubeUrl === 'function' && window.isYouTubeUrl(item.src))
-                  ) {
-                    var id =
-                      item.youtubeId ||
-                      (typeof window.parseYouTubeId === 'function'
-                        ? window.parseYouTubeId(item.src)
-                        : '');
-                    return {
-                      type: 'video',
-                      provider: 'youtube',
-                      youtubeId: id || '',
-                      url: item.src,
-                      poster: item.poster || ''
-                    };
-                  }
-                  var row = { type: item.type === 'video' ? 'video' : 'image', url: item.src };
-                  if (item.poster) row.poster = item.poster;
-                  if (item.thumb) row.thumb = item.thumb;
-                  return row;
-                });
+              : existing.map(toFirestoreCarouselItem).filter(Boolean);
           base.push({
             type: 'video',
             provider: 'youtube',
@@ -751,6 +729,100 @@
       if (e.key === 'Enter') {
         e.preventDefault();
         submitYouTube();
+      }
+    });
+  }
+
+  function setupProjectWebsiteUrlControls() {
+    var input = document.getElementById('project-website-url-input');
+    var btn = document.getElementById('project-website-url-btn');
+    if (!input || !btn || btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
+    function submitWebsite() {
+      if (!isLiteAdmin || !selectedProjectId || !dbRef) return;
+      var project = getProjectByKey(selectedProjectId);
+      if (!project || !project.docId) return;
+      var raw = String(input.value || '').trim();
+      if (!raw) return;
+      if (typeof window.parseYouTubeId === 'function' && window.parseYouTubeId(raw)) {
+        var ytInput = document.getElementById('project-youtube-url-input');
+        var ytBtn = document.getElementById('project-youtube-url-btn');
+        if (ytInput) ytInput.value = raw;
+        input.value = '';
+        if (ytBtn) ytBtn.click();
+        return;
+      }
+      var siteUrl = typeof window.normalizeWebsiteUrl === 'function' ? window.normalizeWebsiteUrl(raw) : null;
+      if (!siteUrl) {
+        alert(t('js.websiteInvalid'));
+        return;
+      }
+      var existing = Array.isArray(project.mediaItems) ? project.mediaItems : [];
+      var already = existing.some(function (item) {
+        return item && (item.src === siteUrl || item.url === siteUrl);
+      });
+      if (already) {
+        alert(t('js.websiteExists'));
+        return;
+      }
+
+      btn.disabled = true;
+      input.disabled = true;
+      setProjectPreviewLoading(true);
+
+      dbRef
+        .collection('projetos')
+        .doc(project.docId)
+        .get()
+        .then(function (snap) {
+          var data = snap.exists ? snap.data() || {} : {};
+          var base =
+            Array.isArray(data.carouselItems) && data.carouselItems.length
+              ? data.carouselItems.slice()
+              : existing.map(toFirestoreCarouselItem).filter(Boolean);
+          var dup = base.some(function (item) {
+            if (!item) return false;
+            var href = item.url || item.src || '';
+            return href === siteUrl || (typeof window.isWebsiteCarouselItem === 'function' && window.isWebsiteCarouselItem(item) && href === siteUrl);
+          });
+          if (dup) throw new Error('exists');
+          base.push({
+            type: 'website',
+            provider: 'website',
+            url: siteUrl
+          });
+          return dbRef.collection('projetos').doc(project.docId).set({ carouselItems: base }, { merge: true });
+        })
+        .then(function () {
+          input.value = '';
+          return refreshProjectMediaFromFirestore(project.docId);
+        })
+        .then(function () {
+          alert(t('js.websiteAdded'));
+        })
+        .catch(function (err) {
+          if (err && err.message === 'exists') {
+            alert(t('js.websiteExists'));
+            return;
+          }
+          console.warn('Website Lite:', err);
+          alert(t('js.websiteAddFailed'));
+        })
+        .finally(function () {
+          btn.disabled = false;
+          input.disabled = false;
+          setProjectPreviewLoading(false);
+        });
+    }
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      submitWebsite();
+    });
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submitWebsite();
       }
     });
   }
@@ -1072,6 +1144,61 @@
     return value.indexOf('video') !== -1;
   }
 
+  function isWebsiteMedia(item) {
+    if (!item) return false;
+    if (item.type === 'website' || item.provider === 'website') return true;
+    return typeof window.isWebsiteCarouselItem === 'function' && window.isWebsiteCarouselItem(item);
+  }
+
+  function toFirestoreCarouselItem(item) {
+    if (!item || !item.src) return null;
+    if (isWebsiteMedia(item)) {
+      return { type: 'website', provider: 'website', url: item.src };
+    }
+    var isYt =
+      item.provider === 'youtube' ||
+      item.youtubeId ||
+      (typeof window.isYouTubeUrl === 'function' && window.isYouTubeUrl(item.src));
+    if (isYt) {
+      var ytId =
+        item.youtubeId ||
+        (typeof window.parseYouTubeId === 'function' ? window.parseYouTubeId(item.src) : '');
+      var rowYt = {
+        type: 'video',
+        provider: 'youtube',
+        youtubeId: ytId || '',
+        url:
+          ytId && typeof window.youtubeWatchUrl === 'function'
+            ? window.youtubeWatchUrl(ytId)
+            : item.src
+      };
+      if (item.poster) rowYt.poster = item.poster;
+      else if (ytId && typeof window.youtubePosterUrl === 'function') {
+        rowYt.poster = window.youtubePosterUrl(ytId);
+      }
+      return rowYt;
+    }
+    var row = { type: item.type === 'video' ? 'video' : 'image', url: item.src };
+    if (item.type === 'video' && item.poster) row.poster = item.poster;
+    if (item.type !== 'video' && item.thumb) row.thumb = item.thumb;
+    return row;
+  }
+
+  function pickProjectCover(mediaItems, fallback) {
+    var list = Array.isArray(mediaItems) ? mediaItems : [];
+    var i;
+    var item;
+    for (i = 0; i < list.length; i += 1) {
+      item = list[i];
+      if (item && item.type === 'image' && item.src) return item.src;
+    }
+    for (i = 0; i < list.length; i += 1) {
+      item = list[i];
+      if (item && item.type === 'video') return item.poster || item.src || '';
+    }
+    return fallback || '';
+  }
+
   function normalizeMediaEntry(raw) {
     if (!raw) return null;
     if (typeof raw === 'string') {
@@ -1145,6 +1272,19 @@
     }
     if (isVideoTypeHint(explicitType) || isVideoUrl(src)) {
       return { type: 'video', src: src, poster: poster || '' };
+    }
+    if (
+      raw.provider === 'website' ||
+      raw.source === 'website' ||
+      explicitType === 'website' ||
+      explicitType === 'url' ||
+      explicitType === 'link' ||
+      explicitType === 'site'
+    ) {
+      var site =
+        typeof window.normalizeWebsiteUrl === 'function' ? window.normalizeWebsiteUrl(src) : src;
+      if (!site) return null;
+      return { type: 'website', provider: 'website', src: site };
     }
     if (isImageUrl(src)) return { type: 'image', src: src, thumb: thumb || '' };
     return null;
@@ -1237,7 +1377,7 @@
   function applyFirestoreMediaToProject(project, data) {
     if (!project || !data) return;
     var mediaItems = collectMediaItems(data);
-    var coverCandidate = mediaItems.length ? mediaItems[0].src : (data.coverImage || data.image || data.thumbnail || data.thumb || '');
+    var coverCandidate = pickProjectCover(mediaItems, data.coverImage || data.image || data.thumbnail || data.thumb || '');
     if (!mediaItems.length && coverCandidate) {
       mediaItems = [{ type: isVideoUrl(coverCandidate) ? 'video' : 'image', src: coverCandidate }];
     }
@@ -1250,7 +1390,7 @@
 
     function normalizeProject(item, idx) {
       var mediaItems = collectMediaItems(item);
-      var coverCandidate = mediaItems.length ? mediaItems[0].src : (item.coverImage || item.image || item.thumbnail || item.thumb || '');
+      var coverCandidate = pickProjectCover(mediaItems, item.coverImage || item.image || item.thumbnail || item.thumb || '');
       if (!mediaItems.length && coverCandidate) {
         mediaItems = [{ type: isVideoUrl(coverCandidate) ? 'video' : 'image', src: coverCandidate }];
       }
@@ -1719,7 +1859,7 @@
     activeMediaIndex = 0;
     // Abre pela primeira imagem quando existe; mantém a ordem real para a navegação.
     for (var firstImageIndex = 0; firstImageIndex < activeProjectMedia.length; firstImageIndex += 1) {
-      if (activeProjectMedia[firstImageIndex].type !== 'video') {
+      if (activeProjectMedia[firstImageIndex].type === 'image') {
         activeMediaIndex = firstImageIndex;
         break;
       }
@@ -1730,6 +1870,7 @@
       imageEl.classList.remove('is-visible');
       videoEl.classList.remove('is-visible');
       clearPreviewYouTube();
+      clearPreviewWebsite();
       imageEl.removeAttribute('src');
       videoEl.pause();
       videoEl.removeAttribute('src');
@@ -1774,6 +1915,7 @@
     imageEl.classList.remove('is-visible');
     videoEl.classList.remove('is-visible');
     clearPreviewYouTube();
+    clearPreviewWebsite();
     if (playButton) playButton.classList.add('is-hidden');
 
     var targetSrc = targetItem.src;
@@ -1783,7 +1925,12 @@
       !!targetItem.youtubeId ||
       (typeof window.isYouTubeUrl === 'function' && window.isYouTubeUrl(targetSrc));
 
-    if (isYt) {
+    if (isWebsiteMedia(targetItem)) {
+      currentPreviewIsVideo = false;
+      clearPreviewVideoSource();
+      showWebsitePreview(targetSrc);
+      setProjectPreviewLoading(false);
+    } else if (isYt) {
       currentPreviewIsVideo = true;
       clearPreviewVideoSource();
       var ytId =
@@ -1843,6 +1990,30 @@
     yt.classList.remove('is-visible');
     if (yt.getAttribute('src')) yt.removeAttribute('src');
     delete yt.dataset.embedSrc;
+  }
+
+  function clearPreviewWebsite() {
+    var wrap = document.getElementById('project-preview-website');
+    var frame = document.getElementById('project-preview-website-frame');
+    var open = document.getElementById('project-preview-website-open');
+    if (wrap) wrap.classList.remove('is-visible');
+    if (frame && frame.getAttribute('src')) frame.removeAttribute('src');
+    if (open) open.setAttribute('href', '#');
+  }
+
+  function showWebsitePreview(src) {
+    var wrap = document.getElementById('project-preview-website');
+    var frame = document.getElementById('project-preview-website-frame');
+    var open = document.getElementById('project-preview-website-open');
+    var host = document.getElementById('project-preview-website-host');
+    if (!wrap || !frame) return;
+    frame.src = src;
+    wrap.classList.add('is-visible');
+    if (open) open.setAttribute('href', src);
+    if (host) {
+      host.textContent =
+        (typeof window.websiteHostname === 'function' && window.websiteHostname(src)) || src;
+    }
   }
 
   function clearPreviewVideoSource() {
@@ -1931,6 +2102,7 @@
 
   function preloadCoverOnly(item) {
     if (!item || !item.src) return;
+    if (isWebsiteMedia(item)) return;
     if (item.type === 'video') {
       if (item.poster) preloadImage(item.poster);
       return;
@@ -2198,38 +2370,10 @@
     if (!dbRef || !project || !project.docId) return Promise.resolve();
     var mediaItems = Array.isArray(project.mediaItems) ? project.mediaItems : [];
     var payload = {
-      carouselItems: mediaItems.map(function (item) {
-        var isYt =
-          item.provider === 'youtube' ||
-          item.youtubeId ||
-          (typeof window.isYouTubeUrl === 'function' && window.isYouTubeUrl(item.src));
-        if (isYt) {
-          var ytId =
-            item.youtubeId ||
-            (typeof window.parseYouTubeId === 'function' ? window.parseYouTubeId(item.src) : '');
-          var rowYt = {
-            type: 'video',
-            provider: 'youtube',
-            youtubeId: ytId || '',
-            url:
-              ytId && typeof window.youtubeWatchUrl === 'function'
-                ? window.youtubeWatchUrl(ytId)
-                : item.src
-          };
-          if (item.poster) rowYt.poster = item.poster;
-          else if (ytId && typeof window.youtubePosterUrl === 'function') {
-            rowYt.poster = window.youtubePosterUrl(ytId);
-          }
-          return rowYt;
-        }
-        var row = { type: item.type === 'video' ? 'video' : 'image', url: item.src };
-        if (item.type === 'video' && item.poster) row.poster = item.poster;
-        if (item.type !== 'video' && item.thumb) row.thumb = item.thumb;
-        return row;
-      }),
+      carouselItems: mediaItems.map(toFirestoreCarouselItem).filter(Boolean),
       images: mediaItems
         .filter(function (item) {
-          return item.type !== 'video';
+          return item.type === 'image';
         })
         .map(function (item) {
           return item.thumb || item.src;
@@ -2274,7 +2418,7 @@
     var index = activeMediaIndex;
     if (index < 0 || index >= project.mediaItems.length) return;
     var item = project.mediaItems[index];
-    var label = item && item.type === 'video' ? 'este vídeo' : 'esta imagem';
+    var label = isWebsiteMedia(item) ? 'este site' : item && item.type === 'video' ? 'este vídeo' : 'esta imagem';
     var ok = window.confirm(t('immersive.deleteMediaConfirm', { label: label }));
     if (!ok) return;
 

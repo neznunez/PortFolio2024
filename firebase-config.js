@@ -115,6 +115,38 @@
     return global.isYouTubeUrl(url);
   };
 
+  global.normalizeWebsiteUrl = function (input) {
+    if (!input || typeof input !== 'string') return null;
+    var raw = input.trim();
+    if (!raw) return null;
+    if (/^(javascript|data|file|blob|vbscript):/i.test(raw)) return null;
+    if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(raw)) raw = 'https://' + raw;
+    try {
+      var url = new URL(raw);
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+      if (!url.hostname) return null;
+      return url.href;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  global.isWebsiteCarouselItem = function (item) {
+    if (!item || typeof item !== 'object') return false;
+    if (item.provider === 'website' || item.source === 'website') return true;
+    var kind = String(item.type || item.kind || '').toLowerCase();
+    return kind === 'website' || kind === 'url' || kind === 'link' || kind === 'site';
+  };
+
+  global.websiteHostname = function (input) {
+    try {
+      var href = global.normalizeWebsiteUrl(input) || String(input || '');
+      return new URL(href).hostname.replace(/^www\./, '');
+    } catch (e) {
+      return '';
+    }
+  };
+
   global.fitPortfolioImageSize = function (width, height, maxEdge) {
     var w = Number(width) || 1;
     var h = Number(height) || 1;

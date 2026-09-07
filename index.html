@@ -2687,6 +2687,51 @@
             border-color: rgba(255, 255, 255, 0.92);
             color: #0b0b0d;
         }
+        #project-panel .carousel-slide.is-website {
+            background: #111;
+        }
+        #project-panel .panel-website-bar {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 6;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 14px;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.78));
+            pointer-events: none;
+        }
+        #project-panel .panel-website-bar a {
+            pointer-events: auto;
+            color: #fff;
+            text-decoration: none;
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 11px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            border-radius: 999px;
+            padding: 5px 12px;
+            background: rgba(0, 0, 0, 0.35);
+        }
+        #project-panel .panel-website-bar a:hover {
+            background: rgba(255, 255, 255, 0.92);
+            color: #0b0b0d;
+            border-color: rgba(255, 255, 255, 0.92);
+        }
+        #project-panel .panel-website-bar span {
+            color: rgba(255, 255, 255, 0.82);
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 11px;
+            letter-spacing: 0.04em;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
         #project-panel .carousel-slide iframe.slide-media {
             width: 100%;
             height: 100%;
@@ -7906,6 +7951,10 @@ document.addEventListener('keydown', function(event) {
                 if (!iframe.getAttribute('data-src')) iframe.setAttribute('data-src', currentSrc);
                 iframe.removeAttribute('src');
             }
+            if (iframe.getAttribute('data-kind') === 'website') {
+                _panelSetSlideLoading(s, false);
+                return;
+            }
             iframe.removeAttribute('data-user-started');
             var poster = s.querySelector('.panel-youtube-poster');
             if (poster) poster.classList.remove('is-hidden');
@@ -7915,10 +7964,25 @@ document.addEventListener('keydown', function(event) {
         });
     }
 
+    function _panelArmSlideWebsite(slide) {
+        if (!slide) return;
+        var iframe = slide.querySelector('iframe.slide-media[data-kind="website"]');
+        if (!iframe) return;
+        var pendingSrc = iframe.getAttribute('data-src');
+        if (pendingSrc && !iframe.getAttribute('src')) {
+            iframe.src = pendingSrc;
+        }
+        _panelSetSlideLoading(slide, false);
+    }
+
     function _panelArmSlideYouTube(slide) {
         if (!slide) return;
         var iframe = slide.querySelector('iframe.slide-media');
         if (!iframe) return;
+        if (iframe.getAttribute('data-kind') === 'website') {
+            _panelArmSlideWebsite(slide);
+            return;
+        }
         if (iframe.getAttribute('data-user-started') !== '1') {
             _panelSetSlideLoading(slide, false);
             return;
@@ -7934,6 +7998,10 @@ document.addEventListener('keydown', function(event) {
         if (!slide) return;
         var playBtn = slide.querySelector('.panel-media-play');
         var iframe = slide.querySelector('iframe.slide-media');
+        if (iframe && iframe.getAttribute('data-kind') === 'website') {
+            _panelArmSlideWebsite(slide);
+            return;
+        }
         if (iframe) {
             iframe.setAttribute('data-user-started', '1');
             var poster = slide.querySelector('.panel-youtube-poster');
@@ -8003,7 +8071,9 @@ document.addEventListener('keydown', function(event) {
         _panelSlides[index].classList.add('active');
 
         var activeSlide = _panelSlides[index];
-        if (activeSlide.querySelector('iframe.slide-media')) {
+        if (activeSlide.querySelector('iframe.slide-media[data-kind="website"]')) {
+            _panelArmSlideWebsite(activeSlide);
+        } else if (activeSlide.querySelector('iframe.slide-media')) {
             _panelArmSlideYouTube(activeSlide);
         } else if (activeSlide.querySelector('video.slide-media')) {
             _panelArmSlideVideos(activeSlide);
@@ -8169,7 +8239,34 @@ document.addEventListener('keydown', function(event) {
 
             var slide = document.createElement('div');
             slide.className = 'carousel-slide ' + (mediaFit === 'cover' ? 'is-cover' : 'is-contain') + (idx === 0 ? ' active' : '');
-            if (type === 'video') {
+            var isWebsite = type === 'website' || (typeof isWebsiteCarouselItem === 'function' && isWebsiteCarouselItem(item));
+            if (isWebsite) {
+                slide.classList.add('is-website');
+                var siteUrl = (typeof normalizeWebsiteUrl === 'function' ? normalizeWebsiteUrl(url) : url) || url;
+                var host = (typeof websiteHostname === 'function' && websiteHostname(siteUrl)) || siteUrl;
+                var siteFrame = document.createElement('iframe');
+                siteFrame.className = 'slide-media';
+                siteFrame.setAttribute('data-kind', 'website');
+                siteFrame.setAttribute('title', host || ('Site ' + (idx + 1)));
+                siteFrame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+                siteFrame.setAttribute('loading', 'lazy');
+                siteFrame.setAttribute('data-src', siteUrl);
+                slide.appendChild(siteFrame);
+                var bar = document.createElement('div');
+                bar.className = 'panel-website-bar';
+                var hostEl = document.createElement('span');
+                hostEl.textContent = host;
+                var openEl = document.createElement('a');
+                openEl.href = siteUrl;
+                openEl.target = '_blank';
+                openEl.rel = 'noopener noreferrer';
+                openEl.textContent = (typeof i18nT === 'function') ? i18nT('ui.websiteOpen') : 'Abrir site';
+                bar.appendChild(hostEl);
+                bar.appendChild(openEl);
+                slide.appendChild(bar);
+                _panelEnsureSlideLoadingEl(slide);
+                _panelSetSlideLoading(slide, false);
+            } else if (type === 'video') {
                 var isYt = typeof isYouTubeCarouselItem === 'function' && isYouTubeCarouselItem(item);
                 var ytId = item.youtubeId || (typeof parseYouTubeId === 'function' ? parseYouTubeId(url) : null);
                 if (isYt && ytId && typeof youtubeEmbedUrl === 'function') {
@@ -8259,7 +8356,7 @@ document.addEventListener('keydown', function(event) {
         for (var startI = 0; startI < items.length; startI++) {
             var startItem = items[startI];
             var startType = startItem && startItem.type ? startItem.type : 'image';
-            if (startType !== 'video') {
+            if (startType === 'image') {
                 startIndex = startI;
                 break;
             }
@@ -8322,17 +8419,23 @@ document.addEventListener('keydown', function(event) {
             var url = typeof item === 'string' ? item : (item && item.url) ? item.url : '';
             var type = (item && item.type) ? item.type : 'image';
             var isYt = typeof isYouTubeCarouselItem === 'function' && isYouTubeCarouselItem(item);
-            var label = isYt
-                ? ('YouTube ' + (idx + 1))
-                : (type === 'video' ? ('Vídeo ' + (idx + 1)) : ('Imagem ' + (idx + 1)));
+            var isSite = type === 'website' || (typeof isWebsiteCarouselItem === 'function' && isWebsiteCarouselItem(item));
+            var siteHost = isSite && typeof websiteHostname === 'function' ? websiteHostname(url) : '';
+            var label = isSite
+                ? (siteHost || ('Site ' + (idx + 1)))
+                : (isYt
+                    ? ('YouTube ' + (idx + 1))
+                    : (type === 'video' ? ('Vídeo ' + (idx + 1)) : ('Imagem ' + (idx + 1))));
             var poster = (item && item.poster) ? item.poster : '';
             if (!poster && isYt) {
                 var listYtId = item.youtubeId || (typeof parseYouTubeId === 'function' ? parseYouTubeId(url) : null);
                 if (listYtId && typeof youtubePosterUrl === 'function') poster = youtubePosterUrl(listYtId);
             }
-            var thumb = type === 'image'
-                ? ('<img src="' + url + '" alt="Preview" onerror="this.style.display=\'none\'">')
-                : (poster ? ('<img src="' + poster + '" alt="Preview" onerror="this.style.display=\'none\'">') : '<span style="font-size:20px;">▶</span>');
+            var thumb = isSite
+                ? '<span style="font-size:18px;">↗</span>'
+                : (type === 'image'
+                    ? ('<img src="' + url + '" alt="Preview" onerror="this.style.display=\'none\'">')
+                    : (poster ? ('<img src="' + poster + '" alt="Preview" onerror="this.style.display=\'none\'">') : '<span style="font-size:20px;">▶</span>'));
             var div = document.createElement('div');
             div.className = 'image-item';
             // Só ativa drag a partir do handle — senão o clique em Deletar/▲▼ é engolido pelo HTML5 drag.
@@ -8684,6 +8787,7 @@ document.addEventListener('keydown', function(event) {
         });
 
         _panelBindYouTubeUrlControls();
+        _panelBindWebsiteUrlControls();
         _panelBindMediaPanelCollapse();
     }
 
@@ -8790,6 +8894,90 @@ document.addEventListener('keydown', function(event) {
                 submitYouTube();
             }
         });
+    }
+
+    function _panelBindWebsiteUrlControls() {
+        var input = document.getElementById('panel-website-url-input');
+        var btn = document.getElementById('panel-website-url-btn');
+        if (!input || !btn || btn.dataset.bound === '1') return;
+        btn.dataset.bound = '1';
+        function submitWebsite() {
+            if (typeof isAdminLoggedIn === 'undefined' || !isAdminLoggedIn) return;
+            var projectId = _panelCurrentProjectId;
+            if (!projectId) {
+                showNotification('Erro: projeto não identificado.', 'error', true);
+                return;
+            }
+            var raw = String(input.value || '').trim();
+            if (!raw) {
+                showNotification('Cole a URL do site.', 'error', true);
+                return;
+            }
+            if (typeof parseYouTubeId === 'function' && parseYouTubeId(raw)) {
+                var ytInput = document.getElementById('panel-youtube-url-input');
+                var ytBtn = document.getElementById('panel-youtube-url-btn');
+                if (ytInput) ytInput.value = raw;
+                input.value = '';
+                if (ytBtn) ytBtn.click();
+                return;
+            }
+            var siteUrl = typeof normalizeWebsiteUrl === 'function' ? normalizeWebsiteUrl(raw) : null;
+            if (!siteUrl) {
+                showNotification('URL do site inválida.', 'error', true);
+                return;
+            }
+            btn.disabled = true;
+            input.disabled = true;
+            _panelShowCarouselLoading('A adicionar site...');
+            _panelSaveWebsiteUrl(projectId, siteUrl)
+                .then(function () {
+                    input.value = '';
+                    return _panelLoadProjectImages(projectId, true);
+                })
+                .then(function () {
+                    showNotification('Site adicionado ao carrossel!', 'success', true);
+                })
+                .catch(function (err) {
+                    showNotification('Erro ao adicionar site: ' + ((err && err.message) ? err.message : err), 'error', true);
+                })
+                .finally(function () {
+                    btn.disabled = false;
+                    input.disabled = false;
+                    _panelHideCarouselLoading();
+                });
+        }
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            submitWebsite();
+        });
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                submitWebsite();
+            }
+        });
+    }
+
+    async function _panelSaveWebsiteUrl(projectId, siteUrl) {
+        if (typeof db === 'undefined' || !db) throw new Error('Firestore não inicializado.');
+        if (!siteUrl) throw new Error('URL em falta.');
+        var ref = db.collection('projetos').doc(projectId);
+        var doc = await ref.get();
+        var data = doc.exists ? (doc.data() || {}) : {};
+        var existingCarousel = Array.isArray(data.carouselItems) ? data.carouselItems.slice() : [];
+        var already = existingCarousel.some(function (item) {
+            if (!item) return false;
+            var href = item.url || item.src || '';
+            return href === siteUrl;
+        });
+        if (already) throw new Error('Este site já está no carrossel.');
+        existingCarousel.push({
+            type: 'website',
+            provider: 'website',
+            url: siteUrl
+        });
+        await ref.set({ carouselItems: existingCarousel }, { merge: true });
     }
 
     async function _panelSaveYouTubeUrl(projectId, youtubeId) {
@@ -8959,7 +9147,8 @@ document.addEventListener('keydown', function(event) {
     function _panelRebuildImagesField(carouselItems) {
         var out = [];
         (carouselItems || []).forEach(function (item) {
-            if (!item || item.type === 'video') return;
+            if (!item || item.type === 'video' || item.type === 'website') return;
+            if (typeof isWebsiteCarouselItem === 'function' && isWebsiteCarouselItem(item)) return;
             var u = item.thumb || item.url;
             if (u) out.push(u);
         });
@@ -8967,7 +9156,8 @@ document.addEventListener('keydown', function(event) {
     }
 
     async function _panelOptimizeOneCarouselImage(projectId, item) {
-        if (!item || !item.url || item.type === 'video') return { status: 'skip' };
+        if (!item || !item.url || item.type === 'video' || item.type === 'website') return { status: 'skip' };
+        if (typeof isWebsiteCarouselItem === 'function' && isWebsiteCarouselItem(item)) return { status: 'skip' };
         if (item.optimized) return { status: 'skip' };
         if (typeof isYouTubeUrl === 'function' && isYouTubeUrl(item.url)) return { status: 'skip' };
 
@@ -9616,6 +9806,10 @@ document.addEventListener('keydown', function(event) {
                         <div class="youtube-url-row">
                             <input type="url" id="panel-youtube-url-input" class="youtube-url-input" placeholder="URL do YouTube…" autocomplete="off" spellcheck="false">
                             <button type="button" id="panel-youtube-url-btn" class="youtube-url-btn">YouTube</button>
+                        </div>
+                        <div class="youtube-url-row">
+                            <input type="url" id="panel-website-url-input" class="youtube-url-input" placeholder="URL do site…" autocomplete="off" spellcheck="false">
+                            <button type="button" id="panel-website-url-btn" class="youtube-url-btn">Site</button>
                         </div>
                         <p class="image-list-hint">Arraste ou use ▲▼ para ordenar</p>
                         <div class="image-list" id="panel-image-list"></div>

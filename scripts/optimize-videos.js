@@ -77,6 +77,11 @@ function isYouTube(item) {
   return /youtu\.?be|youtube\.com/i.test(String(item.url || ''));
 }
 
+function isWebsiteItem(item) {
+  if (!item) return false;
+  return item.type === 'website' || item.provider === 'website';
+}
+
 function isVideoItem(item) {
   if (!item || typeof item !== 'object') return false;
   if (item.type === 'video') return true;
@@ -224,7 +229,7 @@ async function listVideos() {
     var carousel = fieldVal(fields.carouselItems) || [];
     if (!Array.isArray(carousel)) carousel = [];
     carousel.forEach(function (item, idx) {
-      if (!isVideoItem(item)) return;
+      if (!isVideoItem(item) || isWebsiteItem(item)) return;
       if (isYouTube(item)) {
         rows.push({ title: title, id: id, idx: idx, kind: 'youtube', url: item.url, bytes: 0, poster: !!item.poster });
         return;
