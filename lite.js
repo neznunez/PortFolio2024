@@ -225,7 +225,25 @@
       });
     }
     if (playButton) {
-      playButton.addEventListener('click', function () {
+      playButton.addEventListener('pointerdown', function (e) {
+        e.stopPropagation();
+      });
+      playButton.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        togglePreviewVideoPlayback();
+      });
+    }
+    var preview = document.getElementById('project-preview');
+    if (preview) {
+      preview.addEventListener('click', function (e) {
+        if (!playButton || playButton.classList.contains('is-hidden')) return;
+        if (e.target && e.target.closest && (
+          e.target.closest('#project-video-play') ||
+          e.target.closest('#project-preview-controls') ||
+          e.target.closest('#project-preview-add-wrap') ||
+          e.target.closest('#project-media-order-wrap')
+        )) return;
         togglePreviewVideoPlayback();
       });
     }
@@ -1615,6 +1633,54 @@
       { showControls: true, autoplayVideo: false, previewOwnerKey: selectedProjectId }
     );
     if (isLiteAdmin) schedulePosterBackfillForCurrentProject();
+  }
+
+  function slugifyLiteProjectName(text) {
+    var s = String(text || '');
+    try {
+      s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    } catch (e) {}
+    s = s.toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .replace(/-{2,}/g, '-');
+    if (s.length > 64) s = s.slice(0, 64).replace(/-+$/g, '');
+    return s || 'projeto';
+  }
+
+  function findLiteProjectByDeepLink() {
+    var token = '';
+    try {
+      token = String(new URLSearchParams(window.location.search || '').get('project') || '').trim();
+    } catch (e) {
+      token = '';
+    }
+    if (!token) return null;
+    var lower = token.toLowerCase();
+    var byId = projectsData.find(function (p) {
+      return String(p.docId || '') === token || String(p.id || '') === token;
+    });
+    if (byId) return byId;
+    return projectsData.find(function (p) {
+      var title = loc(p, 'title');
+      var slug = p.slug ? slugifyLiteProjectName(p.slug) : slugifyLiteProjectName(title);
+      return slug === lower || slug === token;
+    }) || null;
+  }
+
+  function applyLiteDeepLink() {
+    var project = findLiteProjectByDeepLink();
+    if (!project) return false;
+    setContentMode('projects');
+    selectProject(project.key);
+    try {
+      var title = loc(project, 'title');
+      var slug = project.slug ? slugifyLiteProjectName(project.slug) : slugifyLiteProjectName(title);
+      var params = new URLSearchParams(window.location.search || '');
+      params.set('project', slug);
+      history.replaceState({}, '', 'lite.html?' + params.toString() + (window.location.hash || ''));
+    } catch (e) {}
+    return true;
   }
 
   function previewProjectByKey(projectKey, showControls) {
@@ -3153,6 +3219,7 @@
     loadProjectsData().then(function (rows) {
       projectsData = rows;
       renderProjectsList();
+      applyLiteDeepLink();
     });
   }
 

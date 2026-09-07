@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8">
@@ -15,6 +15,21 @@
         if (!isMobile) return;
         var search = window.location.search || '';
         var hash = window.location.hash || '';
+        try {
+          var path = decodeURIComponent(window.location.pathname || '').replace(/^\/+|\/+$/g, '');
+          var first = (path.split('/')[0] || '').toLowerCase();
+          var reserved = {
+            '': 1, 'index.html': 1, 'lite.html': 1, 'project.html': 1,
+            models: 1, hdr: 1, locales: 1, libs: 1, scripts: 1, secrets: 1,
+            'fb-storage': 1, 'fb-storage-app': 1, 'gcs-storage': 1,
+            desertdawn: 1, assets: 1, rainbow: 1, park2: 1, lycksele3: 1
+          };
+          if (first && first.indexOf('.') === -1 && !reserved[first]) {
+            var params = new URLSearchParams(search);
+            if (!params.get('project')) params.set('project', path.split('/')[0]);
+            search = '?' + params.toString();
+          }
+        } catch (e) {}
         window.location.replace('lite.html' + search + hash);
       })();
     </script>
@@ -2198,21 +2213,30 @@
             position: absolute;
             left: 50%;
             top: 50%;
-            z-index: 4;
-            width: 58px;
-            height: 58px;
-            padding: 0 0 0 4px;
+            z-index: 25;
+            width: 72px;
+            height: 72px;
+            padding: 0 0 0 5px;
             transform: translate(-50%, -50%);
             border: 1px solid rgba(255, 255, 255, 0.72);
             border-radius: 50%;
             background: rgba(0, 0, 0, 0.58);
             color: #fff;
-            font-size: 21px;
+            font-size: 24px;
             line-height: 1;
             cursor: pointer;
+            pointer-events: auto;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
             box-shadow: 0 8px 28px rgba(0, 0, 0, 0.42);
             backdrop-filter: blur(8px);
             transition: transform 0.2s ease, background 0.2s ease;
+        }
+        #project-panel .carousel-slide .panel-media-play::before {
+            content: '';
+            position: absolute;
+            inset: -22px;
         }
         #project-panel .carousel-slide .panel-media-play:hover,
         #project-panel .carousel-slide .panel-media-play:focus-visible {
@@ -2324,6 +2348,7 @@
             justify-content: space-between;
             padding: 0 16px;
             z-index: 10;
+            pointer-events: none;
         }
         #project-panel .carousel-button {
             appearance: none;
@@ -3911,6 +3936,19 @@
 
         // Cubos usam MeshStandardMaterial (sem transmission/clearcoat):
         // o vidro de loading é só opacity + envMap, sem segundo render pass.
+        // Textura: IBL mais baixo para não esbranquiçar a foto; roughness baixo mantém o brilho.
+        var CUBE_TEX_ENV = 0.78;
+        var CUBE_TEX_COLOR_HEX = 0xe8e8e8;
+        var CUBE_TEX_ROUGH = 0.24;
+        var CUBE_GLASS_ENV = 1.55;
+
+        function applyCubeTexturedLook(material) {
+            if (!material) return;
+            material.roughness = CUBE_TEX_ROUGH;
+            material.metalness = 0;
+            if (material.envMapIntensity !== undefined) material.envMapIntensity = CUBE_TEX_ENV;
+        }
+
         function createCubeFaceMaterial(loadingGlass) {
             var mat = new THREE.MeshStandardMaterial({
                 color: 0xE8F4FF,
@@ -3923,7 +3961,7 @@
             });
             if (scene.environment) {
                 mat.envMap = scene.environment;
-                mat.envMapIntensity = 1.7;
+                mat.envMapIntensity = loadingGlass ? CUBE_GLASS_ENV : CUBE_TEX_ENV;
             }
             return mat;
         }
@@ -3947,7 +3985,7 @@
             material.roughness = 0.08;
             material.metalness = 0.12;
             material.depthWrite = false;
-            if (material.envMapIntensity !== undefined) material.envMapIntensity = 1.9;
+            if (material.envMapIntensity !== undefined) material.envMapIntensity = CUBE_GLASS_ENV;
             if (wasOpaque) material.needsUpdate = true;
         }
 
@@ -3969,19 +4007,19 @@
             var hadNoMap = !material.map;
             material.map = texture;
             material.depthWrite = true;
-            material.roughness = 0.3;
-            material.metalness = 0.02;
+            applyCubeTexturedLook(material);
             if (hadNoMap) material.needsUpdate = true;
             if (typeof gsap !== 'undefined') {
                 gsap.killTweensOf(material.color);
                 gsap.killTweensOf(material);
             }
+            var texColor = new THREE.Color(CUBE_TEX_COLOR_HEX);
             if (fade) {
                 material.transparent = true;
                 gsap.to(material.color, {
-                    r: 1,
-                    g: 1,
-                    b: 1,
+                    r: texColor.r,
+                    g: texColor.g,
+                    b: texColor.b,
                     duration: 0.55,
                     ease: 'power2.out'
                 });
@@ -3994,7 +4032,7 @@
                     }
                 });
             } else {
-                material.color.setHex(0xffffff);
+                material.color.copy(texColor);
                 applyCubeOpaqueFinish(material);
             }
         }
@@ -4591,6 +4629,7 @@
                     if (typeof renderImmersiveProjectsList === 'function') renderImmersiveProjectsList();
                     if (typeof revealResumedCubesIfNeeded === 'function') revealResumedCubesIfNeeded();
                     if (typeof revealPendingCubesIfNeeded === 'function') revealPendingCubesIfNeeded();
+                    if (typeof tryOpenProjectFromDeepLink === 'function') tryOpenProjectFromDeepLink();
                 }).catch(function (error) {
                     console.error("Erro ao verificar a coleção projetos (db.collection.get):", error);
                     markComponentComplete('firestore');
@@ -4631,6 +4670,7 @@
                     }
                 });
                 if (typeof renderImmersiveProjectsList === 'function') renderImmersiveProjectsList();
+                if (typeof tryOpenProjectFromDeepLink === 'function') tryOpenProjectFromDeepLink();
             }, function (error) {
                 console.error("Erro ao ouvir mudanças no Firestore:", error);
                 projectsRealtimeUnsub = null;
@@ -4672,6 +4712,7 @@
                     if (typeof renderImmersiveProjectsList === 'function') renderImmersiveProjectsList();
                     if (typeof revealResumedCubesIfNeeded === 'function') revealResumedCubesIfNeeded();
                     if (typeof revealPendingCubesIfNeeded === 'function') revealPendingCubesIfNeeded();
+                    if (typeof tryOpenProjectFromDeepLink === 'function') tryOpenProjectFromDeepLink();
                 })
                 .catch(error => {
                     console.error("Erro ao carregar projects.json para criação manual:", error);
@@ -4707,6 +4748,7 @@
             if (typeof renderImmersiveProjectsList === 'function') renderImmersiveProjectsList();
             if (typeof revealResumedCubesIfNeeded === 'function') revealResumedCubesIfNeeded();
             if (typeof revealPendingCubesIfNeeded === 'function') revealPendingCubesIfNeeded();
+            if (typeof tryOpenProjectFromDeepLink === 'function') tryOpenProjectFromDeepLink();
         }
         // --- Fim Novas Funções Firebase ---
 
@@ -4731,11 +4773,31 @@
         try {
             resumeImmersiveScene = sessionStorage.getItem('immersive_resume_scene') === '1';
         } catch (e) {}
-        // Com deep link de projeto (?project=...) a tela de entrada é pulada.
+        // Deep link: ?project=id|slug ou /nome-do-projeto — salta a tela de entrada.
+        function hasProjectDeepLink() {
+            try {
+                var params = new URLSearchParams(window.location.search || '');
+                if (params.get('project')) return true;
+                var path = decodeURIComponent(window.location.pathname || '').replace(/^\/+|\/+$/g, '');
+                if (!path || path === 'index.html') return false;
+                var first = (path.split('/')[0] || '').toLowerCase();
+                if (!first || first.indexOf('.') !== -1) return false;
+                var reserved = {
+                    'lite.html': 1, 'project.html': 1,
+                    models: 1, hdr: 1, locales: 1, libs: 1, scripts: 1, secrets: 1,
+                    'fb-storage': 1, 'fb-storage-app': 1, 'gcs-storage': 1,
+                    desertdawn: 1, assets: 1, rainbow: 1, park2: 1, lycksele3: 1
+                };
+                return !reserved[first];
+            } catch (e) {
+                return false;
+            }
+        }
+        var projectDeepLinkAtBoot = hasProjectDeepLink();
         var startScreenEnabled = (function () {
             try {
-                if (resumeImmersiveScene) return false;
-                return !(new URLSearchParams(window.location.search).get('project'));
+                if (resumeImmersiveScene || projectDeepLinkAtBoot) return false;
+                return true;
             } catch (e) {
                 return !resumeImmersiveScene;
             }
@@ -4782,7 +4844,7 @@
         }
 
         function revealResumedCubesIfNeeded() {
-            if (!resumeImmersiveScene || headClicked) return;
+            if (!(resumeImmersiveScene || projectDeepLinkAtBoot) || headClicked) return;
             if (!cubeArray || !cubeArray.length) return;
             revealCubesIfNeeded({ resume: true });
         }
@@ -5046,7 +5108,7 @@
                 playStartHeadEntrance();
             } else {
                 settleHeadRestPose();
-                if (resumeImmersiveScene) {
+                if (resumeImmersiveScene || projectDeepLinkAtBoot) {
                     bootResumedImmersiveScene();
                     revealResumedCubesIfNeeded();
                 } else {
@@ -5429,7 +5491,7 @@
                             applyLiteHeadMaterial(mat, texture);
                         } else if (mat && (mat.isMeshStandardMaterial || mat.isMeshPhysicalMaterial)) {
                             mat.envMap = texture;
-                            mat.envMapIntensity = 1.7;
+                            mat.envMapIntensity = mat.map ? CUBE_TEX_ENV : CUBE_GLASS_ENV;
                             mat.needsUpdate = true;
                         }
                     });
@@ -5497,7 +5559,7 @@
                     if (!(startScreenActive || startScreenPending())) {
                         if (pendingHeadReveal) {
                             dismissStartAndRevealProjects();
-                        } else if (resumeImmersiveScene) {
+                        } else if (resumeImmersiveScene || projectDeepLinkAtBoot) {
                             bootResumedImmersiveScene();
                             revealResumedCubesIfNeeded();
                         } else if (!startScreenTransitioning) {
@@ -5611,7 +5673,7 @@
 
             if (startScreenPending()) {
                 showStartScreen();
-            } else if (resumeImmersiveScene) {
+            } else if (resumeImmersiveScene || projectDeepLinkAtBoot) {
                 bootResumedImmersiveScene();
                 scheduleDeferredBootAssets();
             }
@@ -7321,6 +7383,127 @@ document.addEventListener('keydown', function(event) {
         return null;
     }
 
+    function slugifyProjectName(text) {
+        var s = String(text || '');
+        try {
+            s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        } catch (e) {}
+        s = s.toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .replace(/-{2,}/g, '-');
+        if (s.length > 64) s = s.slice(0, 64).replace(/-+$/g, '');
+        return s || 'projeto';
+    }
+
+    function projectBaseSlug(projectId, projectData) {
+        if (projectData && projectData.slug) return slugifyProjectName(projectData.slug);
+        var title = '';
+        if (typeof projectDisplayTitle === 'function') {
+            title = projectDisplayTitle(projectId, projectData);
+        } else if (projectData) {
+            title = projectData.title || projectData.name || '';
+        }
+        return slugifyProjectName(title);
+    }
+
+    function buildProjectSlug(projectId) {
+        projectId = String(projectId || '');
+        var data = _panelFindCachedProjectData(projectId);
+        var base = projectBaseSlug(projectId, data);
+        if (typeof cubeArray === 'undefined' || !cubeArray || !cubeArray.length) return base;
+        var same = [];
+        for (var i = 0; i < cubeArray.length; i++) {
+            var cube = cubeArray[i];
+            if (!cube || !cube.userData) continue;
+            var id = String(cube.userData.projectId || '');
+            if (!id) continue;
+            if (projectBaseSlug(id, cube.userData.projectData) === base) same.push(id);
+        }
+        if (same.length <= 1) return base;
+        same.sort();
+        if (same[0] === projectId) return base;
+        var short = projectId.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).toLowerCase();
+        return base + '-' + (short || 'x');
+    }
+
+    function readProjectDeepLink() {
+        try {
+            var params = new URLSearchParams(window.location.search || '');
+            var q = params.get('project');
+            if (q) return { token: String(q).trim() };
+            var path = decodeURIComponent(window.location.pathname || '').replace(/^\/+|\/+$/g, '');
+            if (!path || path === 'index.html') return null;
+            var first = path.split('/')[0];
+            if (!first || first.indexOf('.') !== -1) return null;
+            var reserved = {
+                'lite.html': 1, 'project.html': 1,
+                models: 1, hdr: 1, locales: 1, libs: 1, scripts: 1, secrets: 1,
+                'fb-storage': 1, 'fb-storage-app': 1, 'gcs-storage': 1,
+                desertdawn: 1, assets: 1, rainbow: 1, park2: 1, lycksele3: 1
+            };
+            if (reserved[first.toLowerCase()]) return null;
+            return { token: first };
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function resolveProjectIdFromToken(token) {
+        token = String(token || '').trim();
+        if (!token || typeof cubeArray === 'undefined' || !cubeArray) return null;
+        var i, cube, id, slug, base;
+        for (i = 0; i < cubeArray.length; i++) {
+            cube = cubeArray[i];
+            id = cube && cube.userData && String(cube.userData.projectId || '');
+            if (id && id === token) return id;
+        }
+        var lower = token.toLowerCase();
+        for (i = 0; i < cubeArray.length; i++) {
+            cube = cubeArray[i];
+            id = cube && cube.userData && String(cube.userData.projectId || '');
+            if (!id) continue;
+            slug = buildProjectSlug(id);
+            base = projectBaseSlug(id, cube.userData.projectData);
+            if (slug === token || slug === lower || base === lower) return id;
+        }
+        return null;
+    }
+
+    var _deepLinkOpenHandled = false;
+    function tryOpenProjectFromDeepLink() {
+        if (_deepLinkOpenHandled) return false;
+        var link = readProjectDeepLink();
+        if (!link || !link.token) return false;
+        var id = resolveProjectIdFromToken(link.token);
+        if (!id) return false;
+        _deepLinkOpenHandled = true;
+        try {
+            history.replaceState({ projectPanel: id }, '', '/' + buildProjectSlug(id));
+        } catch (e) {}
+        if (typeof revealCubesIfNeeded === 'function' && !headClicked) {
+            revealCubesIfNeeded({ resume: true });
+        }
+        var cube = null;
+        if (typeof cubeArray !== 'undefined' && cubeArray) {
+            for (var i = 0; i < cubeArray.length; i++) {
+                if (cubeArray[i] && cubeArray[i].userData && String(cubeArray[i].userData.projectId) === String(id)) {
+                    cube = cubeArray[i];
+                    break;
+                }
+            }
+        }
+        var open = function () {
+            openProject(id, { fromHistory: true });
+        };
+        if (cube && typeof focusImmersiveCube === 'function') {
+            focusImmersiveCube(cube, open);
+        } else {
+            open();
+        }
+        return true;
+    }
+
     function _panelItemsSignature(items) {
         if (!items || !items.length) return '';
         return items.map(function (item) {
@@ -7354,8 +7537,9 @@ document.addEventListener('keydown', function(event) {
     }
 
     // ---------- ABRIR / FECHAR PAINEL ----------
-    function openProject(projectId) {
+    function openProject(projectId, options) {
         if (!projectId) return;
+        options = options || {};
         var openedFromProjects = document.body.classList.contains('immersive-projects-open');
         if (!openedFromProjects && typeof window.setImmersiveView === 'function') {
             window.setImmersiveView('scene');
@@ -7401,8 +7585,14 @@ document.addEventListener('keydown', function(event) {
             panel.style.opacity = '1';
         }
 
-        // Atualizar URL sem navegar
-        try { history.pushState({ projectPanel: projectId }, '', '?project=' + projectId); } catch(e) {}
+        // URL amigável: /nome-do-projeto (links antigos ?project=id continuam a abrir)
+        if (!options.fromHistory) {
+            try {
+                var pretty = '/' + buildProjectSlug(projectId);
+                if (options.replaceUrl) history.replaceState({ projectPanel: projectId }, '', pretty);
+                else history.pushState({ projectPanel: projectId }, '', pretty);
+            } catch (e) {}
+        }
 
         // Pintura imediata com dados do cubo (já em memória).
         var cached = _panelFindCachedProjectData(projectId);
@@ -7442,13 +7632,25 @@ document.addEventListener('keydown', function(event) {
             doClose();
         }
 
-        // Restaurar URL
-        try { history.pushState({}, '', window.location.pathname); } catch(e) {}
+        // Restaurar URL raiz
+        try { history.pushState({}, '', '/'); } catch(e) {}
     }
 
     // Tratar botão back do navegador
     window.addEventListener('popstate', function(e) {
         var panel = document.getElementById('project-panel');
+        var link = typeof readProjectDeepLink === 'function' ? readProjectDeepLink() : null;
+        var id = link && link.token && typeof resolveProjectIdFromToken === 'function'
+            ? resolveProjectIdFromToken(link.token)
+            : null;
+
+        if (id) {
+            if (String(_panelCurrentProjectId || '') !== String(id)) {
+                openProject(id, { fromHistory: true });
+            }
+            return;
+        }
+
         if (panel && panel.classList.contains('visible')) {
             // Estava no painel, fechar sem pushState (já voltou)
             var doClose = function() {
@@ -7678,12 +7880,23 @@ document.addEventListener('keydown', function(event) {
         btn.className = 'panel-media-play';
         btn.setAttribute('aria-label', i18nT('ui.playVideo'));
         btn.textContent = '▶';
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
+        var start = function(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
             _panelStartSlideMedia(slide);
+        };
+        btn.addEventListener('pointerdown', function(e) {
+            e.stopPropagation();
         });
+        btn.addEventListener('click', start);
         slide.appendChild(btn);
+        slide.addEventListener('click', function(e) {
+            if (btn.classList.contains('is-hidden')) return;
+            if (e.target && e.target.closest && e.target.closest('.panel-media-play')) return;
+            start(e);
+        });
     }
 
     function _panelPrefetchNeighborCovers(index) {
