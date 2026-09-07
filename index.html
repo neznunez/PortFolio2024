@@ -6163,6 +6163,8 @@ function showNavigationNotification() {
             if (okBtn) okBtn.focus();
         });
     }
+    // Painel SPA (outro <script>) precisa destas funções no escopo global.
+    window.showAdminConfirm = showAdminConfirm;
 
     // Adiciona e mostra o campo de senha do admin
     function showPasswordField() {
@@ -6269,6 +6271,7 @@ function showNavigationNotification() {
             }, 380);
         }, 3200);
     }
+    window.showNotification = showNotification;
 
 
     // Listeners de Auth/Storage ligados sob demanda em ensureFirebaseAdminSdk().
@@ -6960,6 +6963,76 @@ document.addEventListener('keydown', function(event) {
     var _panelVideoFit = 'contain';
     var _panelCarouselItems = [];
     var _panelCarouselSignature = '';
+
+    // Confirm/notify no próprio script do painel (não depende do escopo de setupEventListeners).
+    if (typeof window.showAdminConfirm !== 'function') {
+        window.showAdminConfirm = function (opts) {
+            opts = opts || {};
+            return new Promise(function (resolve) {
+                var modal = document.getElementById('admin-confirm-modal');
+                if (!modal) {
+                    resolve(window.confirm(opts.message || 'Confirmar?'));
+                    return;
+                }
+                var titleEl = document.getElementById('admin-confirm-title');
+                var msgEl = document.getElementById('admin-confirm-message');
+                var okBtn = document.getElementById('admin-confirm-ok');
+                var cancelBtn = document.getElementById('admin-confirm-cancel');
+                if (titleEl) titleEl.textContent = opts.title || 'Tem a certeza?';
+                if (msgEl) msgEl.textContent = opts.message || 'Esta ação não pode ser desfeita.';
+                if (okBtn) {
+                    okBtn.textContent = opts.confirmLabel || 'Confirmar';
+                    okBtn.className = 'admin-dialog-btn ' + (opts.danger === false ? 'admin-dialog-btn--primary' : 'admin-dialog-btn--danger');
+                }
+                if (cancelBtn) cancelBtn.textContent = opts.cancelLabel || 'Cancelar';
+                function cleanup(result) {
+                    modal.classList.remove('is-open');
+                    modal.removeEventListener('click', onBackdrop);
+                    document.removeEventListener('keydown', onKey);
+                    if (okBtn) okBtn.removeEventListener('click', onOk);
+                    if (cancelBtn) cancelBtn.removeEventListener('click', onCancel);
+                    resolve(result);
+                }
+                function onOk() { cleanup(true); }
+                function onCancel() { cleanup(false); }
+                function onBackdrop(e) {
+                    if (e.target === modal) cleanup(false);
+                }
+                function onKey(e) {
+                    if (e.key === 'Escape') cleanup(false);
+                    if (e.key === 'Enter') cleanup(true);
+                }
+                if (okBtn) okBtn.addEventListener('click', onOk);
+                if (cancelBtn) cancelBtn.addEventListener('click', onCancel);
+                modal.addEventListener('click', onBackdrop);
+                document.addEventListener('keydown', onKey);
+                modal.classList.add('is-open');
+                if (okBtn) okBtn.focus();
+            });
+        };
+    }
+    if (typeof window.showNotification !== 'function') {
+        window.showNotification = function (message, type) {
+            var existing = document.getElementById('index-notification');
+            if (existing) existing.remove();
+            var notification = document.createElement('div');
+            notification.id = 'index-notification';
+            notification.setAttribute('role', 'status');
+            notification.textContent = message;
+            if (type === 'success') notification.classList.add('is-success');
+            else if (type === 'error') notification.classList.add('is-error');
+            document.body.appendChild(notification);
+            requestAnimationFrame(function () {
+                notification.classList.add('is-visible');
+            });
+            setTimeout(function () {
+                notification.classList.remove('is-visible');
+                setTimeout(function () {
+                    if (notification.parentNode) notification.remove();
+                }, 380);
+            }, 3200);
+        };
+    }
 
     function _panelFindCachedProjectData(projectId) {
         projectId = String(projectId || '');
@@ -7697,11 +7770,28 @@ document.addEventListener('keydown', function(event) {
         }
     }
 
+    // Fallback: se setupEventListeners ainda não expôs as helpers globais.
+    function _panelShowAdminConfirm(opts) {
+        if (typeof window.showAdminConfirm === 'function') {
+            return window.showAdminConfirm(opts);
+        }
+        return Promise.resolve(window.confirm((opts && opts.message) || 'Confirmar?'));
+    }
+
+    function _panelNotify(message, type, isIndex) {
+        if (typeof window.showNotification === 'function') {
+            window.showNotification(message, type, isIndex);
+            return;
+        }
+        if (type === 'error') console.error(message);
+        else console.log(message);
+    }
+
     async function _panelDeleteCarouselItem(itemIndex) {
         if (typeof isAdminLoggedIn === 'undefined' || !isAdminLoggedIn) return;
         var projectId = _panelCurrentProjectId;
         if (!projectId) return;
-        var ok = await showAdminConfirm({
+        var ok = await _panelShowAdminConfirm({
             title: 'Eliminar mídia?',
             message: 'Esta imagem ou vídeo será removido do projeto e do armazenamento. Não é possível desfazer.',
             confirmLabel: 'Eliminar',
@@ -7710,6 +7800,9 @@ document.addEventListener('keydown', function(event) {
         });
         if (!ok) return;
         try {
+            if (typeof db === 'undefined' || !db) {
+                throw new Error('Firestore não inicializado.');
+            }
             var projectRef = db.collection('projetos').doc(projectId);
             var projectDoc = await projectRef.get();
             var data = projectDoc.data() || {};
@@ -7756,9 +7849,9 @@ document.addEventListener('keydown', function(event) {
             await _panelDeleteStorageUrl(thumbToDelete);
             await _panelDeleteStorageUrl(posterToDelete);
 
-            showNotification('Item removido com sucesso!', 'success', true);
+            _panelNotify('Item removido com sucesso!', 'success', true);
         } catch(err) {
-            showNotification('Erro ao deletar: ' + err.message, 'error', true);
+            _panelNotify('Erro ao deletar: ' + ((err && err.message) ? err.message : err), 'error', true);
             try { await _panelLoadProjectImages(projectId, true); } catch (e2) {}
         }
     }
