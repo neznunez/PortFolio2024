@@ -506,28 +506,6 @@ select {
   background: #111;
 }
 
-.project-preview-website-open {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 12px;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.78));
-  color: #fff;
-  text-decoration: none;
-  font-size: 12px;
-  letter-spacing: 0.04em;
-}
-
-.project-preview-website-open:hover {
-  color: #fff;
-}
-
 .project-preview-add-wrap.is-busy {
   opacity: 0.65;
 }

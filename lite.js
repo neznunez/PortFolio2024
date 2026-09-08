@@ -1995,25 +1995,16 @@
   function clearPreviewWebsite() {
     var wrap = document.getElementById('project-preview-website');
     var frame = document.getElementById('project-preview-website-frame');
-    var open = document.getElementById('project-preview-website-open');
     if (wrap) wrap.classList.remove('is-visible');
     if (frame && frame.getAttribute('src')) frame.removeAttribute('src');
-    if (open) open.setAttribute('href', '#');
   }
 
   function showWebsitePreview(src) {
     var wrap = document.getElementById('project-preview-website');
     var frame = document.getElementById('project-preview-website-frame');
-    var open = document.getElementById('project-preview-website-open');
-    var host = document.getElementById('project-preview-website-host');
     if (!wrap || !frame) return;
     frame.src = src;
     wrap.classList.add('is-visible');
-    if (open) open.setAttribute('href', src);
-    if (host) {
-      host.textContent =
-        (typeof window.websiteHostname === 'function' && window.websiteHostname(src)) || src;
-    }
   }
 
   function clearPreviewVideoSource() {

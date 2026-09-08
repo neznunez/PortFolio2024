@@ -2690,48 +2690,6 @@
         #project-panel .carousel-slide.is-website {
             background: #111;
         }
-        #project-panel .panel-website-bar {
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 6;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 12px 14px;
-            background: linear-gradient(transparent, rgba(0, 0, 0, 0.78));
-            pointer-events: none;
-        }
-        #project-panel .panel-website-bar a {
-            pointer-events: auto;
-            color: #fff;
-            text-decoration: none;
-            font-family: "IBM Plex Mono", ui-monospace, monospace;
-            font-size: 11px;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            border: 1px solid rgba(255, 255, 255, 0.45);
-            border-radius: 999px;
-            padding: 5px 12px;
-            background: rgba(0, 0, 0, 0.35);
-        }
-        #project-panel .panel-website-bar a:hover {
-            background: rgba(255, 255, 255, 0.92);
-            color: #0b0b0d;
-            border-color: rgba(255, 255, 255, 0.92);
-        }
-        #project-panel .panel-website-bar span {
-            color: rgba(255, 255, 255, 0.82);
-            font-family: "IBM Plex Mono", ui-monospace, monospace;
-            font-size: 11px;
-            letter-spacing: 0.04em;
-            min-width: 0;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
         #project-panel .carousel-slide iframe.slide-media {
             width: 100%;
             height: 100%;
@@ -8252,18 +8210,6 @@ document.addEventListener('keydown', function(event) {
                 siteFrame.setAttribute('loading', 'lazy');
                 siteFrame.setAttribute('data-src', siteUrl);
                 slide.appendChild(siteFrame);
-                var bar = document.createElement('div');
-                bar.className = 'panel-website-bar';
-                var hostEl = document.createElement('span');
-                hostEl.textContent = host;
-                var openEl = document.createElement('a');
-                openEl.href = siteUrl;
-                openEl.target = '_blank';
-                openEl.rel = 'noopener noreferrer';
-                openEl.textContent = (typeof i18nT === 'function') ? i18nT('ui.websiteOpen') : 'Abrir site';
-                bar.appendChild(hostEl);
-                bar.appendChild(openEl);
-                slide.appendChild(bar);
                 _panelEnsureSlideLoadingEl(slide);
                 _panelSetSlideLoading(slide, false);
             } else if (type === 'video') {
