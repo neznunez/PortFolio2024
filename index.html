@@ -1643,6 +1643,45 @@
             display: block;
         }
 
+        .immersive-projects-list .project-item.is-admin-reorder {
+            display: flex;
+            align-items: flex-start;
+            padding-left: 0;
+        }
+
+        .immersive-projects-list .project-item-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .immersive-projects-list .project-drag-handle {
+            flex: 0 0 28px;
+            align-self: stretch;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 8px;
+            color: rgba(255, 255, 255, 0.45);
+            cursor: grab;
+            user-select: none;
+            font-size: 11px;
+            letter-spacing: -0.12em;
+            touch-action: none;
+        }
+
+        .immersive-projects-list .project-item:hover .project-drag-handle,
+        .immersive-projects-list .project-item.is-active .project-drag-handle {
+            color: rgba(255, 255, 255, 0.92);
+        }
+
+        .immersive-projects-list .project-drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .immersive-projects-list .project-item.is-dragging {
+            opacity: 0.45;
+        }
+
         @media (max-width: 768px) {
             .immersive-cv-panel {
                 width: auto;
@@ -3516,6 +3555,8 @@
             }
             if (projectsList) {
               projectsList.addEventListener('click', function (event) {
+                if (event.target.closest && event.target.closest('[data-drag-handle]')) return;
+                if (window._immersiveListDrag && window._immersiveListDrag.active) return;
                 var item = event.target.closest('[data-project-id]');
                 if (!item) return;
                 if (typeof window.focusImmersiveProject === 'function') {
@@ -3674,9 +3715,158 @@
           }
         }
 
+        var _immersiveListDrag = {
+          active: false,
+          startSig: '',
+          row: null,
+          last: { id: null, after: null },
+          saving: false,
+          bound: false
+        };
+        window._immersiveListDrag = _immersiveListDrag;
+
+        function immersiveListOrderSignature(list) {
+          if (!list) return '';
+          return Array.prototype.map.call(list.querySelectorAll('[data-project-id]'), function (el) {
+            return el.getAttribute('data-project-id') || '';
+          }).join('\t');
+        }
+
+        function persistImmersiveProjectListOrder(orderedIds) {
+          if (typeof isAdminLoggedIn === 'undefined' || !isAdminLoggedIn) return;
+          if (typeof db === 'undefined' || !db || !orderedIds || !orderedIds.length) return;
+          if (_immersiveListDrag.saving) return;
+          _immersiveListDrag.saving = true;
+          var batch = db.batch();
+          orderedIds.forEach(function (id, idx) {
+            if (!id) return;
+            batch.set(
+              db.collection('projetos').doc(String(id)),
+              { order: idx, ordem: idx, position: idx, posicao: idx },
+              { merge: true }
+            );
+            if (typeof cubeArray !== 'undefined') {
+              for (var i = 0; i < cubeArray.length; i++) {
+                var cube = cubeArray[i];
+                if (!cube.userData || String(cube.userData.projectId) !== String(id)) continue;
+                cube.userData.projectData = Object.assign({}, cube.userData.projectData || {}, {
+                  order: idx,
+                  ordem: idx,
+                  position: idx,
+                  posicao: idx
+                });
+              }
+            }
+          });
+          batch.commit()
+            .then(function () {
+              if (typeof showNotification === 'function') {
+                showNotification(i18nT('projects.orderSaved'), 'success', true);
+              }
+            })
+            .catch(function (err) {
+              console.warn('Ordem da lista imersiva:', err);
+              if (typeof showNotification === 'function') {
+                showNotification(i18nT('js.projectOrderFailed'), 'error', true);
+              }
+            })
+            .finally(function () {
+              _immersiveListDrag.saving = false;
+            });
+        }
+
+        function finalizeImmersiveListDrag() {
+          var list = document.getElementById('immersive-projects-list');
+          var newSig = immersiveListOrderSignature(list);
+          var changed = !!(!_immersiveListDrag.saving && _immersiveListDrag.startSig && newSig && newSig !== _immersiveListDrag.startSig);
+          var ids = newSig ? newSig.split('\t') : [];
+          if (list) {
+            Array.prototype.forEach.call(list.querySelectorAll('.project-item'), function (el) {
+              el.classList.remove('is-dragging');
+            });
+          }
+          _immersiveListDrag.active = false;
+          _immersiveListDrag.row = null;
+          _immersiveListDrag.last = { id: null, after: null };
+          _immersiveListDrag.startSig = '';
+          if (changed) persistImmersiveProjectListOrder(ids);
+        }
+
+        function bindImmersiveProjectsListReorder(list) {
+          if (!list || typeof isAdminLoggedIn === 'undefined' || !isAdminLoggedIn) return;
+          if (!_immersiveListDrag.bound) {
+            _immersiveListDrag.bound = true;
+            list.addEventListener('dragover', function (e) {
+              if (!_immersiveListDrag.active) return;
+              e.preventDefault();
+              if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+            });
+            list.addEventListener('drop', function (e) {
+              if (!_immersiveListDrag.active) return;
+              e.preventDefault();
+            });
+          }
+          Array.prototype.forEach.call(list.querySelectorAll('.project-item'), function (itemEl) {
+            var handle = itemEl.querySelector('[data-drag-handle]');
+            if (!handle || handle.dataset.bound === '1') return;
+            handle.dataset.bound = '1';
+            handle.addEventListener('dragstart', function (event) {
+              event.stopPropagation();
+              _immersiveListDrag.active = true;
+              _immersiveListDrag.startSig = immersiveListOrderSignature(list);
+              _immersiveListDrag.row = itemEl;
+              _immersiveListDrag.last = { id: null, after: null };
+              itemEl.classList.add('is-dragging');
+              if (event.dataTransfer) {
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', itemEl.getAttribute('data-project-id') || '');
+                try {
+                  var ghost = new Image();
+                  ghost.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAEAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+                  event.dataTransfer.setDragImage(ghost, 0, 0);
+                } catch (e) {}
+              }
+            });
+            handle.addEventListener('dragend', function () {
+              finalizeImmersiveListDrag();
+            });
+            itemEl.addEventListener('dragover', function (event) {
+              if (!_immersiveListDrag.active || !_immersiveListDrag.row) return;
+              if (itemEl === _immersiveListDrag.row) return;
+              var rect = itemEl.getBoundingClientRect();
+              var after = (event.clientY - rect.top) > Math.max(1, rect.height) * 0.5;
+              var rowId = itemEl.getAttribute('data-project-id');
+              if (rowId === _immersiveListDrag.last.id && after === _immersiveListDrag.last.after) {
+                event.preventDefault();
+                if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+                return;
+              }
+              _immersiveListDrag.last = { id: rowId, after: after };
+              if (after) {
+                if (itemEl.nextSibling === _immersiveListDrag.row) {
+                  event.preventDefault();
+                  if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+                  return;
+                }
+                list.insertBefore(_immersiveListDrag.row, itemEl.nextSibling);
+              } else {
+                if (itemEl.previousSibling === _immersiveListDrag.row) {
+                  event.preventDefault();
+                  if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+                  return;
+                }
+                list.insertBefore(_immersiveListDrag.row, itemEl);
+              }
+              event.preventDefault();
+              if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+            });
+          });
+        }
+
         function renderImmersiveProjectsList() {
           var list = document.getElementById('immersive-projects-list');
           if (!list || typeof cubeArray === 'undefined') return;
+          if (_immersiveListDrag.active) return;
           var items = cubeArray.slice().sort(function (a, b) {
             var ao = projectSortOrder(a.userData && a.userData.projectData);
             var bo = projectSortOrder(b.userData && b.userData.projectData);
@@ -3689,6 +3879,8 @@
             list.innerHTML = '<p class="immersive-projects-empty">' + immersiveEscapeHtml(i18nT('projects.noneAvailable')) + '</p>';
             return;
           }
+          var adminOn = typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn;
+          var dragLabel = immersiveEscapeHtml(i18nT('projects.dragReorder') || 'Arrastar para reordenar');
           list.innerHTML = items.map(function (cube) {
             var id = cube.userData.projectId;
             var data = cube.userData.projectData || {};
@@ -3697,12 +3889,19 @@
             var meta = i18nProject(row, 'subtitle') || (data.year ? String(data.year) : '');
             var descHtml = immersiveFormatListDescription(i18nProject(row, 'description') || '');
             var active = id === immersiveSelectedProjectId ? ' is-active' : '';
-            return '<article class="project-item' + active + '" data-project-id="' + immersiveEscapeHtml(String(id)) + '" role="listitem">' +
+            var adminClass = adminOn ? ' is-admin-reorder' : '';
+            var handle = adminOn
+              ? '<span class="project-drag-handle" draggable="true" data-drag-handle="true" title="' + dragLabel + '" aria-label="' + dragLabel + '">⋮⋮</span>'
+              : '';
+            return '<article class="project-item' + active + adminClass + '" data-project-id="' + immersiveEscapeHtml(String(id)) + '" role="listitem">' +
+              handle +
+              '<div class="project-item-body">' +
               '<p class="project-item-title">' + immersiveEscapeHtml(title) + '</p>' +
               (meta ? '<p class="project-item-meta">' + immersiveEscapeHtml(meta) + '</p>' : '') +
               (descHtml ? '<div class="project-item-description">' + descHtml + '</div>' : '') +
-              '</article>';
+              '</div></article>';
           }).join('');
+          if (adminOn) bindImmersiveProjectsListReorder(list);
         }
         window.renderImmersiveProjectsList = renderImmersiveProjectsList;
 
@@ -3811,6 +4010,9 @@
                     if (panel && panel.classList.contains('visible') && typeof _panelEnableEditMode === 'function') {
                         _panelEnableEditMode();
                     }
+                    if (typeof window.renderImmersiveProjectsList === 'function') {
+                        window.renderImmersiveProjectsList();
+                    }
                 } else {
                     isAdminLoggedIn = false;
                     if (typeof stopProjectsRealtimeListener === 'function') stopProjectsRealtimeListener();
@@ -3819,6 +4021,9 @@
                     var panelOff = document.getElementById('project-panel');
                     if (panelOff && panelOff.classList.contains('visible') && typeof _panelDisableEditMode === 'function') {
                         _panelDisableEditMode();
+                    }
+                    if (typeof window.renderImmersiveProjectsList === 'function') {
+                        window.renderImmersiveProjectsList();
                     }
                 }
             });
