@@ -5805,11 +5805,13 @@
                     }
                     scene.add(model);
                     
-                    // Hitbox invisível para detectar clique na cabeça (SkinnedMesh não suporta raycast nesta versão do Three.js)
-                    var hitboxGeometry = new THREE.SphereGeometry(1.0, 16, 16);
+                    // Hitbox invisível para detectar clique na cabeça (SkinnedMesh não suporta raycast nesta versão do Three.js).
+                    // Elipsoide um pouco maior que o crânio para o cursor/clique cobrir cabelo, orelhas e pescoço.
+                    var hitboxGeometry = new THREE.SphereGeometry(1.55, 16, 16);
                     var hitboxMaterial = new THREE.MeshBasicMaterial({ visible: false });
                     headHitbox = new THREE.Mesh(hitboxGeometry, hitboxMaterial);
-                    headHitbox.position.set(0, 2.0, 0);
+                    headHitbox.position.set(0, 2.12, 0);
+                    headHitbox.scale.set(1.18, 1.38, 1.22);
                     model.add(headHitbox);
                     
                     // Aplicar envMapIntensity ao modelo (caso HDR já tenha carregado)
